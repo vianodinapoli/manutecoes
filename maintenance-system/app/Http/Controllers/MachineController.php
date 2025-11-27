@@ -36,7 +36,10 @@ class MachineController extends Controller
             'name' => 'required|string|max:100',
             'serial_number' => 'required|string|max:50|unique:machines', 
             'location' => 'required|string|max:100',
+             'chassi' => 'required|string|max:100',
             'description' => 'nullable|string', 
+            'status' => 'required|string|in:operacional,em manutenção,avariada,terreno',
+
         ]);
         
         // 2. Criação do Registo

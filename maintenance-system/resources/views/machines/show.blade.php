@@ -23,6 +23,7 @@
     <ul>
         <li>**Nome:** {{ $machine->name }}</li>
         <li>**Nº de Série:** {{ $machine->serial_number }}</li>
+        <li>**Chassi:** {{ $machine->chassi }}</li>
         <li>**Localização:** {{ $machine->location }}</li>
         <li>**Registo:** {{ $machine->created_at->format('d/m/Y H:i') }}</li>
     </ul>
