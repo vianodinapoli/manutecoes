@@ -17,4 +17,7 @@ class Machine extends Model
     {
         return $this->hasMany(Maintenance::class);
     }
+
+
+    
 }

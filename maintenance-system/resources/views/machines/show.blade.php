@@ -21,12 +21,22 @@
 
     <h2>Informação Básica</h2>
     <ul>
-        <li>**Nome:** {{ $machine->name }}</li>
-        <li>**Nº de Série:** {{ $machine->serial_number }}</li>
-        <li>**Chassi:** {{ $machine->chassi }}</li>
-        <li>**Localização:** {{ $machine->location }}</li>
-        <li>**Registo:** {{ $machine->created_at->format('d/m/Y H:i') }}</li>
+        <li>Nome: {{ $machine->name }}</li>
+        <li>Nº de Série: {{ $machine->serial_number }}</li>
+        <li>Chassi: {{ $machine->chassi }}</li>
+        <li>Localização: {{ $machine->location }}</li>
+        <li>Registo:{{ $machine->created_at->format('d/m/Y H:i') }}</li>
     </ul>
+
+    <h3>Histórico de Manutenções</h3>
+<ul>
+@foreach($machine->maintenances as $maintenance)
+    <li>
+        {{ $maintenance->title }} - {{ $maintenance->status }} ({{ $maintenance->scheduled_date }})
+    </li>
+@endforeach
+</ul>
+
 
     <h3>Descrição Detalhada</h3>
     <p>{{ $machine->description ?? 'N/A' }}</p>

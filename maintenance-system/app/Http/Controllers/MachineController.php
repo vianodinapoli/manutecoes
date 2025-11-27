@@ -54,7 +54,10 @@ class MachineController extends Controller
      * Mostrar os detalhes de uma máquina específica.
      */
     public function show(Machine $machine)
+
+    
     {
+     
         // O Laravel resolve automaticamente a máquina pelo ID (Route Model Binding)
         
         // Aqui, carregamos também as manutenções associadas à máquina

@@ -16,6 +16,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>🛠️ Lista de Máquinas</h1>
             
+            <a href="{{ route('maintenances.index') }}" class="btn btn-info me-2">🛠 Todas as Manutenções</a>
             <a href="{{ route('machines.create') }}" class="btn btn-primary">
                 ➕ Adicionar Nova Máquina
             </a>
@@ -79,7 +80,7 @@
         Apagar
     </button>
 
-                                    <a href="#" class="btn btn-sm btn-danger" 
+                                    <a href="{{ route('machines.maintenances.create', $machine->id) }}"  class="btn btn-sm btn-danger" 
                                        title="Criar Ordem de Manutenção">Manutenção</a>
                                 </td>
 
