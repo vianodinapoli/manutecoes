@@ -42,7 +42,7 @@
                             <th>Nº de Série</th>
                             <th>Chassi</th>
                             <th>Localização</th>
-                            <th>Status</th>
+                            {{-- <th>Status</th> --}}
                             <th>Descrição</th>
                             
                             <th>Status</th> 
@@ -58,7 +58,7 @@
                                 <td>{{ $machine->serial_number }}</td>
                                 <td>{{ $machine->chassi }}</td>
                                 <td>{{ $machine->location }}</td>
-                                  <td>{{ $machine->status }}</td>
+                                  {{-- <td>{{ $machine->status }}</td> --}}
                                 <td>{{ \Illuminate\Support\Str::limit($machine->description, 30) }}</td>
                                 
                                 <td>
