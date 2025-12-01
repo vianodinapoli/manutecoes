@@ -31,24 +31,26 @@ class MachineController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validação de Dados
         $validatedData = $request->validate([
-            'name' => 'required|string|max:100',
-            'serial_number' => 'required|string|max:50|unique:machines', 
-            'location' => 'required|string|max:100',
-             'chassi' => 'required|string|max:100',
-            'description' => 'nullable|string', 
-            'status' => 'required|string|in:operacional,em manutenção,avariada,terreno',
-
-        ]);
+        'numero_interno' => 'required|string|max:50|unique:machines,numero_interno',
+        'tipo_equipamento' => 'required|string|max:100',
+        'marca' => 'nullable|string|max:100',
+        'modelo' => 'nullable|string|max:100',
+        'localizacao' => 'required|string|max:100',
+        'operador' => 'nullable|string|max:100',
+        'status' => 'required|in:Operacional,Avariada,Em Manutenção,Desativada',
+        'observacoes' => 'nullable|string',
+    ]);
         
         // 2. Criação do Registo
         Machine::create($validatedData);
 
-        // 3. Redirecionamento
-        return redirect()->route('machines.index')
-                         ->with('success', 'Máquina "' . $validatedData['name'] . '" adicionada com sucesso!');
+// 3. Redirecionamento (CORREÇÃO DA LINHA 50)
+    return redirect()->route('machines.index')
+                     ->with('success', 'Máquina "' . $validatedData['numero_interno'] . '" adicionada com sucesso!'); // <-- CORRIGIDO
     }
+
+    
 
     /**
      * Mostrar os detalhes de uma máquina específica.
@@ -83,12 +85,17 @@ class MachineController extends Controller
     {
         // 1. Validação de Dados (ignoramos o próprio serial_number atual para evitar erro de UNIQUE)
         $validatedData = $request->validate([
-            'name' => 'required|string|max:100',
-            // O serial_number deve ser único, exceto para o registo atual ($machine->id)
-            'serial_number' => 'required|string|max:50|unique:machines,serial_number,' . $machine->id, 
-            'location' => 'required|string|max:100',
-            'description' => 'nullable|string', 
-        ]);
+        // Regra unique ignorando o ID da máquina atual:
+        'numero_interno' => 'required|string|max:50|unique:machines,numero_interno,' . $machine->id,
+        
+        'tipo_equipamento' => 'required|string|max:100',
+        'marca' => 'nullable|string|max:100',
+        'modelo' => 'nullable|string|max:100',
+        'localizacao' => 'required|string|max:100',
+        'operador' => 'nullable|string|max:100',
+        'status' => 'required|in:Operacional,Avariada,Em Manutenção,Desativada',
+        'observacoes' => 'nullable|string',
+    ]);
         
         // 2. Atualização do Registo
         $machine->update($validatedData);

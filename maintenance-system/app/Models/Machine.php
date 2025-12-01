@@ -9,9 +9,17 @@ class Machine extends Model
 {
     use HasFactory;
     
-    // Indica quais campos podem ser preenchidos em massa
-    protected $fillable = ['name', 'description', 'location','serial_number', 'chassi', 'status'];
-
+   // Campos que podem ser preenchidos em massa
+    protected $fillable = [
+        'numero_interno',
+        'tipo_equipamento',
+        'marca',
+        'modelo',
+        'localizacao',
+        'operador',
+        'status',
+        'observacoes',
+    ];
     // Relacionamento: Uma Máquina TEM MUITAS Manutenções
     public function maintenances()
     {

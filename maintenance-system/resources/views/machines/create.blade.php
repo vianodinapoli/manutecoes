@@ -11,7 +11,7 @@
     <div class="container mt-5"> 
         
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>➕ Adicionar Nova Máquina</h1>
+            <h1>➕ Adicionar Novo Equipamento / Máquina</h1>
         </div>
 
         <a href="{{ route('machines.index') }}" class="btn btn-secondary mb-3">
@@ -23,62 +23,88 @@
             
             @if ($errors->any())
                 <div class="alert alert-danger">
-                    Por favor, corrija os erros abaixo.
+                    Por favor, corrija os erros de validação abaixo.
                 </div>
             @endif
-
-            <div class="mb-3">
-                <label for="name" class="form-label">Nome da Máquina:</label>
-                <input type="text" id="name" name="name" class="form-control @error('name') is-invalid @enderror" required value="{{ old('name') }}">
-                @error('name')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
             
-            <div class="mb-3">
-                <label for="serial_number" class="form-label">Número de Série:</label>
-                <input type="text" id="serial_number" name="serial_number" class="form-control @error('serial_number') is-invalid @enderror" required value="{{ old('serial_number') }}">
-                @error('serial_number')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-            
-            <div class="mb-3">
-                <label for="chassi" class="form-label">Chassi</label>
-                <input type="text" name="chassi" id="chassi" class="form-control @error('chassi') is-invalid @enderror" required value="{{ old('chassi') }}">
-                 @error('chassi')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-            
-            <div class="mb-3">
-                <label for="location" class="form-label">Localização:</label>
-                <input type="text" id="location" name="location" class="form-control @error('location') is-invalid @enderror" required value="{{ old('location') }}">
-                @error('location')
+            <div class="row">
+                <div class="col-md-6">
+                    
+                    <div class="mb-3">
+                        <label for="numero_interno" class="form-label">Número Interno (Ativo):</label>
+                        <input type="text" id="numero_interno" name="numero_interno" class="form-control @error('numero_interno') is-invalid @enderror" required value="{{ old('numero_interno') }}">
+                        @error('numero_interno')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="tipo_equipamento" class="form-label">Tipo de Equipamento:</label>
+                        <input type="text" id="tipo_equipamento" name="tipo_equipamento" class="form-control @error('tipo_equipamento') is-invalid @enderror" required value="{{ old('tipo_equipamento') }}">
+                        @error('tipo_equipamento')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="marca" class="form-label">Marca:</label>
+                        <input type="text" id="marca" name="marca" class="form-control @error('marca') is-invalid @enderror" value="{{ old('marca') }}">
+                        @error('marca')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="modelo" class="form-label">Modelo:</label>
+                        <input type="text" id="modelo" name="modelo" class="form-control @error('modelo') is-invalid @enderror" value="{{ old('modelo') }}">
+                        @error('modelo')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                </div>
+                
+                <div class="col-md-6">
+                    
+                    <div class="mb-3">
+                        <label for="localizacao" class="form-label">Localização:</label>
+                        <input type="text" id="localizacao" name="localizacao" class="form-control @error('localizacao') is-invalid @enderror" required value="{{ old('localizacao') }}">
+                        @error('localizacao')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="operador" class="form-label">Operador/Responsável:</label>
+                        <input type="text" id="operador" name="operador" class="form-control @error('operador') is-invalid @enderror" value="{{ old('operador') }}">
+                        @error('operador')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status Operacional:</label>
+                        <select id="status" name="status" class="form-select @error('status') is-invalid @enderror" required>
+                            <option value="Operacional" {{ old('status') == 'Operacional' ? 'selected' : '' }}>Operacional</option>
+                            <option value="Avariada" {{ old('status') == 'Avariada' ? 'selected' : '' }}>Avariada</option>
+                            <option value="Em Manutenção" {{ old('status') == 'Em Manutenção' ? 'selected' : '' }}>Em Manutenção</option>
+                            <option value="Desativada" {{ old('status') == 'Desativada' ? 'selected' : '' }}>Desativada</option>
+                        </select>
+                        @error('status')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                </div>
+            </div> <div class="mb-3">
+                <label for="observacoes" class="form-label">Observações/Descrição:</label>
+                <textarea id="observacoes" name="observacoes" rows="4" class="form-control @error('observacoes') is-invalid @enderror">{{ old('observacoes') }}</textarea>
+                @error('observacoes')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
 
-            <div class="form-group">
-    <label for="status">Status</label>
-    <select name="status" id="status" class="form-control" required>
-        <option value="operacional">Operacional</option>
-        <option value="em manutenção">Em manutenção</option>
-        <option value="avariada">Avariada</option>
-        <option value="terreno">Terreno</option>
-    </select>
-</div>
-
-
-            <div class="mb-3">
-                <label for="description" class="form-label">Descrição:</label>
-                <textarea id="description" name="description" class="form-control @error('description') is-invalid @enderror">{{ old('description') }}</textarea>
-                @error('description')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
-
-            <button type="submit" class="btn btn-success">
+            <button type="submit" class="btn btn-success btn-lg mt-3">
                 💾 Guardar Máquina
             </button>
         </form>
