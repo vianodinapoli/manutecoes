@@ -1,67 +1,87 @@
-@extends('layouts.app')
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Manutenções</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container mt-5">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>🛠️ Histórico de Manutenções</h1>
+            
+            <a href="{{ route('machines.index') }}" class="btn btn-primary">
+                ⚙️ Ver Máquinas
+            </a>
+        </div>
 
-@section('content')
-<div class="container mt-5" style="max-width: 95%;">
-    <h1 class="mb-4">📋 Lista de Manutenções</h1>
+        @if (session('success'))
+            <div class="alert alert-success" role="alert">
+                {{ session('success') }}
+            </div>
+        @endif
 
-    <a href="{{ route('maintenances.create') }}" class="btn btn-primary mb-3">➕ Nova Manutenção</a>
+        @if ($maintenances->isEmpty())
+            <div class="alert alert-info">
+                Não há registos de manutenção no sistema.
+            </div>
+        @else
+            <div class="table-responsive">
+                <table class="table table-striped table-hover border">
+                    <thead class="table-dark">
+                        <tr>
+                            <th># ID</th>
+                            <th>Máquina (Nº Interno)</th>
+                            <th>Status</th>
+                            <th>Avaria Reportada</th>
+                            <th>Agendado para</th>
+                            <th>Início Real</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($maintenances as $maintenance)
+                            <tr>
+                                <td><a href="{{ route('maintenances.show', $maintenance->id) }}">**#{{ $maintenance->id }}**</a></td>
+                                
+                                <td>
+                                    <a href="{{ route('machines.show', $maintenance->machine->id) }}">
+                                        {{ $maintenance->machine->numero_interno }}
+                                    </a>
+                                </td>
+                                
+                                <td>
+                                    @php
+                                        $badge_class = match($maintenance->status) {
+                                            'Pendente' => 'bg-warning text-dark',
+                                            'Em Progresso' => 'bg-info',
+                                            'Concluída' => 'bg-success',
+                                            'Cancelada' => 'bg-secondary',
+                                            default => 'bg-secondary',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $badge_class }}">{{ $maintenance->status }}</span>
+                                </td>
+                                
+                                <td>{{ Str::limit($maintenance->failure_description, 50) }}</td>
+                                <td>{{ $maintenance->scheduled_date ? $maintenance->scheduled_date->format('d/m/Y H:i') : 'N/A' }}</td>
+                                <td>{{ $maintenance->start_date ? $maintenance->start_date->format('d/m/Y H:i') : 'Pendente' }}</td>
 
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
+                                <td>
+                                    <a href="{{ route('maintenances.show', $maintenance->id) }}" class="btn btn-sm btn-outline-info me-1">Detalhes</a>
+                                    <a href="{{ route('maintenances.edit', $maintenance->id) }}" class="btn btn-sm btn-outline-warning">Editar</a>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </div>
 
-    <table class="table table-striped table-hover">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Máquina</th>
-                <th>Título da Última Manutenção</th>
-                <th>Status</th>
-                <th>Data</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-        @foreach($machines as $m)
-            @php
-                // Pega a última manutenção da máquina
-                $lastMaintenance = $m->maintenances->sortByDesc('scheduled_date')->first();
-            @endphp
-            <tr>
-                <td>{{ $m->id }}</td>
-                <td>{{ $m->name }}</td>
-                <td>{{ $lastMaintenance->title ?? '-' }}</td>
-                <td>
-                    @if($lastMaintenance)
-                        @if($lastMaintenance->status == 'em manutenção')
-                            <span class="badge bg-warning text-dark">{{ $lastMaintenance->status }}</span>
-                        @elseif($lastMaintenance->status == 'concluída')
-                            <span class="badge bg-success">{{ $lastMaintenance->status }}</span>
-                        @else
-                            <span class="badge bg-secondary">{{ $lastMaintenance->status }}</span>
-                        @endif
-                    @else
-                        <span class="badge bg-secondary">Sem manutenção</span>
-                    @endif
-                </td>
-                <td>{{ $lastMaintenance->scheduled_date ?? '-' }}</td>
-                <td>
-                    @if($lastMaintenance)
-                        <a href="{{ route('maintenances.edit', $lastMaintenance->id) }}" class="btn btn-sm btn-warning mb-1">✏️ Editar</a>
-
-                        <form action="{{ route('maintenances.destroy', $lastMaintenance->id) }}" method="POST" class="d-inline"
-                              onsubmit="return confirm('Tens certeza que queres apagar esta manutenção?');">
-                            @csrf
-                            @method('DELETE')
-                            <button class="btn btn-sm btn-danger mb-1">🗑 Apagar</button>
-                        </form>
-                    @else
-                        <a href="{{ route('machines.maintenances.create', $m->id) }}" class="btn btn-sm btn-primary mb-1">➕ Criar Manutenção</a>
-                    @endif
-                </td>
-            </tr>
-        @endforeach
-        </tbody>
-    </table>
-</div>
-@endsection
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</body>
+</html>

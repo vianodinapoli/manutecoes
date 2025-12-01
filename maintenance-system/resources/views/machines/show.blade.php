@@ -76,6 +76,14 @@
             </div>
 
         </div> 
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Detalhes da Máquina: <span class="text-primary">{{ $machine->numero_interno }}</span></h1>
+    
+    <a href="{{ route('maintenances.createFromMachine', $machine->id) }}" class="btn btn-danger btn-lg">
+        🚨 Reportar Avaria / Criar Manutenção
+    </a>
+</div>
         
         <hr class="my-4">
 

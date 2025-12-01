@@ -15,3 +15,13 @@ Route::get('/', function () {
 
 Route::get('/machines/{machine}/maintenances/create', [MaintenanceController::class, 'createFromMachine'])
     ->name('machines.maintenances.create');
+
+    // routes/web.php
+
+// ... (Outras rotas de machines e maintenances)
+
+// Rota específica para criar uma manutenção a partir de uma máquina (ID da máquina)
+Route::get('/maintenances/create/{machine}', [App\Http\Controllers\MaintenanceController::class, 'createFromMachine'])
+    ->name('maintenances.createFromMachine');
+
+// ...
