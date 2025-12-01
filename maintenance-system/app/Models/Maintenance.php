@@ -20,4 +20,12 @@ class Maintenance extends Model
     {
         return $this->belongsTo(Machine::class);
     }
+
+
+    // * Define os campos que devem ser convertidos em tipos nativos.*/
+    protected $casts = [
+        'scheduled_date' => 'datetime', // Adicione esta linha
+        'start_date' => 'datetime',     // Adicione esta linha
+        'end_date' => 'datetime',       // Adicione esta linha
+    ];
 }

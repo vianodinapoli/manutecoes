@@ -10,7 +10,7 @@
 </head>
 
 <body >
-    <div class="container-fluid mt-5" style="width: 90%; margin: 0 auto;">
+    <div class="container-fluid mt-5" style="width: 95%; margin: 0 auto;">
  
         
         <div class="d-flex justify-content-between align-items-center mb-4">

@@ -96,8 +96,19 @@
                                 </td>
                                 <td>{{ \Illuminate\Support\Str::limit($maintenance->failure_description, 50) }}</td>
                                 <td>{{ $maintenance->created_at->format('d/m/Y') }}</td>
-                                <td>
-                                    <a href="#" class="btn btn-sm btn-outline-info">Ver Detalhes</a>
+                               <td>
+                                   <form action="{{ route('maintenances.destroy', $maintenance->id) }}" method="POST" class="d-inline ms-3">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-danger btn-sm" 
+                    title="Eliminar permanentemente este registo"
+                    onclick="return confirm('ATENÇÃO: Tem certeza que deseja eliminar este registo de manutenção ID {{ $maintenance->id }}? Esta ação é irreversível.')">
+                🗑️ Eliminar Registo
+            </button>
+        </form>
+                                    <a href="{{ route('maintenances.edit', $maintenance->id) }}" class="btn btn-sm btn-warning" title="Editar Registo de Manutenção">
+                                        ✏️ Editar
+                                    </a>
                                 </td>
                             </tr>
                         @endforeach

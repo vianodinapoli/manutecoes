@@ -38,13 +38,15 @@ public function index()
             'machines' => $machines,
             'selectedMachine' => $maintenance->machine_id,
         ]);
+
+        
     }
 
     public function createFromMachine(Machine $machine)
 {
     // Apenas prepara um novo objeto Maintenance sem salvar
     $maintenance = new Maintenance([
-        'status' => 'em manutenção',
+        'status' => 'Em manutenção',
         'scheduled_date' => now(),
         'machine_id' => $machine->id,
     ]);
@@ -83,6 +85,30 @@ public function update(Request $request, Maintenance $maintenance)
     return redirect()->route('machines.show', $maintenance->machine_id)
                      ->with('success', 'Manutenção atualizada com sucesso!');
 }
+
+
+// app/Http/Controllers/MaintenanceController.php
+
+// ... (outros métodos)
+
+    /**
+     * Eliminar um registo de manutenção (APAGAR).
+     */
+    public function destroy(Maintenance $maintenance)
+    {
+        // Guardamos o ID da máquina para redirecionar para a página correta
+        $machineId = $maintenance->machine_id; 
+        
+        // Nome da manutenção para a mensagem de sucesso
+        $maintenanceId = $maintenance->id; 
+        
+        $maintenance->delete();
+
+        // Redirecionamos o utilizador de volta para a página de detalhes da máquina
+        return redirect()->route('machines.show', $machineId)
+                         ->with('success', 'Registo de manutenção ID ' . $maintenanceId . ' eliminado com sucesso!');
+    }
+
 
 
 
