@@ -101,8 +101,9 @@ class MachineController extends Controller
         $machine->update($validatedData);
 
         // 3. Redirecionamento
+     // 3. Redirecionamento (CORREÇÃO DA LINHA 105)
         return redirect()->route('machines.index')
-                         ->with('success', 'Máquina "' . $validatedData['name'] . '" atualizada com sucesso!');
+                         ->with('success', 'Máquina "' . $validatedData['numero_interno'] . '" atualizada com sucesso!'); // <-- CORRIGIDO
     }
 
     /**
