@@ -45,7 +45,7 @@
                     <tbody>
                         @foreach ($maintenances as $maintenance)
                             <tr>
-                                <td><a href="{{ route('maintenances.show', $maintenance->id) }}">**#{{ $maintenance->id }}**</a></td>
+                                <td><a href="{{ route('maintenances.show', $maintenance->machine->numero_interno) }}">{{ $maintenance->id }}**</a></td>
                                 
                                 <td>
                                     <a href="{{ route('machines.show', $maintenance->machine->id) }}">
@@ -54,16 +54,19 @@
                                 </td>
                                 
                                 <td>
-                                    @php
-                                        $badge_class = match($maintenance->status) {
+                                    
+
+                                     @php
+                                        $badge_class = match($maintenance->machine->status) {
                                             'Pendente' => 'bg-warning text-dark',
                                             'Em Progresso' => 'bg-info',
                                             'Concluída' => 'bg-success',
                                             'Cancelada' => 'bg-secondary',
                                             default => 'bg-secondary',
                                         };
-                                    @endphp
-                                    <span class="badge {{ $badge_class }}">{{ $maintenance->status }}</span>
+                                    @endphp 
+                                
+                                    <span class="badge {{ $badge_class }}">{{ $maintenance->machine->status }}</span> 
                                 </td>
                                 
                                 <td>{{ Str::limit($maintenance->failure_description, 50) }}</td>

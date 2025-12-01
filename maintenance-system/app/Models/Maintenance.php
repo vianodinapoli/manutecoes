@@ -12,7 +12,7 @@ class Maintenance extends Model
     // Indica quais campos podem ser preenchidos em massa
     protected $fillable = [
         'machine_id', 'failure_description', 'status', 'scheduled_date', 
-        'start_date', 'end_date', 'technician_notes'
+        'start_date', 'end_date', 'technician_notes', 'work_sheet_ref', 'hours_kms', 'total_cost'
     ];
 
     // Relacionamento: Uma Manutenção PERTENCE A UMA Máquina

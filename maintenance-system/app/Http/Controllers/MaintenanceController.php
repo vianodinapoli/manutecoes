@@ -57,41 +57,69 @@ class MaintenanceController extends Controller
             'maintenance' => $maintenance,
             'machines' => Machine::all(),
             'selectedMachine' => $machine->id,
+            'currentMachine' => $machine,
         ])->with('info', 'Preencha os detalhes da manutenção antes de salvar.');
     }
 
 
 
 
+// app/Http/Controllers/MaintenanceController.php (Método store)
 
-    public function store(Request $request)
-    {
-        // NOTA: Adicione a validação se necessário
-        $maintenance = Maintenance::create($request->all());
-
-        // Atualiza o status da máquina com o status da manutenção
-        $maintenance->machine->update([
-            'status' => $maintenance->status
-        ]);
-
-        return redirect()->route('machines.show', $maintenance->machine_id)
-                         ->with('success', 'Manutenção criada com sucesso!');
-    }
-
-    public function update(Request $request, Maintenance $maintenance)
-    {
-        // NOTA: Adicione a validação se necessário
-        $maintenance->update($request->all());
-
-        // Atualiza o status da máquina
-        $maintenance->machine->update([
-            'status' => $maintenance->status
-        ]);
-
-        return redirect()->route('machines.show', $maintenance->machine_id)
-                         ->with('success', 'Manutenção atualizada com sucesso!');
-    }
+public function store(Request $request)
+{
+    // ... (Validação, se for o caso)
     
+    $maintenance = Maintenance::create($request->all());
+
+    // --- CORREÇÃO APLICADA AQUI ---
+    
+    $machineStatus = match ($maintenance->status) {
+        'Pendente', 'Em Progresso' => 'Em Manutenção',
+        'Avariada' => 'Avariada', // Caso o formulário permita setar como Avariada
+        default => $maintenance->machine->status, // Manter o status atual se for Concluída, etc.
+    };
+
+    // Atualiza o status da máquina com o status mapeado
+    if ($maintenance->status != 'Concluída' && $maintenance->status != 'Cancelada') {
+        $maintenance->machine->update([
+            'status' => $machineStatus 
+        ]);
+    }
+    // NOTA: Se o status for Concluída, o status da máquina deve ser alterado separadamente para 'Operacional' ou manualmente.
+
+    // -----------------------------
+
+    return redirect()->route('machines.show', $maintenance->machine_id)
+                     ->with('success', 'Manutenção criada com sucesso!');
+}
+
+    // app/Http/Controllers/MaintenanceController.php (Método update)
+
+public function update(Request $request, Maintenance $maintenance)
+{
+    // ... (Validação, se for o caso)
+
+    $maintenance->update($request->all());
+
+    // --- CORREÇÃO APLICADA AQUI ---
+    
+    $machineStatus = match ($maintenance->status) {
+        'Pendente', 'Em Progresso' => 'Em Manutenção',
+        'Avariada' => 'Avariada',
+        'Concluída' => 'Operacional', // Se a manutenção for concluída, assume-se que a máquina volta a ser operacional.
+        default => $maintenance->machine->status,
+    };
+
+    $maintenance->machine->update([
+        'status' => $machineStatus
+    ]);
+    
+    // -----------------------------
+
+    return redirect()->route('machines.show', $maintenance->machine_id)
+                     ->with('success', 'Manutenção atualizada com sucesso!');
+}
     /**
      * Mostrar os detalhes de um registo de manutenção específico.
      */
