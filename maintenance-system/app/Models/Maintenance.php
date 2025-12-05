@@ -15,6 +15,11 @@ class Maintenance extends Model
         'start_date', 'end_date', 'technician_notes', 'work_sheet_ref', 'hours_kms', 'total_cost'
     ];
 
+    public function files()
+    {
+        return $this->hasMany(MaintenanceFile::class);
+    }
+
     // Relacionamento: Uma Manutenção PERTENCE A UMA Máquina
     public function machine()
     {

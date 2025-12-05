@@ -18,11 +18,14 @@
     @if(session('info'))
         <div class="alert alert-info">{{ session('info') }}</div>
     @endif
-    @if($errors->any())
-        <div class="alert alert-danger">Por favor, corrija os erros no formulário.</div>
-    @endif
     
-    <form action="{{ $maintenance->id ? route('maintenances.update', $maintenance->id) : route('maintenances.store') }}" method="POST">
+    {{-- As mensagens de erro de validação do Laravel 
+         serão injetadas aqui pelo JS na resposta do AJAX 422 --}}
+    
+    {{-- Adicionamos o ID maintenanceForm para ser usado no JavaScript --}}
+    <form action="{{ $maintenance->id ? route('maintenances.update', $maintenance->id) : route('maintenances.store') }}" 
+          method="POST" 
+          id="maintenanceForm">
         @csrf
         @if($maintenance->id)
             @method('PUT')
@@ -54,7 +57,8 @@
         @else
             <div class="mb-3">
                 <label for="machine_id" class="form-label">Máquina</label>
-                <select name="machine_id" id="machine_id" class="form-select @error('machine_id') is-invalid @enderror" required>
+                {{-- Aqui não precisamos do @error, pois o tratamento de erro é feito via AJAX/JS --}}
+                <select name="machine_id" id="machine_id" class="form-select" required>
                     <option value="">-- Selecione uma Máquina --</option>
                     @foreach($machines as $machine)
                         <option value="{{ $machine->id }}" 
@@ -63,7 +67,6 @@
                         </option>
                     @endforeach
                 </select>
-                @error('machine_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
             </div>
         @endif
         
@@ -92,20 +95,19 @@
 
         <div class="mb-3">
             <label for="failure_description" class="form-label">Descrição da Falha (Ocorrência)</label>
-            <textarea name="failure_description" id="failure_description" class="form-control @error('failure_description') is-invalid @enderror" rows="3" required>{{ old('failure_description', $maintenance->failure_description) }}</textarea>
-            @error('failure_description') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            {{-- Aqui também removemos a classe @error, confiando no JS para tratamento visual --}}
+            <textarea name="failure_description" id="failure_description" class="form-control" rows="3" required>{{ old('failure_description', $maintenance->failure_description) }}</textarea>
         </div>
         
         <div class="mb-3">
             <label for="status" class="form-label">Status da Manutenção</label>
-            <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
+            <select name="status" id="status" class="form-select" required>
                 @php $currentStatus = old('status', $maintenance->status); @endphp
                 <option value="Pendente" {{ $currentStatus == 'Pendente' ? 'selected' : '' }}>Pendente</option>
                 <option value="Em Progresso" {{ $currentStatus == 'Em Progresso' ? 'selected' : '' }}>Em Progresso</option>
                 <option value="Concluída" {{ $currentStatus == 'Concluída' ? 'selected' : '' }}>Concluída</option>
                 <option value="Cancelada" {{ $currentStatus == 'Cancelada' ? 'selected' : '' }}>Cancelada</option>
             </select>
-            @error('status') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
 
         <hr>
@@ -113,7 +115,7 @@
         {{-- =============================================== --}}
         <h2>Custos e Material (Itens de Serviço)</h2>
         {{-- =============================================== --}}
-        
+
         <div class="mb-3">
             <label for="technician_notes" class="form-label">Descrição do Material / Serviço / Notas do Técnico</label>
             <textarea name="technician_notes" id="technician_notes" class="form-control" rows="4">{{ old('technician_notes', $maintenance->technician_notes ?? '') }}</textarea>
@@ -137,21 +139,38 @@
         </div>
 
         <div class="card p-4 shadow-sm">
-    <h2 class="card-title mb-3">📎 Anexar Ficheiros</h2>
-    <div id="dropZone" class="drop-zone border-dashed rounded-lg p-5 text-center">
-        <p class="mb-2">Arraste e solte ficheiros aqui ou <label for="fileInput" class="text-primary cursor-pointer hover:underline">clique para selecionar</label>.</p>
-        <input type="file" id="fileInput" multiple style="display: none;">
-        <p class="small text-muted" id="fileStatus">Nenhum ficheiro selecionado.</p>
-    </div>
-    <div id="fileList" class="mt-3">
-        <!-- Ficheiros anexados serão listados aqui -->
-    </div>
+            <h2 class="card-title mb-3">📎 Anexar Ficheiros</h2>
+            <div id="dropZone" class="drop-zone border-dashed rounded-lg p-5 text-center">
+                <p class="mb-2">Arraste e solte ficheiros aqui ou <label for="fileInput" class="text-primary cursor-pointer hover:underline">clique para selecionar</label>.</p>
+                <input type="file" id="fileInput" multiple style="display: none;">
+                <p class="small text-muted" id="fileStatus">Nenhum ficheiro selecionado.</p>
+            </div>
+            <div id="fileList" class="mt-3">
+                </div>
+            
+            {{-- Se for edição, pode listar os ficheiros existentes aqui (opcional) --}}
+            @if($maintenance->id && $maintenance->files->isNotEmpty())
+                <h4 class="mt-4">Ficheiros Existentes:</h4>
+                <div class="list-group">
+                    @foreach($maintenance->files as $file)
+                        <a href="{{ $file->url }}" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            📄 {{ $file->filename }} 
+                            <span class="badge bg-secondary rounded-pill">{{ round($file->filesize / 1024 / 1024, 2) }} MB</span>
+                            {{-- Para apagar ficheiros existentes, precisará de lógica AJAX adicional --}}
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+        {{-- O BOTÃO AGORA É TYPE="BUTTON" COM ID PARA SER GERIDO PELO JAVASCRIPT --}}
+        <button type="button" id="submitButton" class="btn btn-success btn-lg mt-3">
+            {{ $maintenance->id ? '✅ Atualizar Manutenção' : '💾 Criar Manutenção' }}
+        </button>
+    </form>
 </div>
 
-<!-- LÓGICA DE SCRIPTS NECESSÁRIOS -->
-<!-- Certifique-se de que o jQuery e o Bootstrap JS estão carregados na sua página principal -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
 <style>
     /* Estilos do Drop Zone */
@@ -178,90 +197,68 @@
         border: 1px solid #dee2e6;
         border-radius: 4px;
     }
+    /* Estilo para campos com erro de validação (adicionado pelo JS) */
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
 </style>
 
 <script>
-    // Inicializa a lógica de Drag & Drop
     $(document).ready(function() {
-        // --- Lógica de Drag and Drop para Ficheiros ---
+        // --- Variáveis e Configuração ---
         const dropZone = $('#dropZone');
         const fileInput = $('#fileInput');
         const fileList = $('#fileList');
         const fileStatus = $('#fileStatus');
+        const submitButton = $('#submitButton');
         let attachedFiles = []; // Array para guardar os ficheiros selecionados
 
-        // Previne o comportamento padrão do navegador (abrir o ficheiro) em todo o documento
-        $(document).on('dragover dragenter', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        });
-        $(document).on('drop', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        });
+        // --- Funções de Drop Zone ---
+        $(document).on('dragover dragenter', function(e) { e.preventDefault(); e.stopPropagation(); });
+        $(document).on('drop', function(e) { e.preventDefault(); e.stopPropagation(); });
 
-        // Lidar com Drag Over/Enter (Mudar estilo)
-        dropZone.on('dragover dragenter', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            dropZone.addClass('drag-over');
-        });
-
-        // Lidar com Drag Leave (Remover estilo)
-        dropZone.on('dragleave', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            // Verifica se o rato saiu da zona de drop (para evitar flicker)
+        dropZone.on('dragover dragenter', function(e) { e.preventDefault(); e.stopPropagation(); dropZone.addClass('drag-over'); });
+        dropZone.on('dragleave', function(e) { 
+            e.preventDefault(); e.stopPropagation(); 
             if (e.originalEvent.relatedTarget === null || !$.contains(this, e.originalEvent.relatedTarget)) {
                 dropZone.removeClass('drag-over');
             }
         });
 
-        // Lidar com Drop
         dropZone.on('drop', function(e) {
             e.preventDefault();
             e.stopPropagation();
             dropZone.removeClass('drag-over');
-            
-            const files = e.originalEvent.dataTransfer.files;
-            handleFiles(files);
+            handleFiles(e.originalEvent.dataTransfer.files);
         });
 
-        // Lidar com seleção via Input (clique)
         fileInput.on('change', function() {
             handleFiles(this.files);
         });
 
-        // Lidar com clique na área (atribui o evento ao label via HTML, mas este é um fallback)
         dropZone.on('click', function(e) {
-            // Previne que o clique dispare duas vezes se clicar no label
-            if (e.target.tagName !== 'LABEL') {
+            if (e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') {
                 fileInput.trigger('click');
             }
         });
 
-        // Função principal para processar ficheiros
         function handleFiles(files) {
             for (let i = 0; i < files.length; i++) {
-                // Adiciona os ficheiros à lista, evitando duplicados pelo nome (simples)
                 const file = files[i];
-                if (!attachedFiles.some(f => f.name === file.name)) {
+                if (!attachedFiles.some(f => f.name === file.name && f.size === file.size)) {
                     attachedFiles.push(file);
                 }
             }
             updateFileList();
         }
         
-        // Função global para remover um ficheiro (chamada pelo botão)
-        window.removeFile = function(fileName) {
-            attachedFiles = attachedFiles.filter(file => file.name !== fileName);
+        window.removeFile = function(fileName, fileSize) {
+            attachedFiles = attachedFiles.filter(file => !(file.name === fileName && file.size === parseInt(fileSize)));
             updateFileList();
         }
 
-        // Função para atualizar a lista de ficheiros na UI
         function updateFileList() {
-            fileList.empty(); // Limpa a lista atual
-
+            fileList.empty(); 
             if (attachedFiles.length === 0) {
                 fileStatus.text('Nenhum ficheiro selecionado.');
             } else {
@@ -269,14 +266,15 @@
             }
             
             attachedFiles.forEach(file => {
-                const fileSize = (file.size / 1024 / 1024).toFixed(2); // Tamanho em MB
+                const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
                 const fileItem = `
                     <div class="file-item">
                         <span>
                             📄 ${file.name} 
-                            <span class="text-muted small">(${fileSize} MB)</span>
+                            <span class="text-muted small">(${fileSizeMB} MB)</span>
                         </span>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile('${file.name}')">
+                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                onclick="removeFile('${file.name}', '${file.size}')">
                             Remover
                         </button>
                     </div>
@@ -284,12 +282,75 @@
                 fileList.append(fileItem);
             });
         }
+
+        // ==========================================================
+        // Lógica de Submissão AJAX
+        // ==========================================================
+        submitButton.on('click', function(e) {
+            e.preventDefault(); 
+            
+            const btn = $(this);
+            const originalText = btn.text();
+
+            // 1. Limpar erros e marcar o botão
+            $('.alert-danger').remove();
+            $('.is-invalid').removeClass('is-invalid');
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> A Guardar...');
+
+            // 2. Criação do FormData
+            const formData = new FormData($('#maintenanceForm')[0]);
+
+            // 3. Adiciona os ficheiros
+            attachedFiles.forEach((file) => {
+                formData.append('maintenance_files[]', file);
+            });
+            
+            // Determina o método HTTP correto (Laravel usa POST com _method=PUT para updates)
+            const formMethod = $('#maintenanceForm input[name="_method"]').length > 0 ? 'POST' : 'POST';
+
+            // 4. Envio AJAX
+            $.ajax({
+                url: $('#maintenanceForm').attr('action'),
+                method: formMethod,
+                data: formData,
+                processData: false, 
+                contentType: false, 
+                
+                success: function(response) {
+                    alert(response.message || 'Operação realizada com sucesso!');
+                    window.location.href = response.redirect_url;
+                },
+                error: function(xhr) {
+                    // Reabilita o botão
+                    btn.prop('disabled', false).text(originalText);
+
+                    // Tratar erros de validação (status 422)
+                    if (xhr.status === 422) {
+                        const errors = xhr.responseJSON.errors;
+                        let errorHtml = '<div class="alert alert-danger mt-3"><strong>⚠️ Erros de Validação:</strong><ul>';
+                        $.each(errors, function(key, value) {
+                            errorHtml += '<li>' + value[0] + '</li>';
+                            
+                            // Tenta encontrar o campo e marcar como inválido
+                            const fieldName = key.replace(/\..*/, ''); 
+                            $(`[name="${fieldName}"], [name="${fieldName}[]"]`).addClass('is-invalid');
+                            
+                            // Se for um erro de ficheiro, realça o drop zone
+                            if(fieldName === 'maintenance_files') {
+                                $('#dropZone').addClass('is-invalid');
+                            }
+                        });
+                        errorHtml += '</ul></div>';
+                        $('.container').prepend(errorHtml);
+                        $('html, body').animate({ scrollTop: 0 }, 'slow');
+                        
+                    } else {
+                         // Erros de servidor (500)
+                        alert('Ocorreu um erro inesperado: ' + (xhr.responseJSON.message || xhr.statusText));
+                    }
+                }
+            });
+        });
     });
 </script>
-
-        <button type="submit" class="btn btn-success btn-lg mt-3">
-            {{ $maintenance->id ? '✅ Atualizar Manutenção' : '💾 Criar Manutenção' }}
-        </button>
-    </form>
-</div>
 @endsection

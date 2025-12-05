@@ -6,6 +6,8 @@
     <title>Detalhes da Manutenção #{{ $maintenance->id }}</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    {{-- Adicionar Font Awesome ou similar se quiser ícones de ficheiros mais bonitos --}}
+    {{-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" /> --}}
 </head>
 <body>
     <div class="container mt-5"> 
@@ -30,6 +32,13 @@
             <a href="{{ route('machines.show', $maintenance->machine->id) }}" class="btn btn-info">
                 ⚙️ Ver Máquina ({{ $maintenance->machine->numero_interno }})
             </a>
+            
+            {{-- Formulário de Eliminação (Recomendado usar AJAX ou modal para confirmação) --}}
+            <form action="{{ route('maintenances.destroy', $maintenance->id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja eliminar este registo de manutenção? Esta ação é irreversível e apagará os ficheiros anexados!');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger">🗑️ Eliminar</button>
+            </form>
         </div>
         
         <div class="row">
@@ -96,6 +105,63 @@
              </div>
         </div>
 
+        {{-- ================================================= --}}
+        {{-- SECÇÃO DE FICHEIROS ANEXADOS (NOVO) --}}
+        {{-- ================================================= --}}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">📎 Ficheiros Anexados ({{ $maintenance->files->count() }})</h5>
+                    </div>
+                    <div class="card-body">
+                        @if($maintenance->files->isNotEmpty())
+                            <div class="list-group">
+                                @foreach($maintenance->files as $file)
+                                    @php
+                                        // Determinar um ícone ou tipo (pode ser mais detalhado com base no mime_type)
+                                        $fileIcon = match(pathinfo($file->filename, PATHINFO_EXTENSION)) {
+                                            'pdf' => '📄 PDF',
+                                            'jpg', 'jpeg', 'png', 'gif' => '🖼️ Imagem',
+                                            'doc', 'docx' => '📝 Documento',
+                                            'zip', 'rar' => '📦 Arquivo',
+                                            default => '📁 Ficheiro',
+                                        };
+                                        // Converter bytes para MB
+                                        $fileSizeMB = round($file->filesize / 1024 / 1024, 2);
+                                    @endphp
+                                    
+                                    {{-- O link $file->url usa o acessor que criámos no modelo MaintenanceFile --}}
+                                    <a href="{{ $file->url }}" 
+                                       target="_blank" Abre em nova tab para visualização
+                                       download="{{ $file->filename }}" {{-- Sugere o download do ficheiro --}}
+                                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                        
+                                        <div>
+                                            <strong>{{ $fileIcon }}</strong> {{ $file->filename }}
+                                        </div>
+                                        
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span class="badge bg-secondary">
+                                                {{ $fileSizeMB }} MB
+                                            </span>
+                                            <span class="btn btn-sm btn-outline-primary" style="pointer-events: none;">
+                                                ⬇️ Baixar / Ver
+                                            </span>
+                                        </div>
+                                    </a>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="alert alert-info mb-0">
+                                Nenhum ficheiro foi anexado a este registo de manutenção.
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+        
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
