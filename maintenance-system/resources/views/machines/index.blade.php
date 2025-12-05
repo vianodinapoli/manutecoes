@@ -19,6 +19,10 @@
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>⚙️ Lista de Equipamentos e Máquinas</h1>
+            <a href="{{ route('maintenances.index') }}" class="btn btn-dark">
+                Ver Manutenções
+            </a>
+
             <a href="{{ route('machines.create') }}" class="btn btn-primary">
                 ➕ Adicionar Nova Máquina
             </a>

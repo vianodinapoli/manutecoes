@@ -71,7 +71,7 @@
                 @php $currentStatus = old('status', $machine->status ?? 'Operacional'); @endphp
                 <option value="Operacional" {{ $currentStatus == 'Operacional' ? 'selected' : '' }}>Operacional</option>
                 <option value="Avariada" {{ $currentStatus == 'Avariada' ? 'selected' : '' }}>Avariada</option>
-                <option value="Em Manutenção" {{ $currentStatus == 'Em Manutenção' ? 'selected' : '' }}>Em Manutenção</option>
+                {{-- <option value="Em Manutenção" {{ $currentStatus == 'Em Manutenção' ? 'selected' : '' }}>Em Manutenção</option> --}}
                 <option value="Desativada" {{ $currentStatus == 'Desativada' ? 'selected' : '' }}>Desativada</option>
             </select>
             @error('status')

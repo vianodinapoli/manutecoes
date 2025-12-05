@@ -136,6 +136,157 @@
             </div>
         </div>
 
+        <div class="card p-4 shadow-sm">
+    <h2 class="card-title mb-3">📎 Anexar Ficheiros</h2>
+    <div id="dropZone" class="drop-zone border-dashed rounded-lg p-5 text-center">
+        <p class="mb-2">Arraste e solte ficheiros aqui ou <label for="fileInput" class="text-primary cursor-pointer hover:underline">clique para selecionar</label>.</p>
+        <input type="file" id="fileInput" multiple style="display: none;">
+        <p class="small text-muted" id="fileStatus">Nenhum ficheiro selecionado.</p>
+    </div>
+    <div id="fileList" class="mt-3">
+        <!-- Ficheiros anexados serão listados aqui -->
+    </div>
+</div>
+
+<!-- LÓGICA DE SCRIPTS NECESSÁRIOS -->
+<!-- Certifique-se de que o jQuery e o Bootstrap JS estão carregados na sua página principal -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+<style>
+    /* Estilos do Drop Zone */
+    .drop-zone {
+        border: 2px dashed #ccc;
+        background-color: #f8f9fa;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .drop-zone.drag-over {
+        border-color: #007bff; /* Cor primária do Bootstrap */
+        background-color: #e9ecef;
+    }
+    .cursor-pointer {
+        cursor: pointer;
+    }
+    .file-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        margin-bottom: 4px;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+    }
+</style>
+
+<script>
+    // Inicializa a lógica de Drag & Drop
+    $(document).ready(function() {
+        // --- Lógica de Drag and Drop para Ficheiros ---
+        const dropZone = $('#dropZone');
+        const fileInput = $('#fileInput');
+        const fileList = $('#fileList');
+        const fileStatus = $('#fileStatus');
+        let attachedFiles = []; // Array para guardar os ficheiros selecionados
+
+        // Previne o comportamento padrão do navegador (abrir o ficheiro) em todo o documento
+        $(document).on('dragover dragenter', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        $(document).on('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        // Lidar com Drag Over/Enter (Mudar estilo)
+        dropZone.on('dragover dragenter', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.addClass('drag-over');
+        });
+
+        // Lidar com Drag Leave (Remover estilo)
+        dropZone.on('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Verifica se o rato saiu da zona de drop (para evitar flicker)
+            if (e.originalEvent.relatedTarget === null || !$.contains(this, e.originalEvent.relatedTarget)) {
+                dropZone.removeClass('drag-over');
+            }
+        });
+
+        // Lidar com Drop
+        dropZone.on('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.removeClass('drag-over');
+            
+            const files = e.originalEvent.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        // Lidar com seleção via Input (clique)
+        fileInput.on('change', function() {
+            handleFiles(this.files);
+        });
+
+        // Lidar com clique na área (atribui o evento ao label via HTML, mas este é um fallback)
+        dropZone.on('click', function(e) {
+            // Previne que o clique dispare duas vezes se clicar no label
+            if (e.target.tagName !== 'LABEL') {
+                fileInput.trigger('click');
+            }
+        });
+
+        // Função principal para processar ficheiros
+        function handleFiles(files) {
+            for (let i = 0; i < files.length; i++) {
+                // Adiciona os ficheiros à lista, evitando duplicados pelo nome (simples)
+                const file = files[i];
+                if (!attachedFiles.some(f => f.name === file.name)) {
+                    attachedFiles.push(file);
+                }
+            }
+            updateFileList();
+        }
+        
+        // Função global para remover um ficheiro (chamada pelo botão)
+        window.removeFile = function(fileName) {
+            attachedFiles = attachedFiles.filter(file => file.name !== fileName);
+            updateFileList();
+        }
+
+        // Função para atualizar a lista de ficheiros na UI
+        function updateFileList() {
+            fileList.empty(); // Limpa a lista atual
+
+            if (attachedFiles.length === 0) {
+                fileStatus.text('Nenhum ficheiro selecionado.');
+            } else {
+                fileStatus.text(`${attachedFiles.length} ficheiro(s) pronto(s) para upload.`);
+            }
+            
+            attachedFiles.forEach(file => {
+                const fileSize = (file.size / 1024 / 1024).toFixed(2); // Tamanho em MB
+                const fileItem = `
+                    <div class="file-item">
+                        <span>
+                            📄 ${file.name} 
+                            <span class="text-muted small">(${fileSize} MB)</span>
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile('${file.name}')">
+                            Remover
+                        </button>
+                    </div>
+                `;
+                fileList.append(fileItem);
+            });
+        }
+    });
+</script>
+
         <button type="submit" class="btn btn-success btn-lg mt-3">
             {{ $maintenance->id ? '✅ Atualizar Manutenção' : '💾 Criar Manutenção' }}
         </button>
