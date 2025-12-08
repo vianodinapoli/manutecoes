@@ -1,27 +1,27 @@
 <?php
 use App\Http\Controllers\MachineController;
 use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\StockItemController; // <--- PASSO 1: Importar o Controller
 use Illuminate\Support\Facades\Route;
+
+
+// ROTA ALTERADA: Redireciona a rota raiz ("/") para a lista de máquinas
+Route::get('/', [MachineController::class, 'index'])->name('root');
 
 
 Route::resource('machines', MachineController::class);
 
 Route::resource('maintenances', MaintenanceController::class);
 
+// <--- PASSO 2: Adicionar a Rota de Recurso para Stock Items
+// Esta linha cria automaticamente as rotas 'stock-items.index', 'stock-items.create', etc.
+Route::resource('stock-items', StockItemController::class); 
 
-Route::get('/', function () {
-    return view('welcome');
-});
 
+// Rotas específicas
 Route::get('/machines/{machine}/maintenances/create', [MaintenanceController::class, 'createFromMachine'])
     ->name('machines.maintenances.create');
 
-    // routes/web.php
-
-// ... (Outras rotas de machines e maintenances)
-
-// Rota específica para criar uma manutenção a partir de uma máquina (ID da máquina)
-Route::get('/maintenances/create/{machine}', [App\Http\Controllers\MaintenanceController::class, 'createFromMachine'])
-    ->name('maintenances.createFromMachine');
-
-// ...
+// NOTA: A rota 'maintenances.createFromMachine' é redundante (verifique a necessidade).
+// Route::get('/maintenances/create/{machine}', [MaintenanceController::class, 'createFromMachine'])
+//     ->name('maintenances.createFromMachine');

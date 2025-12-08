@@ -22,6 +22,11 @@
             <a href="{{ route('maintenances.index') }}" class="btn btn-dark">
                 Ver Manutenções
             </a>
+            <br>
+            {{-- NOVO BOTÃO DE REDIRECIONAMENTO --}}
+            <a href="{{ route('stock-items.index') }}" class="btn btn-dark">
+                📦 Inventário de Stock
+            </a>
 
             <a href="{{ route('machines.create') }}" class="btn btn-primary">
                 ➕ Adicionar Nova Máquina

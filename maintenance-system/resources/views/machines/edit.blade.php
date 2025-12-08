@@ -23,20 +23,30 @@
             </a>
         </div>
         
-        <form method="POST" action="{{ route('machines.update', $machine->id) }}">
-            @csrf 
-            @method('PUT') @if ($errors->any())
-                <div class="alert alert-danger">
-                    Por favor, corrija os erros de validação abaixo.
-                </div>
-            @endif
-            
-            @include('machines.form') 
-            
-            <button type="submit" class="btn btn-success btn-lg mt-3">
-                ✅ Atualizar Máquina
-            </button>
-        </form>
+        <div class="card shadow-sm p-4">
+            <form method="POST" action="{{ route('machines.update', $machine->id) }}">
+                @csrf 
+                @method('PUT') 
+                
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        <strong>Por favor, corrija os erros de validação abaixo:</strong>
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                
+                {{-- O partial 'machines.form' é incluído aqui, contendo todos os campos, incluindo o novo dropdown. --}}
+                @include('machines.form') 
+                
+                <button type="submit" class="btn btn-success btn-lg mt-4 w-100">
+                    ✅ Atualizar Máquina
+                </button>
+            </form>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>

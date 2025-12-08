@@ -3,6 +3,22 @@
     Se estiver em modo de edição, a variável $machine existirá.
     Usamos o operador '?? null' para evitar erros na view de criação.
 --}}
+@php
+    // Definição das categorias baseadas no screenshot
+    $equipmentTypes = [
+        'Viatura',
+        'Camião / Cisterna Água / Atrelado',
+        'Equipamento Perfuração',
+        'Grua',
+        'Multifunções / Plataforma Elevatória / Empilhador',
+        'Torre Iluminação / Gerador / Compressor / Moto-Bomba',
+        'Escavadora / Bulldozer / Pá Carregadora / Tractor / Retro-Escavadora / Cilindro / Dumper',
+        'Martelo / Placa / Saltitão / Betoneira / Baileu',
+        'Motociclo',
+        'Imóvel',
+    ];
+    $currentType = old('tipo_equipamento', $machine->tipo_equipamento ?? null);
+@endphp
 
 <div class="row">
     <div class="col-md-6">
@@ -16,14 +32,23 @@
             @enderror
         </div>
         
+        {{-- CAMPO ALTERADO: TIPO DE EQUIPAMENTO COM DROPDOWN --}}
         <div class="mb-3">
             <label for="tipo_equipamento" class="form-label">Tipo de Equipamento:</label>
-            <input type="text" id="tipo_equipamento" name="tipo_equipamento" class="form-control @error('tipo_equipamento') is-invalid @enderror" required 
-                   value="{{ old('tipo_equipamento', $machine->tipo_equipamento ?? null) }}">
+            <select id="tipo_equipamento" name="tipo_equipamento" class="form-select @error('tipo_equipamento') is-invalid @enderror" required>
+                <option value="">-- Selecione uma Categoria --</option>
+                @foreach($equipmentTypes as $type)
+                    {{-- Usa a descrição completa como valor e como texto visível --}}
+                    <option value="{{ $type }}" {{ $currentType == $type ? 'selected' : '' }}>
+                        {{ $type }}
+                    </option>
+                @endforeach
+            </select>
             @error('tipo_equipamento')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
+        {{-- FIM DO CAMPO ALTERADO --}}
         
         <div class="mb-3">
             <label for="marca" class="form-label">Marca:</label>
@@ -80,7 +105,8 @@
         </div>
 
     </div>
-</div> <div class="mb-3">
+</div> 
+<div class="mb-3">
     <label for="observacoes" class="form-label">Observações/Descrição:</label>
     <textarea id="observacoes" name="observacoes" rows="4" class="form-control @error('observacoes') is-invalid @enderror">{{ old('observacoes', $machine->observacoes ?? null) }}</textarea>
     @error('observacoes')
