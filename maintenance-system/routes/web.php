@@ -25,3 +25,11 @@ Route::get('/machines/{machine}/maintenances/create', [MaintenanceController::cl
 // NOTA: A rota 'maintenances.createFromMachine' é redundante (verifique a necessidade).
 // Route::get('/maintenances/create/{machine}', [MaintenanceController::class, 'createFromMachine'])
 //     ->name('maintenances.createFromMachine');
+
+
+
+// ... outras rotas ...
+
+// Rota para exibir o formulário de criação de manutenção a partir de uma máquina específica
+Route::get('/maintenances/create-from-machine/{machine}', [MaintenanceController::class, 'createFromMachine'])
+    ->name('maintenances.createFromMachine');
