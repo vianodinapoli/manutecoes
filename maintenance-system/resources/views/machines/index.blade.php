@@ -5,32 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista de Máquinas</title>
 
-    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- DataTables + Bootstrap 5 CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
+
+    <style>
+        .dataTables_wrapper {
+            width: 100%;
+        }
+    </style>
 
 </head>
 <body>
 
-    <div class="container mt-5">
+    <div class="container-fluid mt-5">
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>⚙️ Lista de Equipamentos e Máquinas</h1>
-            <a href="{{ route('maintenances.index') }}" class="btn btn-dark">
-                Ver Manutenções
-            </a>
-            <br>
-            {{-- NOVO BOTÃO DE REDIRECIONAMENTO --}}
-            <a href="{{ route('stock-items.index') }}" class="btn btn-dark">
-                📦 Inventário de Stock
-            </a>
-
-            <a href="{{ route('machines.create') }}" class="btn btn-primary">
-                ➕ Adicionar Nova Máquina
-            </a>
+            
+            <div class="btn-group">
+                <a href="{{ route('maintenances.index') }}" class="btn btn-dark">
+                    Ver Manutenções
+                </a>
+                <a href="{{ route('stock-items.index') }}" class="btn btn-dark">
+                    📦 Inventário de Stock
+                </a>
+                <a href="{{ route('machines.create') }}" class="btn btn-primary">
+                    ➕ Adicionar Nova Máquina
+                </a>
+            </div>
         </div>
 
         @if (session('success'))
@@ -46,7 +50,7 @@
         @else
 
             <div class="table-responsive">
-                <table id="machinesTable" class="table table-striped table-hover border" style="width:100%">
+                <table id="machinesTable" class="table table-striped table-hover border">
                     <thead class="table-dark">
                         <tr>
                             <th>Nº Interno</th>
@@ -101,21 +105,16 @@
         @endif
     </div>
 
-    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
-    <!-- DataTables Buttons -->
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
 
-    <!-- Exportações -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
@@ -124,7 +123,8 @@
 
     <script>
         $(document).ready(function() {
-            $('#machinesTable').DataTable({
+            // Inicializa o DataTables e guarda numa variável
+            var table = $('#machinesTable').DataTable({
                 dom: 'Bfrtip',
                 buttons: [
                     { extend: 'copy', text: 'Copiar' },
@@ -138,6 +138,14 @@
                 },
                 pageLength: 10,
                 order: [[0, "asc"]]
+            });
+            
+            // Força o ajuste das colunas para garantir 100% de largura.
+            table.columns.adjust();
+
+            // Garante que a tabela ajusta a largura em caso de redimensionamento do navegador
+            $(window).on('resize', function() {
+                table.columns.adjust();
             });
         });
     </script>
