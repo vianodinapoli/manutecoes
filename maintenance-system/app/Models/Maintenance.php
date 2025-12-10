@@ -4,33 +4,59 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Attribute; // <<< É NECESSÁRIO!
 
 class Maintenance extends Model
 {
     use HasFactory;
-    
-    // Indica quais campos podem ser preenchidos em massa
+
     protected $fillable = [
-        'machine_id', 'failure_description', 'status', 'scheduled_date', 
-        'start_date', 'end_date', 'technician_notes', 'work_sheet_ref', 'hours_kms', 'total_cost'
+        // ... (Seu array fillable completo)
+        'machine_id',
+        'work_sheet_ref',
+        'hours_kms',
+        'failure_description',
+        'status',
+        'technician_notes',
+        'total_cost',
+        'end_date',
+        // NOVOS CAMPOS
+        'nome_motorista',
+        'data_entrada',
+        'horas_trabalho',
+        'scheduled_date',
+        'start_date',
     ];
 
-    public function files()
-    {
-        return $this->hasMany(MaintenanceFile::class);
-    }
+    protected $casts = [
+        'end_date' => 'datetime',
+        'scheduled_date' => 'datetime', // Mantém o cast para leitura
+        'start_date' => 'datetime',
+        'total_cost' => 'decimal:2',
+        'data_entrada' => 'date', 
+        'horas_trabalho' => 'decimal:2',
+    ];
 
-    // Relacionamento: Uma Manutenção PERTENCE A UMA Máquina
+    /**
+     * Define como o scheduled_date deve ser gravado/atualizado. (Método moderno)
+     * Isto garante que o formato do input datetime-local é convertido para o formato SQL.
+     */
+    protected function scheduledDate(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value ? date('Y-m-d H:i:s', strtotime($value)) : null,
+        );
+    }
+    
+    // O método setScheduledDateAttribute FOI REMOVIDO AQUI!
+
     public function machine()
     {
         return $this->belongsTo(Machine::class);
     }
 
-
-    // * Define os campos que devem ser convertidos em tipos nativos.*/
-    protected $casts = [
-        'scheduled_date' => 'datetime', // Adicione esta linha
-        'start_date' => 'datetime',     // Adicione esta linha
-        'end_date' => 'datetime',       // Adicione esta linha
-    ];
+    public function files()
+    {
+        return $this->hasMany(\App\Models\MaintenanceFile::class); 
+    }
 }

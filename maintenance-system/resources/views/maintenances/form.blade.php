@@ -6,6 +6,9 @@
     @php
         // Define a máquina atual. Se estiver em edit, usa a relação. Se em createFromMachine, usa a variável passada.
         $currentMachine = $maintenance->machine ?? $currentMachine ?? null;
+        
+        // CORREÇÃO: Define o status atual para 'pendente' se for uma nova manutenção (criação)
+        $currentStatus = old('status', $maintenance->status ?? 'pendente');
     @endphp
 
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -19,10 +22,7 @@
         <div class="alert alert-info">{{ session('info') }}</div>
     @endif
     
-    {{-- As mensagens de erro de validação do Laravel 
-         serão injetadas aqui pelo JS na resposta do AJAX 422 --}}
-    
-    {{-- Adicionamos o ID maintenanceForm para ser usado no JavaScript --}}
+    {{-- O formulário será submetido via AJAX --}}
     <form action="{{ $maintenance->id ? route('maintenances.update', $maintenance->id) : route('maintenances.store') }}" 
           method="POST" 
           id="maintenanceForm">
@@ -49,7 +49,7 @@
                         <p><strong>Status:</strong> <span class="badge bg-warning text-dark">{{ $currentMachine->status }}</span></p>
                     </div>
                     <div class="col-md-4">
-                        <p><strong>Data Automática:</strong> {{ now()->format('Y-m-d H:i') }}</p>
+                        <p><strong>Ultima actualização:</strong> {{ now()->format('Y-m-d H:i') }}</p>
                     </div>
                 </div>
             </div>
@@ -57,7 +57,6 @@
         @else
             <div class="mb-3">
                 <label for="machine_id" class="form-label">Máquina</label>
-                {{-- Aqui não precisamos do @error, pois o tratamento de erro é feito via AJAX/JS --}}
                 <select name="machine_id" id="machine_id" class="form-select" required>
                     <option value="">-- Selecione uma Máquina --</option>
                     @foreach($machines as $machine)
@@ -76,39 +75,113 @@
         <h2>Detalhes da Intervenção</h2>
         {{-- =============================================== --}}
 
+       <div class="row">
+    
+    {{-- 1. NOME DO MOTORISTA --}}
+    <div class="col-md-4">
+        <div class="mb-3">
+            <label for="nome_motorista" class="form-label">Nome do Motorista / Operador</label>
+            <input type="text" name="nome_motorista" id="nome_motorista" 
+                   class="form-control" 
+                   value="{{ old('nome_motorista', $maintenance->nome_motorista ?? '') }}" 
+                   required>
+            @error('nome_motorista')
+                <div class="text-danger">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+    
+    {{-- 2. DATA DE ENTRADA (READONLY NA EDIÇÃO) --}}
+    <div class="col-md-4">
+        <div class="mb-3">
+            <label for="data_entrada" class="form-label">Data de Entrada (Início da Manutenção)</label>
+            <input type="date" 
+                   name="data_entrada" 
+                   id="data_entrada" 
+                   class="form-control" 
+                   value="{{ old('data_entrada', optional($maintenance->data_entrada)->format('Y-m-d')) }}" 
+                   {{-- Torna o campo somente leitura na EDIÇÃO --}}
+                   {{ $maintenance->id ? 'readonly' : 'required' }}
+                   @if(!$maintenance->id) required @endif
+                   >
+            
+            @if ($maintenance->id)
+                <div class="form-text text-danger">A data de entrada não pode ser alterada.</div>
+            @endif
+            @error('data_entrada')
+                <div class="text-danger">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+    
+    {{-- 3. DATA AGENDADA (SCHEDULED DATE) --}}
+    <div class="col-md-4">
+        <div class="mb-3">
+            <label for="scheduled_date" class="form-label">Data Agendada (Planned)</label>
+            <input type="datetime-local" 
+                   name="scheduled_date" 
+                   id="scheduled_date" 
+                   class="form-control" 
+                   value="{{ old('scheduled_date', optional($maintenance->scheduled_date)->format('Y-m-d\TH:i')) }}"
+                   >
+            
+            @error('scheduled_date')
+                <div class="text-danger">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+</div>
+
+
+        </div>
+
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <div class="mb-3">
                     <label for="work_sheet_ref" class="form-label">Folha de Obra / Ref.</label>
                     <input type="text" name="work_sheet_ref" id="work_sheet_ref" class="form-control" 
                            value="{{ old('work_sheet_ref', $maintenance->work_sheet_ref ?? '') }}">
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <div class="mb-3">
                     <label for="hours_kms" class="form-label">Nº de Horas / KMS</label>
                     <input type="number" name="hours_kms" id="hours_kms" class="form-control" 
                            value="{{ old('hours_kms', $maintenance->hours_kms ?? '') }}">
                 </div>
             </div>
+            {{-- NOVO CAMPO: HORAS TOTAIS DE TRABALHO --}}
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="horas_trabalho" class="form-label">Horas Totais de Trabalho (Ex: 8.5)</label>
+                    <input type="number" step="0.1" name="horas_trabalho" id="horas_trabalho" class="form-control" 
+                           value="{{ old('horas_trabalho', $maintenance->horas_trabalho ?? '') }}">
+                </div>
+            </div>
         </div>
 
         <div class="mb-3">
             <label for="failure_description" class="form-label">Descrição da Falha (Ocorrência)</label>
-            {{-- Aqui também removemos a classe @error, confiando no JS para tratamento visual --}}
-            <textarea name="failure_description" id="failure_description" class="form-control" rows="3" required>{{ old('failure_description', $maintenance->failure_description) }}</textarea>
+            <textarea name="failure_description" id="failure_description" class="form-control" rows="3" required>{{ old('failure_description', $maintenance->failure_description ?? '') }}</textarea>
         </div>
         
         <div class="mb-3">
-            <label for="status" class="form-label">Status da Manutenção</label>
-            <select name="status" id="status" class="form-select" required>
-                @php $currentStatus = old('status', $maintenance->status); @endphp
-                <option value="Pendente" {{ $currentStatus == 'Pendente' ? 'selected' : '' }}>Pendente</option>
-                <option value="Em Progresso" {{ $currentStatus == 'Em Progresso' ? 'selected' : '' }}>Em Progresso</option>
-                <option value="Concluída" {{ $currentStatus == 'Concluída' ? 'selected' : '' }}>Concluída</option>
-                <option value="Cancelada" {{ $currentStatus == 'Cancelada' ? 'selected' : '' }}>Cancelada</option>
-            </select>
-        </div>
+    <label for="status" class="form-label">Status da Manutenção</label>
+    <select name="status" id="status" class="form-select" required>
+        @php
+            // A variável $currentStatus usa o valor guardado/padrão
+            $currentStatus = old('status', $maintenance->status ?? 'pendente');
+        @endphp
+        
+        <option value="pendente" {{ $currentStatus == 'pendente' ? 'selected' : '' }}>Pendente</option>
+        
+        <option value="em_manutencao" {{ $currentStatus == 'em_manutencao' ? 'selected' : '' }}>Em Manutenção</option>
+        
+        <option value="concluida" {{ $currentStatus == 'concluida' ? 'selected' : '' }}>Concluída</option>
+        
+        <option value="cancelada" {{ $currentStatus == 'cancelada' ? 'selected' : '' }}>Cancelada</option>
+    </select>
+</div>
 
         <hr>
         
@@ -133,7 +206,7 @@
                 <div class="mb-3">
                     <label for="end_date" class="form-label">Data de Conclusão (Opcional)</label>
                     <input type="datetime-local" name="end_date" id="end_date" class="form-control"
-                           value="{{ old('end_date', $maintenance->end_date ? $maintenance->end_date->format('Y-m-d\TH:i') : '') }}">
+                           value="{{ old('end_date', optional($maintenance->end_date)->format('Y-m-d\TH:i')) }}">
                 </div>
             </div>
         </div>
@@ -148,7 +221,7 @@
             <div id="fileList" class="mt-3">
                 </div>
             
-            {{-- Se for edição, pode listar os ficheiros existentes aqui (opcional) --}}
+            {{-- Se for edição, lista os ficheiros existentes --}}
             @if($maintenance->id && $maintenance->files->isNotEmpty())
                 <h4 class="mt-4">Ficheiros Existentes:</h4>
                 <div class="list-group">
@@ -156,14 +229,13 @@
                         <a href="{{ $file->url }}" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                             📄 {{ $file->filename }} 
                             <span class="badge bg-secondary rounded-pill">{{ round($file->filesize / 1024 / 1024, 2) }} MB</span>
-                            {{-- Para apagar ficheiros existentes, precisará de lógica AJAX adicional --}}
                         </a>
                     @endforeach
                 </div>
             @endif
         </div>
 
-        {{-- O BOTÃO AGORA É TYPE="BUTTON" COM ID PARA SER GERIDO PELO JAVASCRIPT --}}
+        {{-- O BOTÃO É GERIDO PELO JAVASCRIPT --}}
         <button type="button" id="submitButton" class="btn btn-success btn-lg mt-3">
             {{ $maintenance->id ? '✅ Atualizar Manutenção' : '💾 Criar Manutenção' }}
         </button>
@@ -181,7 +253,7 @@
         transition: all 0.2s ease;
     }
     .drop-zone.drag-over {
-        border-color: #007bff; /* Cor primária do Bootstrap */
+        border-color: #007bff;
         background-color: #e9ecef;
     }
     .cursor-pointer {
@@ -211,9 +283,9 @@
         const fileList = $('#fileList');
         const fileStatus = $('#fileStatus');
         const submitButton = $('#submitButton');
-        let attachedFiles = []; // Array para guardar os ficheiros selecionados
+        let attachedFiles = []; 
 
-        // --- Funções de Drop Zone ---
+        // --- Funções de Drop Zone (Mantidas as originais) ---
         $(document).on('dragover dragenter', function(e) { e.preventDefault(); e.stopPropagation(); });
         $(document).on('drop', function(e) { e.preventDefault(); e.stopPropagation(); });
 
@@ -284,7 +356,7 @@
         }
 
         // ==========================================================
-        // Lógica de Submissão AJAX
+        // Lógica de Submissão AJAX (Mantida a original)
         // ==========================================================
         submitButton.on('click', function(e) {
             e.preventDefault(); 
@@ -305,7 +377,6 @@
                 formData.append('maintenance_files[]', file);
             });
             
-            // Determina o método HTTP correto (Laravel usa POST com _method=PUT para updates)
             const formMethod = $('#maintenanceForm input[name="_method"]').length > 0 ? 'POST' : 'POST';
 
             // 4. Envio AJAX
@@ -321,21 +392,18 @@
                     window.location.href = response.redirect_url;
                 },
                 error: function(xhr) {
-                    // Reabilita o botão
                     btn.prop('disabled', false).text(originalText);
 
-                    // Tratar erros de validação (status 422)
                     if (xhr.status === 422) {
                         const errors = xhr.responseJSON.errors;
                         let errorHtml = '<div class="alert alert-danger mt-3"><strong>⚠️ Erros de Validação:</strong><ul>';
                         $.each(errors, function(key, value) {
                             errorHtml += '<li>' + value[0] + '</li>';
                             
-                            // Tenta encontrar o campo e marcar como inválido
+                            // Marca o campo com erro
                             const fieldName = key.replace(/\..*/, ''); 
                             $(`[name="${fieldName}"], [name="${fieldName}[]"]`).addClass('is-invalid');
                             
-                            // Se for um erro de ficheiro, realça o drop zone
                             if(fieldName === 'maintenance_files') {
                                 $('#dropZone').addClass('is-invalid');
                             }
@@ -345,7 +413,6 @@
                         $('html, body').animate({ scrollTop: 0 }, 'slow');
                         
                     } else {
-                         // Erros de servidor (500)
                         alert('Ocorreu um erro inesperado: ' + (xhr.responseJSON.message || xhr.statusText));
                     }
                 }

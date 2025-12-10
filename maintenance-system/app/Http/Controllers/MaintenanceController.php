@@ -72,8 +72,13 @@ class MaintenanceController extends Controller
         $validatedData = $request->validate([
             'machine_id' => 'required|exists:machines,id',
             'failure_description' => 'required|string|max:1000',
-            'status' => 'required|in:Pendente,Em Progresso,Concluída,Cancelada',
-            
+            'nome_motorista' => 'required|string|max:255', // <-- ESTE CAMPO DEVE ESTAR AQUI
+             'data_entrada' => 'required|date',         // <-- ESTE CAMPO DEVE ESTAR AQUI
+             'horas_trabalho' => 'required|numeric|min:0', // <-- ESTE
+            'scheduled_date' => 'nullable|date',
+
+
+'status' => 'required|in:pendente,em_manutencao,concluida,cancelada', // CORREÇÃO: Usando sublinhado e sem acento            
             // Opcionais
             'work_sheet_ref' => 'nullable|string|max:255',
             'hours_kms' => 'nullable|integer',
@@ -134,15 +139,15 @@ class MaintenanceController extends Controller
         $validatedData = $request->validate([
             'machine_id' => 'required|exists:machines,id',
             'failure_description' => 'required|string|max:1000',
-            'status' => 'required|in:Pendente,Em Progresso,Concluída,Cancelada',
-            
+            'status' => 'required|in:pendente,em_manutencao,concluida,cancelada',            
             // Opcionais
             'work_sheet_ref' => 'nullable|string|max:255',
             'hours_kms' => 'nullable|integer',
             'technician_notes' => 'nullable|string',
             'total_cost' => 'nullable|numeric|min:0',
             'end_date' => 'nullable|date',
-            
+                        'scheduled_date' => 'nullable|date',
+
             // Validação dos Ficheiros (Chave: 'maintenance_files.*')
             'maintenance_files' => 'nullable|array',
             'maintenance_files.*' => 'file|max:10240|mimes:pdf,jpg,jpeg,png,zip,doc,docx', 
@@ -243,10 +248,17 @@ class MaintenanceController extends Controller
      */
     public function show(Maintenance $maintenance)
     {
-        // Carrega as relações 'machine' e 'files'
-        $maintenance->load(['machine', 'files']); 
+       // 1. Define a taxa de câmbio (Ajuste este valor conforme a taxa atual)
+    $exchangeRate = 70.00; // Exemplo: 1 Euro = 70 Meticais Moçambicanos (MZN)
 
-        return view('maintenances.show', compact('maintenance'));
+    // 2. Garante que as relações são carregadas
+    $maintenance->load(['machine', 'files']); 
+
+    // 3. Normaliza o status para minúsculas antes de passar para o Blade (para a lógica de badges)
+    $maintenance->status = strtolower($maintenance->status);
+
+    // 4. PASSA A VARIÁVEL $exchangeRate para a view
+    return view('maintenances.show', compact('maintenance', 'exchangeRate'));
     }
 
     /**
