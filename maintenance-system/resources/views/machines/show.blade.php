@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalhes da Máquina: {{ $machine->numero_interno }}</title>
+    <title>Detalhes: {{ $machine->numero_interno }}</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 </head>
@@ -11,7 +11,7 @@
     <div class="container mt-5">
         
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Detalhes da Máquina: <span class="text-primary">{{ $machine->numero_interno }}</span></h1>
+            <h3>Detalhes da Máquina: <span class="text-primary">{{ $machine->numero_interno }}</span></h3>
             <a href="{{ route('machines.index') }}" class="btn btn-secondary">
                 ⬅️ Voltar à Lista
             </a>
@@ -78,9 +78,9 @@
         </div> 
 
         <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Detalhes da Máquina: <span class="text-primary">{{ $machine->numero_interno }}</span></h1>
+    <h5>Detalhes: <span class="text-primary">{{ $machine->numero_interno }}</span></h5>
     
-    <a href="{{ route('maintenances.createFromMachine', $machine->id) }}" class="btn btn-danger btn-lg">
+    <a href="{{ route('maintenances.createFromMachine', $machine->id) }}" class="btn btn-danger btn-md">
         🚨 Reportar Avaria / Criar Manutenção
     </a>
 </div>
@@ -88,7 +88,7 @@
         <hr class="my-4">
 
         @if (isset($maintenances))
-            <h2>Histórico de Manutenções ({{ $maintenances->count() }})</h2>
+            <h4>Histórico de Manutenções ({{ $maintenances->count() }})</h4>
 
             @if ($maintenances->isEmpty())
                 <div class="alert alert-info mt-3">
