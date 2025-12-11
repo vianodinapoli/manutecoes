@@ -62,7 +62,7 @@
                         @foreach ($machines as $machine)
                             <tr>
                                 <td><strong>{{ $machine->numero_interno }}</strong></td>
-                                <td>{{ $machine->tipo_equipamento }}</td>
+                                <td>{{ Str::limit($machine->tipo_equipamento, 30) }}</td>
                                 <td>{{ $machine->marca }} / {{ $machine->modelo }}</td>
                                 <td>{{ $machine->localizacao }}</td>
 

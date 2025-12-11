@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Machine;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str; // Garanta que isto está no topo do arquivo do seu Controller
 
 class MachineController extends Controller
 {

@@ -34,13 +34,29 @@
                 ⚙️ Ver Máquinas
             </a>
         </div>
-
+        
         @if($maintenances->isEmpty())
              <div class="alert alert alert-info">
                 Não há registos de manutenção Ativos no sistema.
             </div>
         @endif
 
+        <div class="card p-3 mb-4 shadow-sm">
+            <h6 class="card-title mb-3">🔍 Filtro de Manutenções por Período</h6>
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <label for="min-date" class="form-label">Data Inicial (Entrada)</label>
+                    <input type="date" id="min-date" class="form-control">
+                </div>
+                <div class="col-md-5">
+                    <label for="max-date" class="form-label">Data Final (Entrada)</label>
+                    <input type="date" id="max-date" class="form-control">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button id="clear-filters" class="btn btn-outline-secondary w-100">Limpar Filtros</button>
+                </div>
+            </div>
+        </div>
         <div class="table-responsive">
             <table id="maintenanceTable" class="table table-striped table-hover border">
                 <thead class="table-dark">
@@ -49,7 +65,7 @@
                         <th>Máquina (Nº Interno)</th>
                         <th>Status</th>
                         <th>Avaria Reportada</th>
-                        <th>Data de Entrada</th> {{-- NOVA COLUNA AQUI --}}
+                        <th>Data de Entrada</th>
                         <th>Agendado para</th>
                         <th>Início Real</th>
                         <th>Ações</th>
@@ -116,15 +132,78 @@
 
     <script>
         $(document).ready(function() {
-            $('#maintenanceTable').DataTable({
+            
+            // --- 1. FUNÇÃO CUSTOMIZADA PARA FILTRO DE DATA ---
+            
+            // Estende a funcionalidade de busca do DataTables para aceitar ranges de data.
+            $.fn.dataTable.ext.search.push(
+                function(settings, data, dataIndex) {
+                    var min = $('#min-date').val(); // Data mínima no formato YYYY-MM-DD (input)
+                    var max = $('#max-date').val(); // Data máxima no formato YYYY-MM-DD (input)
+                    
+                    // Pega o valor da coluna "Data de Entrada" (índice 4) no formato 'd/m/Y' da tabela
+                    var date = data[4]; 
+                    
+                    // Função auxiliar para converter 'd/m/Y' para 'YYYYMMDD' para comparação
+                    var parseDate = function(dateString) {
+                        if (!dateString || dateString === 'N/A') return null;
+                        var parts = dateString.split('/');
+                        // Retorna no formato YYYYMMDD
+                        return parts[2] + parts[1] + parts[0]; 
+                    };
+
+                    // Converte as datas de entrada e de filtro para o formato comparável
+                    var valDate = parseDate(date);
+                    var minDate = min ? min.replace(/-/g, '') : null;
+                    var maxDate = max ? max.replace(/-/g, '') : null;
+                    
+                    // Se a data na linha for 'N/A' e não houver filtros, exibe a linha
+                    if (valDate === null) {
+                        return (!minDate && !maxDate);
+                    }
+
+                    // Lógica de Filtragem:
+                    if ((minDate === null) && (maxDate === null)) {
+                        return true; // Sem filtros, exibe tudo
+                    }
+                    if (minDate !== null && maxDate === null) {
+                        return valDate >= minDate; // Apenas filtro inicial
+                    }
+                    if (minDate === null && maxDate !== null) {
+                        return valDate <= maxDate; // Apenas filtro final
+                    }
+                    if (minDate !== null && maxDate !== null) {
+                        return valDate >= minDate && valDate <= maxDate; // Filtro de range
+                    }
+
+                    return false;
+                }
+            );
+
+            // --- 2. INICIALIZAÇÃO DO DATATABLES ---
+
+            var table = $('#maintenanceTable').DataTable({
                 language: {
                     url: 'https://cdn.datatables.net/plug-ins/2.0.8/i18n/pt-BR.json'
                 },
-                // A coluna de Ações agora é a última (índice 7), e DataTables ajusta-se automaticamente.
                 columnDefs: [
                     { orderable: false, targets: [7] }
                 ],
-                order: [[0, 'desc']] 
+                order: [[4, 'desc']] // Ordena por Data de Entrada (índice 4)
+            });
+
+            // --- 3. EVENT LISTENERS PARA OS CAMPOS DE DATA ---
+
+            // Quando o valor de Data Inicial ou Data Final muda, redesenha a tabela
+            $('#min-date, #max-date').on('change', function() {
+                table.draw();
+            });
+            
+            // Listener para o botão de limpar filtros
+            $('#clear-filters').on('click', function() {
+                $('#min-date').val('');
+                $('#max-date').val('');
+                table.draw();
             });
         });
     </script>
