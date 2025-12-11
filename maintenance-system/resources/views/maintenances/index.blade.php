@@ -28,7 +28,7 @@
     <div class="container mt-5">
         
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>🛠️ Manutenções Ativas (Pendente / Em Andamento)</h1>
+            <h4>🛠️ Manutenções Ativas (Pendente / Em Andamento)</h4>
             
             <a href="{{ route('machines.index') }} " class="btn btn-primary shadow-sm">
                 ⚙️ Ver Máquinas

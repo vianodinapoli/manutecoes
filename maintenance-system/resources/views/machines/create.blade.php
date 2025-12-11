@@ -12,7 +12,7 @@
     <div class="container mt-5"> 
         
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>➕ Adicionar Novo Equipamento / Máquina</h1>
+            <h4>➕ Adicionar Novo Equipamento / Máquina</h4>
         </div>
 
         <a href="{{ route('machines.index') }}" class="btn btn-secondary mb-3">

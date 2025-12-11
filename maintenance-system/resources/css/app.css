@@ -13,3 +13,11 @@
 aside a {
     text-decoration: none !important;
 }
+
+/* Adicione estas classes ao seu CSS para ter botões extra-pequenos */
+.btn-xs {
+    padding: 0.1rem 0.4rem; /* Reduz o padding */
+    font-size: 1.3rem;     /* Reduz o tamanho da fonte */
+    line-height: 1;
+    border-radius: 0.2rem;
+}

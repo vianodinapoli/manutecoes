@@ -111,13 +111,15 @@ class MachineController extends Controller
      */
     public function destroy(Machine $machine)
     {
-        $machineName = $machine->name;
+       
+        // 1. CAPTURAR O VALOR NECESSÁRIO ANTES DE ELIMINAR O OBJETO
+    $numero_interno = $machine->numero_interno;
         
         // Graças ao onDelete('cascade') na migration, 
         // todas as manutenções associadas serão eliminadas automaticamente!
         $machine->delete();
 
         return redirect()->route('machines.index')
-                         ->with('success', 'Máquina "' . $machineName . '" e todos os seus registos de manutenção eliminados com sucesso!');
+                         ->with('success', 'Máquina "' . $numero_interno . '" e todos os seus registos de manutenção eliminados com sucesso!');
     }
 }
