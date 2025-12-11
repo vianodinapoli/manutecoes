@@ -24,6 +24,7 @@
     </style>
 </head>
 <body>
+    <x-app-layout>
     <div class="container mt-5">
         
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -127,5 +128,6 @@
             });
         });
     </script>
+    </x-app-layout>
 </body>
 </html>

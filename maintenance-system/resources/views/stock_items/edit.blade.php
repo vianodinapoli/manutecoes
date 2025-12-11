@@ -8,6 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 </head>
 <body>
+    <x-app-layout>
     <div class="container mt-5"> 
         
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -51,5 +52,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</x-app-layout>
 </body>
 </html>

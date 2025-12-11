@@ -13,24 +13,21 @@
     <style>
         .dataTables_wrapper {
             width: 100%;
+            font-size: 12px
         }
     </style>
 
 </head>
-<body>
+<body >
+    <x-app-layout>
 
-    <div class="container-fluid mt-5">
+    <div class="container-fluid mt-5 w-100">
 
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>⚙️ Lista de Equipamentos e Máquinas</h1>
+            <h5>⚙️ Lista de Equipamentos e Máquinas</h5>
             
             <div class="btn-group">
-                <a href="{{ route('maintenances.index') }}" class="btn btn-dark">
-                    Ver Manutenções
-                </a>
-                <a href="{{ route('stock-items.index') }}" class="btn btn-dark">
-                    📦 Inventário de Stock
-                </a>
+               
                 <a href="{{ route('machines.create') }}" class="btn btn-primary">
                     ➕ Adicionar Nova Máquina
                 </a>
@@ -104,6 +101,7 @@
 
         @endif
     </div>
+  
 
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 
@@ -149,6 +147,6 @@
             });
         });
     </script>
-
+</x-app-layout>
 </body>
 </html>
