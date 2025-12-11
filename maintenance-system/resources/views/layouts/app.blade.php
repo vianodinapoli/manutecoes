@@ -1,74 +1,92 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full bg-gray-50">
-
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Gestão de Manutenção') }}</title>
+    <title>{{ config('app.name', 'Laravel') }}</title>
 
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+<body class="font-sans antialiased">
+    
+    <div class="min-h-screen bg-gray-100">
+        
+        {{-- 1. NAVBAR SUPERIOR (Header Principal) --}}
+        @include('layouts.navigation')
 
-<body class="h-full font-sans antialiased bg-gray-50 text-gray-800">
-
-    @if (session('success'))
-        <div id="toast-flash-message-success" style="display: none;" data-toast-success="{{ session('success') }}">
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div id="toast-flash-message-error" style="display: none;" data-toast-error="{{ session('error') }}"></div>
-    @endif
-
-
-    <div class="min-h-full">
-        <header class="bg-white border-b border-gray-100">
-            {{-- Reduzido py-4 para py-3 para um cabeçalho mais fino --}}
-            <div class="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-
-                <div class="flex items-center">
-                    <a href="/" class="focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded">
-
-                        {{-- 
-                            ATENÇÃO: Mude 'images/logo.svg' para o caminho real do seu ficheiro 
-                            A classe 'h-8' define a altura, ajuste conforme necessário (ex: h-10)
-                        --}}
-                        <img class="h-8 w-auto" {{-- Apenas um asset() e o caminho direto --}} src="{{ asset('unnamed.jpg') }}"
-                            alt="{{ config('app.name', 'Gestão de Manutenção') }}"> </a>
+        {{-- 2. HEADER DA PÁGINA (Se definido) --}}
+        @if (isset($header))
+            <header class="bg-white shadow">
+                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    {{ $header }}
                 </div>
-                {{-- Título mais discreto e com menos peso --}}
-                <h1 class="text-xl font-medium text-gray-900 flex items-center space-x-2">
-                    <span class="text-indigo-600 text-2xl">⚙️</span>
-                    <span>Gestão de Manutenção</span>
-                </h1>
+            </header>
+        @endif
 
-                {{-- Navegação: Espaçamento reduzido --}}
-                <nav class="flex space-x-4 items-center text-sm">
-                    <a href="#" class="text-gray-600 hover:text-indigo-600 transition duration-150">Dashboard</a>
-                    <a href="#"
-                        class="text-gray-900 hover:text-indigo-600 font-semibold transition duration-150">Máquinas</a>
+        {{-- 3. DIV PRINCIPAL DE LAYOUT: SIDEBAR E CONTEÚDO --}}
+        <div class="flex">
 
-                    {{-- Botão: Estilo Ghost/Outline para minimalismo, com cor de ação suave --}}
-                    <button
-                        class="border border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-medium py-1.5 px-3 rounded-lg transition duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                        + Nova Ordem
-                    </button>
+            
+            {{-- ==========================================================
+            SIDEBAR FIXA (ESTRUTURA DE NAVEGAÇÃO LATERAL)
+            ========================================================== --}}
+            <aside class="w-64 bg-gray-800 text-white flex-shrink-0 min-h-screen pt-4">
+                <div class="p-4 text-2xl font-semibold border-b border-gray-700 mb-4">
+                    {{ config('app.name', 'Laravel') }}
+                </div>
+                <nav class="space-y-2 px-4">
+                    
+                    {{-- ITEM 1: Dashboard --}}
+                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 text-white">
+                        <i class="fas fa-home me-2"></i> Dashboard
+                    </x-nav-link>
+
+                    {{-- ITEM 2: Máquinas --}}
+                    <x-nav-link :href="route('machines.index')" :active="request()->routeIs('machines.*')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 text-white">
+                        <i class="fas fa-tools me-2"></i> Máquinas
+                    </x-nav-link>
+                    
+                    {{-- ITEM 3: Manutenções --}}
+                    <x-nav-link :href="route('maintenances.index')" :active="request()->routeIs('maintenances.*')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 text-white">
+                        <i class="fas fa-wrench me-2"></i> Manutenções
+                    </x-nav-link>
+                    
+                    {{-- ITEM 4: Stock --}}
+                    <x-nav-link :href="route('stock-items.index')" :active="request()->routeIs('stock-items.*')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 text-white">
+                        <i class="fas fa-boxes me-2"></i> Stock
+                    </x-nav-link>
+
+                    {{-- Separador --}}
+                    <hr class="border-gray-700 my-4">
+
+                    {{-- ITEM 5: Perfil --}}
+                    <x-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.edit')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 text-white">
+                        <i class="fas fa-user-circle me-2"></i> Perfil
+                    </x-nav-link>
                 </nav>
-            </div>
-        </header>
+            </aside>
 
-        <main>
-            {{-- Aumentado py-6 para py-8 para mais espaço vertical (respiro) --}}
-            <div class="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
+            {{-- ==========================================================
+            CONTEÚDO PRINCIPAL (Main Content)
+            ========================================================== --}}
+            <main class="flex-1 p-6"> 
                 {{ $slot }}
-            </div>
-        </main>
+            </main>
+        </div>
+        
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {{-- Se tiver o código de Toastify, adicione aqui o script de inicialização --}}
 </body>
-
 </html>
