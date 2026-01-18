@@ -188,11 +188,57 @@
             {{-- =============================================== --}}
             <h2>Custos e Material (Itens de Serviço)</h2>
             {{-- =============================================== --}}
+{{-- =============================================== --}}
+<h5 class="mt-4">📦 Peças e Consumíveis do Stock</h5>
+<div class="card p-3 mb-4 border-info shadow-sm">
+    <table class="table table-sm" id="itemsTable">
+        <thead>
+            <tr>
+                <th>Artigo / Peça</th>
+                <th width="150">Stock Disponível</th>
+                <th width="150">Qtd. a Retirar</th>
+                <th width="50"></th>
+            </tr>
+        </thead>
+        <tbody id="itemsBody">
+            <tr class="item-row">
+                <td>
+                    {{-- O TEU DROPDOWN FICA AQUI DENTRO --}}
+                    <select name="items[0][id]" class="form-select item-select">
+                        <option value="">-- Selecione a Peça --</option>
+                       @foreach($items as $item)
+    <option value="{{ $item->id }}" data-stock="{{ $item->quantidade }}">
+        {{-- Aqui decides o que aparece: Referência - Nome --}}
+        [{{ $item->referencia }}] {{ $item->marca_fabricante }} - (Stock: {{ $item->quantidade }} {{ $item->unidade ?? 'un' }})
 
-            <div class="mb-3">
-                <label for="technician_notes" class="form-label">Descrição do Material / Serviço / Notas do Técnico</label>
-                <textarea name="technician_notes" id="technician_notes" class="form-control" rows="4">{{ old('technician_notes', $maintenance->technician_notes ?? '') }}</textarea>
-            </div>
+
+    </option>
+@endforeach
+                    </select>
+                </td>
+                <td>
+                    {{-- Este campo será preenchido via JavaScript quando selecionares a peça --}}
+                    <input type="text" class="form-control stock-display" readonly placeholder="0" style="background-color: #f8f9fa;">
+                </td>
+                <td>
+                    <input type="number" name="items[0][quantity]" class="form-control" step="0.01" min="0" placeholder="0.00">
+                </td>
+                <td>
+                    {{-- Botão para remover a linha se o técnico se enganar --}}
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-item">×</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="text-start">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="addItem">
+            + Adicionar outra peça
+        </button>
+    </div>
+</div>
+{{-- =============================================== --}}
+
+
             
             <div class="row">
                 <div class="col-md-6">
@@ -281,6 +327,36 @@
 
     <script>
         $(document).ready(function() {
+
+// 1. Mostrar o stock disponível ao selecionar o item
+$(document).on('change', '.item-select', function() {
+    const selected = $(this).find('option:selected');
+    const stock = selected.data('stock') || 0;
+    $(this).closest('tr').find('.stock-display').val(stock);
+});
+
+// 2. Adicionar nova linha de material
+let itemIndex = 1;
+$('#addItem').on('click', function() {
+    let newRow = $('.item-row').first().clone();
+    
+    // Limpa os campos da nova linha
+    newRow.find('select').attr('name', `items[${itemIndex}][id]`).val('');
+    newRow.find('input').attr('name', `items[${itemIndex}][quantity]`).val('');
+    newRow.find('.stock-display').val('0');
+    
+    $('#itemsBody').append(newRow);
+    itemIndex++;
+});
+
+// 3. Remover linha
+$(document).on('click', '.remove-item', function() {
+    if ($('.item-row').length > 1) {
+        $(this).closest('tr').remove();
+    }
+});
+
+
             // --- Variáveis e Configuração ---
             const dropZone = $('#dropZone');
             const fileInput = $('#fileInput');

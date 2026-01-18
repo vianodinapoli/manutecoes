@@ -1,154 +1,129 @@
 <?php
 
-// app/Http/Controllers/MaintenanceController.php
-
 namespace App\Http\Controllers;
 
-use App\Models\Maintenance;
-use App\Models\Machine;
-use App\Models\MaintenanceFile; // <-- NOVO: Importar o modelo de ficheiros
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;       // <-- NOVO: Para usar transações
-use Illuminate\Support\Facades\Storage;  // <-- NOVO: Para guardar ficheiros
-use Illuminate\Routing\Controller; 
+use App\Models\StockMovement;
+use App\Models\StockItem; 
+use App\Models\Machine;
+use App\Models\Maintenance;
+use App\Models\MaintenanceFile; // Certifica-te que este model existe
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MaintenanceController extends Controller
 {
-    // ... (Métodos index, create, edit, show, destroy, createFromMachine permanecem inalterados) ...
-    
+    /**
+     * Lista todas as manutenções.
+     */
     public function index()
     {
-       // Usamos 'with('machine')' para carregar a máquina associada a cada manutenção de forma eficiente
         $maintenances = Maintenance::with('machine')->latest()->get();
-
         return view('maintenances.index', compact('maintenances'));
     }
-    
 
+    /**
+     * Formulário de criação genérico.
+     */
     public function create()
     {
-        $machines = Machine::all();
         return view('maintenances.form', [
             'maintenance' => new Maintenance(),
-            'machines' => $machines,
-            'selectedMachine' => null, 
+            'machines' => Machine::all(),
+            'items' => StockItem::all(),
+            'selectedMachine' => null,
         ]);
     }
 
+    /**
+     * Formulário de edição.
+     */
     public function edit(Maintenance $maintenance)
     {
-        $machines = Machine::all();
         return view('maintenances.form', [
             'maintenance' => $maintenance,
-            'machines' => $machines,
+            'machines' => Machine::all(),
+            'items' => StockItem::all(),
             'selectedMachine' => $maintenance->machine_id,
         ]);
     }
 
+    /**
+     * Formulário de criação a partir de uma máquina específica.
+     */
     public function createFromMachine(Machine $machine)
     {
         $maintenance = new Maintenance([
-            'status' => 'Em manutenção',
+            'status' => 'em_manutencao',
             'scheduled_date' => now(),
             'machine_id' => $machine->id,
         ]);
 
         return view('maintenances.form', [
-            'maintenance' => $maintenance,
-            'machines' => Machine::all(),
+            'maintenance'     => $maintenance,
+            'machines'        => Machine::all(),
+            'items'           => StockItem::all(),
             'selectedMachine' => $machine->id,
-            'currentMachine' => $machine,
+            'currentMachine'  => $machine,
         ])->with('info', 'Preencha os detalhes da manutenção antes de salvar.');
     }
 
-
-    // =========================================================================
-    // 💾 Método STORE (Criar) - Adaptado para AJAX e Gestão de Ficheiros
-    // =========================================================================
+    /**
+     * 💾 Gravar Nova Manutenção (Com Baixa de Stock)
+     */
     public function store(Request $request)
     {
-        // 1. Validação
-        // Nota: A validação dos campos de texto deve ser mais robusta aqui!
-        $validatedData = $request->validate([
-            'machine_id' => 'required|exists:machines,id',
-            'failure_description' => 'required|string|max:1000',
-            'nome_motorista' => 'required|string|max:255', // <-- ESTE CAMPO DEVE ESTAR AQUI
-             'data_entrada' => 'required|date',         // <-- ESTE CAMPO DEVE ESTAR AQUI
-             'horas_trabalho' => 'required|numeric|min:0', // <-- ESTE
-            'scheduled_date' => 'nullable|date',
+        return DB::transaction(function () use ($request) {
+            // 1. Criar a Manutenção
+            $maintenance = Maintenance::create($request->all());
 
+            // 2. Processar itens de stock
+            if ($request->has('items')) {
+                foreach ($request->items as $itemData) {
+                    if (!empty($itemData['id']) && $itemData['quantity'] > 0) {
+                        
+                        // Regista o movimento no histórico
+                        StockMovement::create([
+                            'maintenance_id' => $maintenance->id,
+                            'machine_id'     => $request->machine_id,
+                            'stock_item_id'  => $itemData['id'], 
+                            'quantity'       => $itemData['quantity'],
+                        ]);
 
-'status' => 'required|in:pendente,em_manutencao,concluida,cancelada', // CORREÇÃO: Usando sublinhado e sem acento            
-            // Opcionais
-            'work_sheet_ref' => 'nullable|string|max:255',
-            'hours_kms' => 'nullable|integer',
-            'technician_notes' => 'nullable|string',
-            'total_cost' => 'nullable|numeric|min:0',
-            'end_date' => 'nullable|date',
-            
-            // Validação dos Ficheiros (Chave: 'maintenance_files.*')
-            'maintenance_files' => 'nullable|array',
-            'maintenance_files.*' => 'file|max:10240|mimes:pdf,jpg,jpeg,png,zip,doc,docx', 
-        ]);
-
-        try {
-            // Inicia uma Transação de Base de Dados
-            DB::beginTransaction();
-
-            // 2. Criação da Manutenção
-            $maintenance = Maintenance::create($validatedData);
-
-            // 3. Gestão e atualização do Status da Máquina
-            $this->updateMachineStatus($maintenance);
-
-            // 4. Guardar os Ficheiros
-            if ($request->hasFile('maintenance_files')) {
-                $this->handleFileUploads($request, $maintenance);
+                        // Baixa automática no stock real
+                        $stockItem = StockItem::find($itemData['id']);
+                        if ($stockItem) {
+                            $stockItem->decrement('quantidade', $itemData['quantity']);
+                        }
+                    }
+                }
             }
 
-            // Confirma a transação
-            DB::commit();
+            // 3. Status da Máquina
+            $this->updateMachineStatus($maintenance);
 
-            // Resposta de Sucesso JSON (necessária para o Frontend AJAX)
             return response()->json([
-                'success' => true,
-                'message' => 'Manutenção criada e ficheiros guardados com sucesso!',
-                'redirect_url' => route('machines.show', $maintenance->machine_id)
-            ], 201);
-
-        } catch (\Exception $e) {
-            // Desfaz a transação se algo falhar (incluindo o upload)
-            DB::rollBack();
-            
-            // Resposta de Erro JSON
-            \Log::error("Erro ao guardar manutenção (store): " . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro interno do servidor ao criar manutenção.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+                'message' => 'Manutenção e stock processados com sucesso!',
+                'redirect_url' => route('maintenances.index')
+            ]);
+        });
     }
 
-    // =========================================================================
-    // ✏️ Método UPDATE (Editar) - Adaptado para AJAX e Gestão de Ficheiros
-    // =========================================================================
+    /**
+     * ✏️ Atualizar Manutenção Existente
+     */
     public function update(Request $request, Maintenance $maintenance)
     {
-        // 1. Validação
         $validatedData = $request->validate([
             'machine_id' => 'required|exists:machines,id',
             'failure_description' => 'required|string|max:1000',
             'status' => 'required|in:pendente,em_manutencao,concluida,cancelada',            
-            // Opcionais
             'work_sheet_ref' => 'nullable|string|max:255',
             'hours_kms' => 'nullable|integer',
             'technician_notes' => 'nullable|string',
             'total_cost' => 'nullable|numeric|min:0',
             'end_date' => 'nullable|date',
-                        'scheduled_date' => 'nullable|date',
-
-            // Validação dos Ficheiros (Chave: 'maintenance_files.*')
+            'scheduled_date' => 'nullable|date',
             'maintenance_files' => 'nullable|array',
             'maintenance_files.*' => 'file|max:10240|mimes:pdf,jpg,jpeg,png,zip,doc,docx', 
         ]);
@@ -156,81 +131,47 @@ class MaintenanceController extends Controller
         try {
             DB::beginTransaction();
 
-            // 2. Atualização da Manutenção
             $maintenance->update($validatedData);
-
-            // 3. Gestão e atualização do Status da Máquina
             $this->updateMachineStatus($maintenance);
             
-            // 4. Guardar Novos Ficheiros
-            // NOTA: Os ficheiros antigos permanecem. O AJAX só envia NOVOS ficheiros.
             if ($request->hasFile('maintenance_files')) {
                 $this->handleFileUploads($request, $maintenance);
             }
 
             DB::commit();
             
-            // Resposta de Sucesso JSON (necessária para o Frontend AJAX)
             return response()->json([
                 'success' => true,
-                'message' => 'Manutenção atualizada e novos ficheiros guardados com sucesso!',
+                'message' => 'Manutenção atualizada com sucesso!',
                 'redirect_url' => route('machines.show', $maintenance->machine_id)
-            ], 200);
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
-            // Resposta de Erro JSON
-            \Log::error("Erro ao guardar manutenção (update): " . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro interno do servidor ao atualizar manutenção.',
-                'error' => $e->getMessage()
-            ], 500);
+            Log::error("Erro no update: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Erro ao atualizar.'], 500);
         }
     }
 
-
-    // =========================================================================
-    // Métodos Auxiliares
-    // =========================================================================
-
     /**
-     * Lógica para mapear o status da manutenção para o status da máquina e atualizar.
+     * Métodos Auxiliares
      */
     protected function updateMachineStatus(Maintenance $maintenance)
     {
         $machine = $maintenance->machine;
-        
         $machineStatus = match ($maintenance->status) {
-            'Pendente', 'Em Progresso' => 'Em Manutenção',
-            'Concluída' => 'Operacional', // Se concluída, a máquina está apta para uso
-            'Cancelada' => $machine->status, // Manter o status anterior
+            'em_manutencao', 'pendente' => 'Em Manutenção',
+            'concluida' => 'Operacional',
             default => $machine->status,
         };
-
-        // Adicione aqui qualquer lógica que defina o status 'Avariada' se necessário
-        
-        $machine->update([
-            'status' => $machineStatus
-        ]);
+        $machine->update(['status' => $machineStatus]);
     }
 
-    /**
-     * Lógica para guardar ficheiros no storage e na base de dados.
-     */
     protected function handleFileUploads(Request $request, Maintenance $maintenance)
     {
-        // Itera sobre cada ficheiro no array 'maintenance_files'
         foreach ($request->file('maintenance_files') as $file) {
-            
-            // Define a pasta de destino (ex: 'maintenances/1/')
-            $folderPath = 'maintenances/' . $maintenance->id;
-            
-            // Guarda o ficheiro no disco 'public'. O nome do ficheiro é hashed.
-            $path = $file->store($folderPath, 'public'); 
+            $path = $file->store('maintenances/' . $maintenance->id, 'public'); 
 
-            // Cria o registo na base de dados
             MaintenanceFile::create([
                 'maintenance_id' => $maintenance->id,
                 'filename' => $file->getClientOriginalName(),
@@ -240,41 +181,20 @@ class MaintenanceController extends Controller
             ]);
         }
     }
-    
-    // ... (Métodos show e destroy permanecem inalterados) ...
-    
-    /**
-     * Mostrar os detalhes de um registo de manutenção específico.
-     */
+
     public function show(Maintenance $maintenance)
     {
-       // 1. Define a taxa de câmbio (Ajuste este valor conforme a taxa atual)
-    $exchangeRate = 70.00; // Exemplo: 1 Euro = 70 Meticais Moçambicanos (MZN)
-
-    // 2. Garante que as relações são carregadas
-    $maintenance->load(['machine', 'files']); 
-
-    // 3. Normaliza o status para minúsculas antes de passar para o Blade (para a lógica de badges)
-    $maintenance->status = strtolower($maintenance->status);
-
-    // 4. PASSA A VARIÁVEL $exchangeRate para a view
-    return view('maintenances.show', compact('maintenance', 'exchangeRate'));
+        $exchangeRate = 70.00; 
+        $maintenance->load(['machine', 'files']); 
+        $maintenance->status = strtolower($maintenance->status);
+        return view('maintenances.show', compact('maintenance', 'exchangeRate'));
     }
 
-    /**
-     * Eliminar um registo de manutenção (APAGAR).
-     */
     public function destroy(Maintenance $maintenance)
     {
-        // Antes de apagar, o Laravel irá apagar automaticamente os registos de 
-        // MaintenanceFile devido ao 'onDelete('cascade')' na migração.
-
         $machineId = $maintenance->machine_id; 
-        $maintenanceId = $maintenance->id; 
-        
         $maintenance->delete();
-
         return redirect()->route('machines.show', $machineId)
-                         ->with('success', 'Registo de manutenção ID ' . $maintenanceId . ' eliminado com sucesso!');
+                         ->with('success', 'Eliminado com sucesso!');
     }
 }
