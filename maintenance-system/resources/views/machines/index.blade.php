@@ -6,6 +6,8 @@
     <title>Lista de Máquinas</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
@@ -14,6 +16,25 @@
         .dataTables_wrapper {
             width: 100%;
             font-size: 12px
+        }
+
+        /* Estilo para reduzir a altura das linhas */
+        #machinesTable th, 
+        #machinesTable td {
+            padding-top: 0.35rem; 
+            padding-bottom: 0.35rem;
+            vertical-align: middle; 
+        }
+
+        /* Estilo para botões de ação com ícones (agora usando bi-) */
+        .col-acao .btn {
+            padding: 0.25rem 0.4rem; /* Padding reduzido */
+            /* line-height: 1;  */
+            /* display: flex !important; */
+            font-size: 1rem; 
+        }
+        .col-acao .d-inline {
+            margin-left: 0.25rem; 
         }
     </style>
 
@@ -29,7 +50,7 @@
             <div class="btn-group">
                
                 <a href="{{ route('machines.create') }}" class="btn btn-primary">
-                    ➕ Adicionar Nova Máquina
+                    <i class="bi bi-plus-circle me-1"></i> Adicionar Nova Máquina
                 </a>
             </div>
         </div>
@@ -53,6 +74,8 @@
                             <th>Nº Interno</th>
                             <th>Tipo de Equipamento</th>
                             <th>Marca / Modelo</th>
+                            <th>Chassi</th>
+                            <th>Matrícula</th>
                             <th>Localização</th>
                             <th>Status</th>
                             <th>Ações</th>
@@ -63,7 +86,10 @@
                             <tr>
                                 <td><strong>{{ $machine->numero_interno }}</strong></td>
                                 <td>{{ Str::limit($machine->tipo_equipamento, 30) }}</td>
-                                <td>{{ $machine->marca }} / {{ $machine->modelo }}</td>
+                                <td>{{Str::limit( $machine->marca, 15) }} / {{ Str::limit( $machine->modelo, 20) }}</td>
+                                <td>{{ $machine->nr_chassi ?? 'N/A' }}</td>
+                                <td>{{ $machine->matricula ?? 'N/A' }}</td>
+                                
                                 <td>{{ $machine->localizacao }}</td>
 
                                 <td>
@@ -79,16 +105,30 @@
                                     <span class="badge {{ $badge_class }}">{{ $machine->status }}</span>
                                 </td>
 
-                                <td>
-                                    <a href="{{ route('machines.show', $machine->id) }}" class="btn btn-sm btn-outline-info me-1">Ver</a>
-                                    <a href="{{ route('machines.edit', $machine->id) }}" class="btn btn-sm btn-outline-warning me-1">Editar</a>
+                                <td class="d-flex gap-1 col-acao">
+                                    {{-- Botão Ver (Detalhes) - bi-eye-fill --}}
+                                    <a href="{{ route('machines.show', $machine->id) }}" 
+                                       class="btn btn-info" 
+                                       title="Ver Detalhes">
+                                       <i class="bi bi-eye-fill"></i>
+                                    </a>
+                                    
+                                    {{-- Botão Editar - bi-pencil-square --}}
+                                    <a href="{{ route('machines.edit', $machine->id) }}" 
+                                       class="btn btn-dark" 
+                                       title="Editar">
+                                       <i class="bi bi-pencil-square"></i>
+                                    </a>
 
+                                    {{-- Formulário Apagar - bi-trash-fill --}}
                                     <form action="{{ route('machines.destroy', $machine->id) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        <button type="submit" 
+                                                class="btn btn-danger"
+                                                title="Apagar"
                                                 onclick="return confirm('Tem certeza que deseja eliminar a máquina {{ $machine->numero_interno }}? Esta ação não pode ser desfeita.')">
-                                            Apagar
+                                            <i class="bi bi-trash-fill"></i>
                                         </button>
                                     </form>
                                 </td>

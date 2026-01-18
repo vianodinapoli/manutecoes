@@ -36,6 +36,9 @@ class MachineController extends Controller
         'numero_interno' => 'required|string|max:50|unique:machines,numero_interno',
         'tipo_equipamento' => 'required|string|max:100',
         'marca' => 'nullable|string|max:100',
+       'matricula' => 'nullable|string|max:50', // Deve estar aqui
+    'nr_chassi' => 'nullable|string|max:100', // Deve estar aqui
+    // ...
         'modelo' => 'nullable|string|max:100',
         'localizacao' => 'required|string|max:100',
         'operador' => 'nullable|string|max:100',
@@ -92,6 +95,9 @@ class MachineController extends Controller
         'tipo_equipamento' => 'required|string|max:100',
         'marca' => 'nullable|string|max:100',
         'modelo' => 'nullable|string|max:100',
+        'matricula' => 'nullable|string|max:50', // Deve estar aqui
+    'nr_chassi' => 'nullable|string|max:100', // Deve estar aqui
+    // ...
         'localizacao' => 'required|string|max:100',
         'operador' => 'nullable|string|max:100',
         'status' => 'required|in:Operacional,Avariada,Em Manutenção,Desativada',

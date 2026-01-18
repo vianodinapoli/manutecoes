@@ -19,9 +19,9 @@
              <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
                         {{-- Pode usar um componente de Logo ou o seu logo da Porto Cargas --}}
-                        <img decoding="async" width="541" height="78" 
-                             src="https://portocargas.com/wp-content/uploads/2025/04/cropped-logo-300x61.png" 
-                             class="h-7 w-auto fill-current text-gray-800" alt="{{ config('app.name', 'Laravel') }}">
+                        <img decoding="async" 
+                             src="https://fem.co.mz/wp-content/uploads/2023/03/logo_pequeno.png" 
+                             class="h-13 w-auto fill-current text-gray-800" alt="{{ config('app.name', 'Laravel') }}">
                     </a>
                 </div>
 

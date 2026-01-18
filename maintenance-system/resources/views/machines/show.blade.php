@@ -28,8 +28,9 @@
             <a href="{{ route('machines.edit', $machine->id) }}" class="btn btn-warning">
                 ✏️ Editar Máquina
             </a>
-            <a href="#" class="btn btn-danger">
-                ➕ Nova Manutenção
+            {{-- Assumindo que você tem essa rota para criar manutenção --}}
+            <a href="{{ route('maintenances.createFromMachine', $machine->id) }}" class="btn btn-danger">
+                🚨 Nova Manutenção
             </a>
         </div>
         
@@ -41,10 +42,20 @@
                         <h5 class="mb-0">Informação de Identificação</h5>
                     </div>
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><strong>Nº Interno:</strong> {{ $machine->numero_interno }}</li>
+                        <li class="list-group-item"><strong>Nº Interno:</strong> <span class="fw-bold text-primary">{{ $machine->numero_interno }}</span></li>
                         <li class="list-group-item"><strong>Tipo de Equipamento:</strong> {{ $machine->tipo_equipamento }}</li>
                         <li class="list-group-item"><strong>Marca:</strong> {{ $machine->marca ?? 'N/A' }}</li>
                         <li class="list-group-item"><strong>Modelo:</strong> {{ $machine->modelo ?? 'N/A' }}</li>
+                        
+                        {{-- === NOVOS CAMPOS: MATRÍCULA E CHASSI === --}}
+                        <li class="list-group-item list-group-item-info">
+                            <strong>Matrícula:</strong> <span class="fw-bold">{{ $machine->matricula ?? 'N/A' }}</span>
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Nº de Chassi:</strong> {{ $machine->nr_chassi ?? 'N/A' }}
+                        </li>
+                        {{-- ====================================== --}}
+                        
                         <li class="list-group-item"><strong>Localização:</strong> {{ $machine->localizacao }}</li>
                         <li class="list-group-item"><strong>Operador/Responsável:</strong> {{ $machine->operador ?? 'N/A' }}</li>
                         <li class="list-group-item">
@@ -78,13 +89,8 @@
 
         </div> 
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
-    <h5>Detalhes: <span class="text-primary">{{ $machine->numero_interno }}</span></h5>
-    
-    <a href="{{ route('maintenances.createFromMachine', $machine->id) }}" class="btn btn-danger btn-md">
-        🚨 Reportar Avaria / Criar Manutenção
-    </a>
-</div>
+        {{-- A seção de título e botão de manutenção duplicada foi removida, 
+             pois já existe um botão de "Nova Manutenção" acima. --}}
         
         <hr class="my-4">
 

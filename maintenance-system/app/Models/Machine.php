@@ -15,6 +15,8 @@ class Machine extends Model
         'tipo_equipamento',
         'marca',
         'modelo',
+        'matricula', 
+        'nr_chassi',
         'localizacao',
         'operador',
         'status',

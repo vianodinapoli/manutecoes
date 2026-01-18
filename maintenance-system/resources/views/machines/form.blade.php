@@ -1,10 +1,9 @@
 {{--
     Este partial é usado em create.blade.php e edit.blade.php.
-    Se estiver em modo de edição, a variável $machine existirá.
-    Usamos o operador '?? null' para evitar erros na view de criação.
+    A variável $machine deve ser passada, ou null na view de criação.
 --}}
 @php
-    // Definição das categorias baseadas no screenshot
+    // Definição das categorias
     $equipmentTypes = [
         'Viatura',
         'Camião / Cisterna Água / Atrelado',
@@ -17,12 +16,19 @@
         'Motociclo',
         'Imóvel',
     ];
+    // Pegando valores atuais ou antigos para preenchimento
     $currentType = old('tipo_equipamento', $machine->tipo_equipamento ?? null);
+    $currentStatus = old('status', $machine->status ?? 'Operacional');
 @endphp
 
 <div class="row">
+    
+    {{-- === COLUNA 1: IDENTIFICAÇÃO E DADOS REGISTRAIS (CHASSI/MATRÍCULA) === --}}
     <div class="col-md-6">
+        <h5 class="mb-3 text-primary">Informações Básicas</h5>
+        <hr class="mt-0">
         
+        {{-- 1. Número Interno (Ativo) --}}
         <div class="mb-3">
             <label for="numero_interno" class="form-label">Número Interno (Ativo):</label>
             <input type="text" id="numero_interno" name="numero_interno" class="form-control @error('numero_interno') is-invalid @enderror" required 
@@ -32,13 +38,12 @@
             @enderror
         </div>
         
-        {{-- CAMPO ALTERADO: TIPO DE EQUIPAMENTO COM DROPDOWN --}}
+        {{-- 2. Tipo de Equipamento (Dropdown) --}}
         <div class="mb-3">
             <label for="tipo_equipamento" class="form-label">Tipo de Equipamento:</label>
             <select id="tipo_equipamento" name="tipo_equipamento" class="form-select @error('tipo_equipamento') is-invalid @enderror" required>
                 <option value="">-- Selecione uma Categoria --</option>
                 @foreach($equipmentTypes as $type)
-                    {{-- Usa a descrição completa como valor e como texto visível --}}
                     <option value="{{ $type }}" {{ $currentType == $type ? 'selected' : '' }}>
                         {{ $type }}
                     </option>
@@ -48,8 +53,52 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
-        {{-- FIM DO CAMPO ALTERADO --}}
+
+        <h5 class="mb-3 mt-4 text-primary">Dados de Registro</h5>
+        <hr class="mt-0">
         
+        {{-- 3. Matrícula (Opcional) --}}
+        <div class="mb-3">
+            <label for="matricula" class="form-label">Matrícula (Opcional):</label>
+            <input 
+                type="text" 
+                class="form-control" 
+                id="matricula" 
+                name="matricula" 
+                value="{{ old('matricula', $machine->matricula ?? null) }}" 
+                placeholder="Ex: AB-12-CD"
+                maxlength="50"
+            >
+            @error('matricula')
+                <div class="text-danger mt-1">{{ $message }}</div>
+            @enderror
+        </div>
+
+        {{-- 4. Número de Chassi (Opcional) --}}
+        <div class="mb-3">
+            <label for="nr_chassi" class="form-label">Nº de Chassi (Opcional):</label>
+            <input 
+                type="text" 
+                class="form-control" 
+                id="nr_chassi" 
+                name="nr_chassi" 
+                value="{{ old('nr_chassi', $machine->nr_chassi ?? null) }}" 
+                placeholder="Ex: XYZ000012345"
+                maxlength="100"
+            >
+            @error('nr_chassi')
+                <div class="text-danger mt-1">{{ $message }}</div>
+            @enderror
+        </div>
+
+    </div>
+    
+    {{-- === COLUNA 2: ESPECIFICAÇÕES E STATUS OPERACIONAL === --}}
+    <div class="col-md-6">
+        <h5 class="mb-3 text-primary">Especificações Técnicas</h5>
+        <hr class="mt-0">
+
+        {{-- 5. Marca --}}
         <div class="mb-3">
             <label for="marca" class="form-label">Marca:</label>
             <input type="text" id="marca" name="marca" class="form-control @error('marca') is-invalid @enderror" 
@@ -59,6 +108,7 @@
             @enderror
         </div>
 
+        {{-- 6. Modelo --}}
         <div class="mb-3">
             <label for="modelo" class="form-label">Modelo:</label>
             <input type="text" id="modelo" name="modelo" class="form-control @error('modelo') is-invalid @enderror" 
@@ -68,12 +118,12 @@
             @enderror
         </div>
 
-    </div>
-    
-    <div class="col-md-6">
+        <h5 class="mb-3 mt-4 text-primary">Localização e Status</h5>
+        <hr class="mt-0">
         
+        {{-- 7. Localização --}}
         <div class="mb-3">
-            <label for="localizacao" class="form-label">Localização:</label>
+            <label for="localizacao" class="form-label">Localização Atual:</label>
             <input type="text" id="localizacao" name="localizacao" class="form-control @error('localizacao') is-invalid @enderror" required 
                    value="{{ old('localizacao', $machine->localizacao ?? null) }}">
             @error('localizacao')
@@ -81,6 +131,7 @@
             @enderror
         </div>
         
+        {{-- 8. Operador/Responsável --}}
         <div class="mb-3">
             <label for="operador" class="form-label">Operador/Responsável:</label>
             <input type="text" id="operador" name="operador" class="form-control @error('operador') is-invalid @enderror" 
@@ -90,13 +141,12 @@
             @enderror
         </div>
         
+        {{-- 9. Status Operacional --}}
         <div class="mb-3">
             <label for="status" class="form-label">Status Operacional:</label>
             <select id="status" name="status" class="form-select @error('status') is-invalid @enderror" required>
-                @php $currentStatus = old('status', $machine->status ?? 'Operacional'); @endphp
                 <option value="Operacional" {{ $currentStatus == 'Operacional' ? 'selected' : '' }}>Operacional</option>
                 <option value="Avariada" {{ $currentStatus == 'Avariada' ? 'selected' : '' }}>Avariada</option>
-                {{-- <option value="Em Manutenção" {{ $currentStatus == 'Em Manutenção' ? 'selected' : '' }}>Em Manutenção</option> --}}
                 <option value="Desativada" {{ $currentStatus == 'Desativada' ? 'selected' : '' }}>Desativada</option>
             </select>
             @error('status')
@@ -106,6 +156,10 @@
 
     </div>
 </div> 
+
+{{-- === ÁREA DE OBSERVAÇÕES (Full Width) === --}}
+<h5 class="mb-3 mt-4 text-primary">Observações</h5>
+<hr class="mt-0">
 <div class="mb-3">
     <label for="observacoes" class="form-label">Observações/Descrição:</label>
     <textarea id="observacoes" name="observacoes" rows="4" class="form-control @error('observacoes') is-invalid @enderror">{{ old('observacoes', $machine->observacoes ?? null) }}</textarea>
