@@ -59,4 +59,8 @@ class Maintenance extends Model
     {
         return $this->hasMany(\App\Models\MaintenanceFile::class); 
     }
+
+    public function movements() {
+    return $this->hasMany(StockMovement::class, 'maintenance_id');
+}
 }

@@ -163,6 +163,35 @@
                     </div>
                 </div>
 
+                <div class="card shadow-sm mb-4 border-start border-info border-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">📦 Peças Utilizadas</h5>
+    </div>
+    <div class="card-body">
+        @if($maintenance->movements->count() > 0)
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Referência</th>
+                        <th>Peça</th>
+                        <th class="text-center">Quantidade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($maintenance->movements as $movement)
+    <tr>
+        <td>{{ $movement->stockItem->nome }}</td>
+        <td>{{ $movement->quantity }}</td>
+    </tr>
+@endforeach
+                </tbody>
+            </table>
+        @else
+            <p class="text-muted italic">Nenhuma peça foi registada nesta intervenção.</p>
+        @endif
+    </div>
+</div>
+
                 <div class="row">
                     <div class="col-md-6 offset-md-3">
                         @php

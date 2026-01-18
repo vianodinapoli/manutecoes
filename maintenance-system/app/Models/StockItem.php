@@ -15,6 +15,7 @@ class StockItem extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'nome',
         'numero_armazem', 
         'seccao_armazem', 
         'referencia', 
