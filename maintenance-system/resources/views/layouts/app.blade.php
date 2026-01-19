@@ -66,6 +66,11 @@
                         <i class="fas fa-boxes me-2"></i> Stock
                     </x-nav-link>
 
+                     {{-- ITEM 5: Stock --}}
+                    <x-nav-link :href="route('compras.index')" :active="request()->routeIs('compras.*')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 text-white">
+                        <i class="fas fa-boxes me-2"></i> Requisições/Compras
+                    </x-nav-link>
+
                     {{-- Separador --}}
                     <hr class="border-gray-700 my-4">
 

@@ -163,7 +163,7 @@
                     </div>
                 </div>
 
-                <div class="card shadow-sm mb-4 border-start border-info border-4">
+                <div class="card shadow-sm mb-4 border-start border-info border-2">
     <div class="card-header bg-white">
         <h5 class="mb-0">📦 Peças Utilizadas</h5>
     </div>

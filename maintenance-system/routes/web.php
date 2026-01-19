@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MachineController; 
 use App\Http\Controllers\MaintenanceController; 
 use App\Http\Controllers\StockItemController; 
+use App\Http\Controllers\MaterialPurchaseController;
+
 
 // -------------------------------------------------------------
 // ROTAS BASE DO BREEZE
@@ -55,6 +57,11 @@ Route::middleware('auth')->group(function () {
     // 4. Rota especial de Manutenção (Se ela ainda existir)
     Route::get('maintenances/create-from-machine/{machine}', [MaintenanceController::class, 'createFromMachine'])
         ->name('maintenances.createFromMachine');
+
+
+Route::resource('compras', MaterialPurchaseController::class);
+// Rota customizada para o select de status
+Route::patch('compras/{compra}/status', [MaterialPurchaseController::class, 'updateStatus'])->name('compras.status');
 
 });
 
