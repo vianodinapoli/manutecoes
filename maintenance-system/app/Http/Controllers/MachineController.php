@@ -129,4 +129,48 @@ class MachineController extends Controller
         return redirect()->route('machines.index')
                          ->with('success', 'Máquina "' . $numero_interno . '" e todos os seus registos de manutenção eliminados com sucesso!');
     }
+
+
+    public function export(Request $request)
+{
+    $machines = \App\Models\Machine::all(); // Assumindo que o model é Machine
+    $type = $request->query('type', 'excel');
+
+    if ($type === 'excel') {
+        $fileName = 'lista_maquinas_' . date('d-m-Y') . '.csv';
+        $headers = [
+            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=$fileName",
+        ];
+
+        $columns = ['ID', 'Nome/Equipamento', 'Marca', 'Modelo', 'Nº Série', 'Estado'];
+
+        $callback = function() use($machines, $columns) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 para Excel
+            fputcsv($file, $columns, ';');
+
+            foreach ($machines as $machine) {
+                fputcsv($file, [
+                    $machine->id,
+                    $machine->nome,
+                    $machine->marca,
+                    $machine->modelo,
+                    $machine->numero_serie,
+                    $machine->estado
+                ], ';');
+            }
+            fclose($file);
+        };
+        return response()->stream($callback, 200, $headers);
+    }
+
+    if ($type === 'pdf') {
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('machines.pdf_export', ['items' => $machines])
+                ->setPaper('a4', 'landscape');
+        return $pdf->download('lista_maquinas_' . date('d-m-Y') . '.pdf');
+    }
+
+    return redirect()->back();
+}
 }

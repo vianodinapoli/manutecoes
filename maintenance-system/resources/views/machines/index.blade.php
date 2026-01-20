@@ -94,6 +94,15 @@
     </div>
 </div>
 
+<div class="mb-3">
+    <a href="{{ route('machines.export', ['type' => 'excel']) }}" class="btn btn-success btn-sm">
+        <i class="bi bi-file-earmark-spreadsheet"></i> Exportar Excel
+    </a>
+    <a href="{{ route('machines.export', ['type' => 'pdf']) }}" class="btn btn-danger btn-sm">
+        <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+    </a>
+</div>
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h5>⚙️ Lista de Equipamentos e Máquinas</h5>
             
@@ -215,11 +224,11 @@
             var table = $('#machinesTable').DataTable({
                 dom: 'Bfrtip',
                 buttons: [
-                    { extend: 'copy', text: 'Copiar' },
-                    { extend: 'csv', text: 'CSV' },
-                    { extend: 'excel', text: 'Excel' },
-                    { extend: 'pdf', text: 'PDF' },
-                    { extend: 'print', text: 'Imprimir' }
+                    // { extend: 'copy', text: 'Copiar' },
+                    // { extend: 'csv', text: 'CSV' },
+                    // { extend: 'excel', text: 'Excel' },
+                    // { extend: 'pdf', text: 'PDF' },
+                    // { extend: 'print', text: 'Imprimir' }
                 ],
                 language: {
                     url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json"

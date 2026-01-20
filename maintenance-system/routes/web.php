@@ -70,6 +70,13 @@ Route::get('exportar-inventario', [StockItemController::class, 'export'])->name(
 // Mantenha o resource abaixo
 Route::resource('stock-items', StockItemController::class);
 
+
+// Rota de exportação de máquinas
+Route::get('exportar-maquinas/export', [App\Http\Controllers\MachineController::class, 'export'])->name('machines.export');
+
+// Seu resource atual
+Route::resource('machines', MachineController::class);
+
 });
 
 // Rotas de Autenticação do Breeze (Login, Register, Logout, etc.)
