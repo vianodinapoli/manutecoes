@@ -63,6 +63,13 @@ Route::resource('compras', MaterialPurchaseController::class);
 // Rota customizada para o select de status
 Route::patch('compras/{compra}/status', [MaterialPurchaseController::class, 'updateStatus'])->name('compras.status');
 
+
+/// Mude para 'exportar-inventario' para garantir que não colide com o resource
+Route::get('exportar-inventario', [StockItemController::class, 'export'])->name('stock-items.export');
+
+// Mantenha o resource abaixo
+Route::resource('stock-items', StockItemController::class);
+
 });
 
 // Rotas de Autenticação do Breeze (Login, Register, Logout, etc.)
