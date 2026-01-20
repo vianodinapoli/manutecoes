@@ -19,7 +19,7 @@ return new class extends Migration
         // Liga à máquina (facilitando relatórios diretos por máquina)
         $table->foreignId('machine_id')->constrained();
         // O artigo que saiu do stock
-        $table->foreignId('item_id')->constrained();
+$table->foreignId('stock_item_id')->constrained('stock_items')->onDelete('cascade');
         $table->decimal('quantity', 10, 2); 
         $table->timestamps();
     });

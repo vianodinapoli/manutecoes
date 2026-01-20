@@ -2,16 +2,80 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <style>
-        .container { max-width: 1400px; }
+        .container { max-width: 100%; }
         .table thead th { font-weight: 700; cursor: pointer; }
         .badge-status { min-width: 120px; border-radius: 20px; padding: 5px 10px; }
         .btn-action { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; }
     </style>
 
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>🛒 Gestão de Compras de Materiais</h2>
+        
+        </div>
+
+        
+
+<div class="row g-2 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: #f8f9fa; border-left: 4px solid #ffc107 !important;">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-warning small fw-bold text-uppercase">Pendentes</span>
+                    <i class="bi bi-hourglass-split text-warning"></i>
+                </div>
+                <h4 class="fw-bold mb-0 text-dark">
+                    {{ \App\Models\MaterialPurchase::where('status', 'Pendente')->count() }}
+                </h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: #f8f9fa; border-left: 4px solid #0dcaf0 !important;">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-info small fw-bold text-uppercase">Em Processo</span>
+                    <i class="bi bi-cart-dash text-info"></i>
+                </div>
+                <h4 class="fw-bold mb-0 text-info">
+                    {{ \App\Models\MaterialPurchase::where('status', 'Em processo')->count() }}
+                </h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: #f8f9fa; border-left: 4px solid #198754 !important;">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-success small fw-bold text-uppercase">Aprovados</span>
+                    <i class="bi bi-check-all text-success"></i>
+                </div>
+                <h4 class="fw-bold mb-0 text-success">
+                    {{ \App\Models\MaterialPurchase::where('status', 'Aprovado')->count() }}
+                </h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: #f8f9fa; border-left: 4px solid #dc3545 !important;">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-danger small fw-bold text-uppercase">Rejeitados</span>
+                    <i class="bi bi-x-circle text-danger"></i>
+                </div>
+                <h4 class="fw-bold mb-0 text-danger">
+                    {{ \App\Models\MaterialPurchase::where('status', 'Rejeitado')->count() }}
+                </h4>
+            </div>
+        </div>
+    </div>
+</div>
     <div class="container mt-5">
         
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4>🛒 Gestão de Compras de Materiais</h4>
             
             <a href="{{ route('compras.create') }}" class="btn btn-primary shadow-sm">
                 <i class="bi bi-plus-lg"></i> Nova Solicitação

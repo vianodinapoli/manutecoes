@@ -60,11 +60,14 @@ class StockItemController extends Controller
     /**
      * Exibe uma listagem de todos os itens de stock.
      */
-    public function index()
-    {
-        $stockItems = StockItem::paginate(15);
-        return view('stock_items.index', compact('stockItems'));
-    }
+   public function index()
+{
+    // Remova as barras // para ativar a variável
+    $stockItems = \App\Models\StockItem::all();
+    
+    // Agora o compact conseguirá encontrar a variável definida acima
+    return view('stock_items.index', compact('stockItems'));
+}
 
     /**
      * Mostra o formulário para criar um novo item.

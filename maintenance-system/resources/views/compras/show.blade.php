@@ -24,7 +24,7 @@
                         <div class="row mt-2">
                             <div class="col-sm-4 text-muted">Preço Estimado:</div>
                             <div class="col-sm-8 text-success font-weight-bold">
-                                {{ $compra->price ? number_format($compra->price, 2, ',', '.') . ' €' : 'Não definido' }}
+                                {{ $compra->price ? number_format($compra->price, 2, ',', '.') . ' MZN' : 'Não definido' }}
                             </div>
                         </div>
                         <div class="row mt-4">

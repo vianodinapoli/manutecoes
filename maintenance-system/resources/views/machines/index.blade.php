@@ -44,6 +44,56 @@
 
     <div class="container-fluid mt-5 w-100">
 
+        <div class="row g-2 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: #f8f9fa; border-left: 4px solid #212529 !important;">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small fw-bold text-uppercase">Total</span>
+                    <i class="bi bi-cpu text-dark"></i>
+                </div>
+                <h4 class="fw-bold mb-0">{{ \App\Models\Machine::count() }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: #f8f9fa; border-left: 4px solid #198754 !important;">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-success small fw-bold text-uppercase">Operacionais</span>
+                    <i class="bi bi-check-circle text-success"></i>
+                </div>
+                <h4 class="fw-bold mb-0 text-success">{{ \App\Models\Machine::where('status', 'Operacional')->count() }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: #f8f9fa; border-left: 4px solid #dc3545 !important;">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-danger small fw-bold text-uppercase">Avariadas</span>
+                    <i class="bi bi-exclamation-triangle text-danger"></i>
+                </div>
+                <h4 class="fw-bold mb-0 text-danger">{{ \App\Models\Machine::where('status', 'Avariada')->count() }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: #f8f9fa; border-left: 4px solid #6c757d !important;">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-secondary small fw-bold text-uppercase">Desativadas</span>
+                    <i class="bi bi-dash-circle text-secondary"></i>
+                </div>
+                <h4 class="fw-bold mb-0 text-secondary">{{ \App\Models\Machine::where('status', 'Desativada')->count() }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h5>⚙️ Lista de Equipamentos e Máquinas</h5>
             

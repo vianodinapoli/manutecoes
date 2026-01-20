@@ -168,22 +168,30 @@
         <h5 class="mb-0">📦 Peças Utilizadas</h5>
     </div>
     <div class="card-body">
-        @if($maintenance->movements->count() > 0)
-            <table class="table table-sm">
-                <thead>
+        @if($maintenance->movements && $maintenance->movements->count() > 0)
+            <table class="table table-sm table-hover">
+                <thead class="table-light">
                     <tr>
+                        <th>Nome do Artigo / Peça</th>
                         <th>Referência</th>
-                        <th>Peça</th>
                         <th class="text-center">Quantidade</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($maintenance->movements as $movement)
-    <tr>
-        <td>{{ $movement->stockItem->nome }}</td>
-        <td>{{ $movement->quantity }}</td>
-    </tr>
-@endforeach
+                        <tr>
+                            {{-- Acedemos ao stockItem através do relacionamento --}}
+                            <td>
+                                @if($movement->stockItem)
+                                    {{ $movement->stockItem->nome_artigo ?? $movement->stockItem->marca_fabricante }}
+                                @else
+                                    <span class="text-danger italic">Artigo removido do stock</span>
+                                @endif
+                            </td>
+                            <td>{{ $movement->stockItem->referencia ?? 'N/A' }}</td>
+                            <td class="text-center fw-bold">{{ $movement->quantity }}</td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
         @else

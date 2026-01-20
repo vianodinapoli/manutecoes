@@ -25,6 +25,64 @@
 </head>
 <body>
     <x-app-layout>
+
+        <div class="row g-2 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: #f8f9fa; border-left: 4px solid #212529 !important;">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small fw-bold text-uppercase">Total Ativas</span>
+                    <i class="bi bi-tools text-dark"></i>
+                </div>
+                <h4 class="fw-bold mb-0">
+                    {{ \App\Models\Maintenance::whereIn('status', ['pendente', 'em_manutencao'])->count() }}
+                </h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: #f8f9fa; border-left: 4px solid #ffc107 !important;">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-warning small fw-bold text-uppercase">Pendentes</span>
+                    <i class="bi bi-clock-history text-warning"></i>
+                </div>
+                <h4 class="fw-bold mb-0 text-dark">
+                    {{ \App\Models\Maintenance::where('status', 'pendente')->count() }}
+                </h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: #f8f9fa; border-left: 4px solid #0dcaf0 !important;">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-info small fw-bold text-uppercase">Em Andamento</span>
+                    <i class="bi bi-gear-wide-connected text-info"></i>
+                </div>
+                <h4 class="fw-bold mb-0 text-info">
+                    {{ \App\Models\Maintenance::where('status', 'em_manutencao')->count() }}
+                </h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0" style="background: #f8f9fa; border-left: 4px solid #198754 !important;">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-success small fw-bold text-uppercase">Concluídas (Geral)</span>
+                    <i class="bi bi-check2-all text-success"></i>
+                </div>
+                <h4 class="fw-bold mb-0 text-success">
+                    {{ \App\Models\Maintenance::where('status', 'concluida')->count() }}
+                </h4>
+            </div>
+        </div>
+    </div>
+</div>
     <div class="container mt-5">
         
         <div class="d-flex justify-content-between align-items-center mb-4">
