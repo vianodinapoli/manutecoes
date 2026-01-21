@@ -52,8 +52,10 @@ class Maintenance extends Model
 
     public function machine()
     {
-        return $this->belongsTo(Machine::class);
+        return $this->belongsTo(Machine::class, 'machine_id');
     }
+
+    
 
     public function files()
     {

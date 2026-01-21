@@ -8,6 +8,7 @@ use App\Http\Controllers\MachineController;
 use App\Http\Controllers\MaintenanceController; 
 use App\Http\Controllers\StockItemController; 
 use App\Http\Controllers\MaterialPurchaseController;
+use App\Http\Controllers\DashboardController;
 
 
 // -------------------------------------------------------------
@@ -25,10 +26,13 @@ Route::get('/', function () {
 });
 
 // Dashboard (Protegido e Verificado)
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Substitui a rota antiga:
+// Route::get('/dashboard', function () { return view('dashboard'); })->...
 
+// Por esta nova:
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 // -------------------------------------------------------------
 // ROTAS PROTEGIDAS DA APLICAÇÃO (Necessita de Login)
