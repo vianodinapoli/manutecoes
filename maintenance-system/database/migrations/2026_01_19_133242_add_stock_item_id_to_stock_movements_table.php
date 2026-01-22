@@ -1,30 +1,32 @@
 <?php
 
-namespace App\Http\Controllers;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use App\Models\StockItem;
-use Illuminate\Http\Request;
 
-
-class StockItemController extends Controller
+return new class extends Migration
 {
-    public function index()
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
     {
-        // Pega todos os itens para que a pesquisa geral funcione em tudo
-        $stockItems = StockItem::all();
-        return view('stock_items.index', compact('stockItems'));
+        Schema::table('stock_movements', function (Blueprint $table) {
+            // Verifica se a coluna já não existe para evitar erros
+            if (!Schema::hasColumn('stock_movements', 'stock_item_id')) {
+                $table->foreignId('stock_item_id')->after('id')->constrained('stock_items')->onDelete('cascade');
+            }
+        });
     }
 
-    public function destroy(StockItem $stockItem)
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
     {
-        // O delete agora funcionará porque a Migration foi corrigida
-        $stockItem->delete();
-
-        return redirect()->route('stock-items.index')
-                         ->with('success', 'Artigo eliminado com sucesso.');
+        Schema::table('stock_movements', function (Blueprint $table) {
+            $table->dropForeign(['stock_item_id']);
+            $table->dropColumn('stock_item_id');
+        });
     }
-    
-    // ... outros métodos (store, edit, update)
-}
+};

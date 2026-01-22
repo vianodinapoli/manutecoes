@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Lamravel') }}</title>
+    <title>FEM OFICINAS</title>
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
@@ -42,7 +42,7 @@
             ========================================================== --}}
             <aside class="w-64 bg-gray-800 text-white flex-shrink-0 min-h-screen pt-4">
                 <div class="p-4 text-2xl font-semibold border-b border-gray-700 mb-4">
-                    {{ config('app.name', 'Laravel') }}
+                    <h5>FEM OFICINAS</h5>
                 </div>
                 <nav class="space-y-2 px-4">
                     

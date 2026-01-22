@@ -148,16 +148,24 @@
                                 </span>
                             </td>
                             <td>
-                                <form action="{{ route('compras.status', $compra->id) }}" method="POST">
-                                    @csrf @method('PATCH')
-                                    <select name="status" onchange="this.form.submit()" class="form-select form-select-sm badge-status {{ $badge_class }}" style="border:none; cursor:pointer;">
-                                        <option value="Pendente" {{ $compra->status == 'Pendente' ? 'selected' : '' }}>Pendente</option>
-                                        <option value="Em processo" {{ $compra->status == 'Em processo' ? 'selected' : '' }}>Em processo</option>
-                                        <option value="Aprovado" {{ $compra->status == 'Aprovado' ? 'selected' : '' }}>Aprovado</option>
-                                        <option value="Rejeitado" {{ $compra->status == 'Rejeitado' ? 'selected' : '' }}>Rejeitado</option>
-                                    </select>
-                                </form>
-                            </td>
+    @can('editar status')
+        {{-- Se for admin, mostra o formulário de alteração --}}
+        <form action="{{ route('compras.status', $compra->id) }}" method="POST">
+            @csrf @method('PATCH')
+            <select name="status" onchange="this.form.submit()" class="form-select form-select-sm badge-status {{ $badge_class }}" style="border:none; cursor:pointer;">
+                <option value="Pendente" {{ $compra->status == 'Pendente' ? 'selected' : '' }}>Pendente</option>
+                <option value="Em processo" {{ $compra->status == 'Em processo' ? 'selected' : '' }}>Em processo</option>
+                <option value="Aprovado" {{ $compra->status == 'Aprovado' ? 'selected' : '' }}>Aprovado</option>
+                <option value="Rejeitado" {{ $compra->status == 'Rejeitado' ? 'selected' : '' }}>Rejeitado</option>
+            </select>
+        </form>
+    @else
+        {{-- Se não for admin, mostra apenas o badge estático --}}
+        <span class="badge {{ $badge_class }} badge-status d-block text-center">
+            {{ $compra->status }}
+        </span>
+    @endcan
+</td>
                             <td>{{ $compra->created_at->format('d/m/Y') }}</td>
                             <td>
                                 @if($compra->metadata)
@@ -168,23 +176,25 @@
                                 @endif
                             </td>
                             <td>
-                                <div class="d-flex justify-content-center gap-2">
-                                    <a href="{{ route('compras.show', $compra->id) }}" class="btn btn-sm btn-outline-info btn-action" title="Visualizar">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    
-                                    <a href="{{ route('compras.edit', $compra->id) }}" class="btn btn-sm btn-outline-warning btn-action" title="Editar">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
+                             <div class="d-flex justify-content-center gap-2">
+    <a href="{{ route('compras.show', $compra->id) }}" class="btn btn-sm btn-outline-info btn-action" title="Visualizar">
+        <i class="bi bi-eye"></i>
+    </a>
+    
+    <a href="{{ route('compras.edit', $compra->id) }}" class="btn btn-sm btn-outline-warning btn-action" title="Editar">
+        <i class="bi bi-pencil"></i>
+    </a>
 
-                                    <form action="{{ route('compras.destroy', $compra->id) }}" method="POST" onsubmit="return confirm('ATENÇÃO: Deseja realmente eliminar esta solicitação?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-action" title="Eliminar">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
+    @can('gerir utilizadores') {{-- Ou a permissão que definires para delete --}}
+    <form action="{{ route('compras.destroy', $compra->id) }}" method="POST" onsubmit="return confirm('ATENÇÃO: Deseja realmente eliminar esta solicitação?')">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="btn btn-sm btn-outline-danger btn-action" title="Eliminar">
+            <i class="bi bi-trash"></i>
+        </button>
+    </form>
+    @endcan
+</div>
                             </td>
                         </tr>
                     @endforeach

@@ -100,7 +100,7 @@ public function edit(MaterialPurchase $compra)
 /**
  * Atualiza os dados da compra
  */
-public function update(Request $request, MaterialPurchase $compra)
+public function update(Request $request, MaterialPurchase $compra, $id)
 {
     $request->validate([
         'item_name' => 'required|string|max:255',
@@ -122,6 +122,17 @@ public function update(Request $request, MaterialPurchase $compra)
     $compra->update($data);
 
     return redirect()->route('compras.index')->with('success', 'Compra atualizada!');
+
+
+
+$this->authorize('editar status');
+    // Verifica se o utilizador logado tem a permissão específica
+    if (!auth()->user()->can('editar status')) {
+        return redirect()->back()->with('error', 'Apenas Super Admins podem alterar o status!');
+    }
+
+    // Lógica para mudar o status...
+
 }
 
 public function show(MaterialPurchase $compra)
@@ -129,4 +140,7 @@ public function show(MaterialPurchase $compra)
     // O Laravel já carrega o Model automaticamente pelo ID na rota
     return view('compras.show', compact('compra'));
 }
+
+
+
 }
