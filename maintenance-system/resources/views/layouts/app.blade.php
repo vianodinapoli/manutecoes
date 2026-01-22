@@ -78,6 +78,17 @@
                     <x-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.edit')" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700 text-white">
                         <i class="fas fa-user-circle me-2"></i> Perfil
                     </x-nav-link>
+
+                    {{-- ESPAÇO PARA O ADMIN --}}
+@hasrole('super-admin')
+    <div class="pt-4 pb-2">
+        <span class="text-xs font-semibold text-gray-500 uppercase px-4">Administração</span>
+    </div>
+
+    <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+        <i class="bi bi-people-fill me-2"></i> {{ __('Gestão de Utilizadores') }}
+    </x-nav-link>
+@endhasrole
                 </nav>
             </aside>
 

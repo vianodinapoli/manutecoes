@@ -9,6 +9,7 @@ use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\StockItemController; 
 use App\Http\Controllers\MaterialPurchaseController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Admin\UserController;
 
 
 // -------------------------------------------------------------
@@ -80,6 +81,14 @@ Route::get('exportar-maquinas/export', [App\Http\Controllers\MachineController::
 
 // Seu resource atual
 Route::resource('machines', MachineController::class);
+
+
+
+Route::middleware(['auth', 'role:super-admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::post('/users/{user}/toggle', [UserController::class, 'toggleAdmin'])->name('users.toggle');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+});
 
 });
 

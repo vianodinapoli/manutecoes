@@ -78,6 +78,13 @@
             <x-responsive-nav-link :href="route('machines.index')" :active="request()->routeIs('machines.*')">
                 <i class="fas fa-tools me-2"></i> {{ __('Máquinas') }}
             </x-responsive-nav-link>
+
+            {{-- Link de Gestão de Utilizadores - Visível apenas para Super Admins --}}
+@hasrole('super-admin')
+    <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+        <i class="bi bi-people-fill me-1"></i> {{ __('Gestão de Users') }}
+    </x-nav-link>
+@endhasrole
             {{-- ... outros links ... --}}
         </div>
 
