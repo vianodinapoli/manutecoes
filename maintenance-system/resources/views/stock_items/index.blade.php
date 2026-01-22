@@ -5,30 +5,50 @@
         :root { --primary-blue: #0d6efd; --danger-red: #dc3545; --light-bg: #f8f9fa; }
         .container-fluid { background-color: #f4f7f6; min-height: 100vh; padding: 2rem; }
         
+        /* Stats Cards */
         .stat-card { border: none; border-radius: 12px; transition: transform 0.2s; }
         .stat-card:hover { transform: translateY(-5px); }
 
+        /* Search Wrapper */
         .search-wrapper { max-width: 1000px; margin: 0 auto 2rem auto; }
         .input-group-search { border-radius: 50px; overflow: hidden; background: white; border: 1px solid #ddd; }
         .input-group-search input { border: none; padding: 12px 20px; box-shadow: none !important; }
 
-        .card-article { border: 1px solid #e0e0e0; border-radius: 10px; background: white; height: 100%; display: flex; flex-direction: column; }
+        /* --- ARTIGOS CARD COM EFEITO HOVER PEDIDO --- */
+        .card-article { 
+            border: 1px solid #e0e0e0; 
+            border-radius: 10px; 
+            background: white; 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column;
+            transition: all 0.3s ease-in-out; /* Suaviza a transição de cor e movimento */
+        }
+
+        /* Efeito de borda vermelha e elevação no hover */
+        .article-card-wrapper:hover .card-article {
+            transform: translateY(-8px);
+            border: 1px solid var(--danger-red) !important;
+            box-shadow: 0 10px 20px rgba(220, 53, 69, 0.1) !important;
+        }
+
         .article-header { background: var(--light-bg); padding: 12px; border-bottom: 1px solid #eee; border-radius: 10px 10px 0 0; }
         .article-title { font-size: 0.85rem; font-weight: 800; color: var(--primary-blue); text-transform: uppercase; margin: 0; }
         
         .item-row { padding: 10px; border-bottom: 1px solid #f1f1f1; }
         .item-row:last-child { border-bottom: none; }
+        
         .label-mini { font-size: 0.6rem; color: #999; font-weight: 700; text-transform: uppercase; margin: 0; }
         .value-mini { font-size: 0.8rem; font-weight: 600; color: #333; margin: 0; }
         
         .badge-low { background-color: #fff2f2; color: #dc3545; border: 1px solid #ffc1c1; }
         .badge-ok { background-color: #f2fff5; color: #198754; border: 1px solid #c1ffcf; }
 
-        /* Estilo para os botões de exportação */
         .btn-export-group .btn { border-radius: 8px; font-weight: 600; font-size: 0.85rem; }
     </style>
 
     <div class="container-fluid">
+        {{-- Header e Estatísticas --}}
         <div class="row mb-4">
             <div class="col-md-6">
                 <h3 class="fw-bold"><i class="bi bi-box-seam me-2"></i>Mapa de Stock</h3>
@@ -48,28 +68,35 @@
             </div>
         </div>
 
+        {{-- Barra de Pesquisa e Botões --}}
         <div class="search-wrapper">
-            <div class="row g-3 align-items-center">
-                <div class="col-lg-6">
-                    <div class="input-group input-group-search shadow-sm">
-                        <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" id="globalSearch" class="form-control" placeholder="Pesquisar por nome, marca, referência...">
-                    </div>
-                </div>
-                <div class="col-lg-6 d-flex justify-content-lg-end gap-2 btn-export-group">
-                    <a href="{{ route('stock-items.export', ['type' => 'excel']) }}" class="btn btn-outline-success shadow-sm">
-                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Excel
-                    </a>
-                    <a href="{{ route('stock-items.export', ['type' => 'pdf']) }}" class="btn btn-outline-danger shadow-sm">
-                        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-                    </a>
-                    <a href="{{ route('stock-items.create') }}" class="btn btn-primary shadow-sm px-4">
-                        <i class="bi bi-plus-lg me-1"></i> Novo Artigo
-                    </a>
-                </div>
+    <div class="row g-3 align-items-center justify-content-between">
+        
+        <div class="col-12 col-md-auto" style="min-width: 400px;">
+            <div class="input-group input-group-search shadow-sm">
+                <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" id="globalSearch" class="form-control" placeholder="Pesquisar por nome, marca, referência...">
             </div>
         </div>
 
+        <div class="col-12 col-md-auto btn-export-group">
+            <div class="d-flex gap-2">
+                <a href="{{ route('stock-items.export', ['type' => 'excel']) }}" class="btn btn-outline-success shadow-sm">
+                    <i class="bi bi-file-earmark-spreadsheet me-1"></i> Excel
+                </a>
+                <a href="{{ route('stock-items.export', ['type' => 'pdf']) }}" class="btn btn-outline-danger shadow-sm">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+                </a>
+                <a href="{{ route('stock-items.create') }}" class="btn btn-primary shadow-sm px-4">
+                    <i class="bi bi-plus-lg me-1"></i> Novo Artigo
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+        {{-- Grid de Artigos --}}
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3" id="stockGrid">
             @php
                 $grouped = $stockItems->groupBy(fn($item) => $item->nome ?: 'Sem Nome');
@@ -78,6 +105,7 @@
             @foreach($grouped as $nomeArtigo => $itens)
                 @php
                     $totalQty = $itens->sum('quantidade');
+                    // Preparar dados para pesquisa rápida
                     $searchData = strtolower($nomeArtigo . ' ' . $itens->pluck('referencia')->implode(' ') . ' ' . $itens->pluck('marca_fabricante')->implode(' '));
                 @endphp
                 
@@ -109,13 +137,18 @@
                                             </span>
                                         </div>
                                     </div>
+                                    
+                                    {{-- Ações protegidas --}}
                                     <div class="d-flex justify-content-end gap-3 mt-2">
                                         <a href="{{ route('stock-items.edit', $item->id) }}" class="text-warning" title="Editar"><i class="bi bi-pencil-square"></i></a>
                                         <a href="{{ route('stock-items.show', $item->id) }}" class="text-info" title="Ver"><i class="bi bi-eye"></i></a>
-                                        <form action="{{ route('stock-items.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Apagar variação?')">
+                                        
+                                        @can('gerir utilizadores') {{-- Apenas Admins podem apagar --}}
+                                        <form action="{{ route('stock-items.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Apagar esta variação?')">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="border-0 bg-transparent text-danger p-0"><i class="bi bi-trash"></i></button>
                                         </form>
+                                        @endcan
                                     </div>
                                 </div>
                             @endforeach
@@ -126,6 +159,7 @@
         </div>
     </div>
 
+    {{-- Script de Pesquisa --}}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
         $(document).ready(function() {
