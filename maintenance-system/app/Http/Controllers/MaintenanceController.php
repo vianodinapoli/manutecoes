@@ -60,75 +60,58 @@ class MaintenanceController extends Controller
      * 💾 Gravar Nova Manutenção (Com Baixa de Stock e Peças)
      */
     public function store(Request $request)
-    {
+{
+    // Removi as duas linhas de Maintenance::create que estavam aqui em cima!
 
- 
-    Maintenance::create($request->all()); // Cria sem guardar em variável
+    return DB::transaction(function () use ($request) {
+        // 1. Criar a Manutenção (Apenas uma vez aqui dentro)
+        $maintenance = Maintenance::create($request->except(['items', 'maintenance_files']));
 
-    \App\Models\Activity::create([
-        'type' => 'maintenance',
-        'description' => "Uma nova manutenção foi registada no sistema",
-        'user_name' => auth()->user()->name,
-        'status' => 'pendente'
-    ]);
+        // 2. Registra a Atividade (Apenas uma vez também)
+        $maquina = \App\Models\Machine::find($request->machine_id);
+        \App\Models\Activity::create([
+            'type' => 'maintenance',
+            'description' => "Manutenção registada para o {$maquina->nome}" . ($request->peca_nome ? " (Peça: {$request->peca_nome})" : ""),
+            'user_name' => auth()->user()->name,
+            'status' => 'pendente'
+        ]);
 
-    // 1. Salva a manutenção
-    $manutencao = Maintenance::create($request->all());
-    
-    // 2. Busca o nome da máquina/camião associada
-    $maquina = \App\Models\Machine::find($request->machine_id);
+        // 3. Processar itens de stock
+        if ($request->has('items') && is_array($request->items)) {
+            foreach ($request->items as $itemData) {
+                $itemId = $itemData['id'] ?? $itemData['stock_item_id'] ?? null;
+                $quantity = $itemData['quantity'] ?? 0;
 
-    // 3. Registra a atividade detalhada
-    \App\Models\Activity::create([
-        'type' => 'maintenance',
-        'description' => "Troca de {$request->peca_nome} para o {$maquina->nome}", 
-        'user_name' => auth()->user()->name,
-        'status' => 'pendente'
-    ]);
+                if ($itemId && $quantity > 0) {
+                    StockMovement::create([
+                        'maintenance_id' => $maintenance->id,
+                        'machine_id'     => $maintenance->machine_id,
+                        'stock_item_id'  => $itemId, 
+                        'quantity'       => $quantity,
+                    ]);
 
-
-        return DB::transaction(function () use ($request) {
-            // 1. Criar a Manutenção (exceto itens para não dar erro na tabela de manutenção)
-            $maintenance = Maintenance::create($request->except(['items', 'maintenance_files']));
-
-            // 2. Processar itens de stock (Aqui é onde as peças são gravadas e o stock desce)
-            if ($request->has('items') && is_array($request->items)) {
-                foreach ($request->items as $itemData) {
-                    $itemId = $itemData['id'] ?? $itemData['stock_item_id'] ?? null;
-                    $quantity = $itemData['quantity'] ?? 0;
-
-                    if ($itemId && $quantity > 0) {
-                        // Regista na tabela de movimentos (para aparecer nos detalhes)
-                        StockMovement::create([
-                            'maintenance_id' => $maintenance->id,
-                            'machine_id'     => $maintenance->machine_id,
-                            'stock_item_id'  => $itemId, 
-                            'quantity'       => $quantity,
-                        ]);
-
-                        // Baixa real na tabela de stock
-                        $stockItem = StockItem::find($itemId);
-                        if ($stockItem) {
-                            $stockItem->decrement('quantidade', $quantity);
-                        }
+                    $stockItem = StockItem::find($itemId);
+                    if ($stockItem) {
+                        $stockItem->decrement('quantidade', $quantity);
                     }
                 }
             }
+        }
 
-            // 3. Processar Ficheiros se existirem no store
-            if ($request->hasFile('maintenance_files')) {
-                $this->handleFileUploads($request, $maintenance);
-            }
+        // 4. Processar Ficheiros
+        if ($request->hasFile('maintenance_files')) {
+            $this->handleFileUploads($request, $maintenance);
+        }
 
-            $this->updateMachineStatus($maintenance);
+        $this->updateMachineStatus($maintenance);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Manutenção e stock processados com sucesso!',
-                'redirect_url' => route('maintenances.index')
-            ]);
-        });
-    }
+        return response()->json([
+            'success' => true,
+            'message' => 'Manutenção e stock processados com sucesso!',
+            'redirect_url' => route('maintenances.index')
+        ]);
+    });
+}
 
     public function update(Request $request, Maintenance $maintenance)
     {

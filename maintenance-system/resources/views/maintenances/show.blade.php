@@ -105,10 +105,10 @@
                             // Usa a variável normalizada do Controller (minúsculas)
                             $safeStatus = str_replace('_', ' ', $maintenance->status);
                             $badge_class = match($maintenance->status) {
-                                'pendente' => 'bg-warning text-dark',
-                                'em_manutencao' => 'bg-info',
-                                'concluida' => 'bg-success',
-                                'cancelada' => 'bg-secondary',
+                                'Pendente' => 'bg-warning text-dark',
+                                'Em_manutencao' => 'bg-info',
+                                'Concluida' => 'bg-success',
+                                'Cancelada' => 'bg-secondary',
                                 default => 'bg-secondary',
                             };
                         @endphp

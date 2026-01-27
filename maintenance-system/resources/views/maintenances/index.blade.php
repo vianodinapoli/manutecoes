@@ -35,7 +35,7 @@
                     <i class="bi bi-tools text-dark"></i>
                 </div>
                 <h4 class="fw-bold mb-0">
-                    {{ \App\Models\Maintenance::whereIn('status', ['pendente', 'em_manutencao'])->count() }}
+                    {{ \App\Models\Maintenance::whereIn('status', ['Pendente', 'Em_manutencao'])->count() }}
                 </h4>
             </div>
         </div>
@@ -136,7 +136,7 @@
                             $status_lower = strtolower($maintenance->status);
                             
                             $badge_class = match($status_lower) {
-                                'pendente' => 'bg-warning text-dark',
+                                'pendente' => 'bg-warning',
                                 'em_manutencao' => 'bg-info',
                                 default => 'bg-secondary',
                             };
