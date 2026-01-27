@@ -13,6 +13,18 @@ class DashboardController extends Controller
 {
     public function index()
 {
+
+ 
+    // Dados para os Cards
+    $totalMachines = \App\Models\Machine::count();
+    $activeMaintenances = \App\Models\Maintenance::where('status', 'em_aberto')->count();
+    $lowStock = \App\Models\StockItem::where('quantity', '<=', 5)->count();
+
+    // Dados para a Tabela de Atividades
+    $activities = \App\Models\Activity::latest()->take(8)->get();
+
+
+
     // KPIs Existentes
     $totalMaquinas = \App\Models\Machine::count();
     $maquinasParadas = \App\Models\Machine::where('estado', 'Avariada')->count();
@@ -59,7 +71,12 @@ $dadosStock = StockItem::select('nome', DB::raw('sum(quantidade) as total'))
         'meses', 
         'contagemManutencoes',
         'dadosStock',
-        'itensCriticos'
+        'itensCriticos',
+         'totalMachines', 'activeMaintenances', 'lowStock', 'activities'
+
+
+
+        
     ));
 
     

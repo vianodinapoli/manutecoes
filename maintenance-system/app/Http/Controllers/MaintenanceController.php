@@ -61,6 +61,32 @@ class MaintenanceController extends Controller
      */
     public function store(Request $request)
     {
+
+ 
+    Maintenance::create($request->all()); // Cria sem guardar em variável
+
+    \App\Models\Activity::create([
+        'type' => 'maintenance',
+        'description' => "Uma nova manutenção foi registada no sistema",
+        'user_name' => auth()->user()->name,
+        'status' => 'pendente'
+    ]);
+
+    // 1. Salva a manutenção
+    $manutencao = Maintenance::create($request->all());
+    
+    // 2. Busca o nome da máquina/camião associada
+    $maquina = \App\Models\Machine::find($request->machine_id);
+
+    // 3. Registra a atividade detalhada
+    \App\Models\Activity::create([
+        'type' => 'maintenance',
+        'description' => "Troca de {$request->peca_nome} para o {$maquina->nome}", 
+        'user_name' => auth()->user()->name,
+        'status' => 'pendente'
+    ]);
+
+
         return DB::transaction(function () use ($request) {
             // 1. Criar a Manutenção (exceto itens para não dar erro na tabela de manutenção)
             $maintenance = Maintenance::create($request->except(['items', 'maintenance_files']));
