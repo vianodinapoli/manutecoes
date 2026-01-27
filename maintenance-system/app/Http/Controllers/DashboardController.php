@@ -39,15 +39,22 @@ class DashboardController extends Controller
         ->get();
 
     // 2. Gráfico de Manutenções (Últimos 6 meses)
-    $meses = [];
-    $contagemManutencoes = [];
-    for ($i = 12; $i >= 0; $i--) {
-        $data = now()->subMonths($i);
-        $meses[] = $data->translatedFormat('M');
-        $contagemManutencoes[] = \App\Models\Maintenance::whereMonth('created_at', $data->month)
-            ->whereYear('created_at', $data->year)
-            ->count();
-    }
+   $meses = [];
+$contagemManutencoes = [];
+
+// Loop para os últimos 12 meses
+for ($i = 12; $i >= 0; $i--) {
+    $dataReferencia = now()->subMonths($i);
+    
+    // 1. Adiciona o nome do mês traduzido para o Eixo X
+    $meses[] = $dataReferencia->translatedFormat('M');
+
+    // 2. Conta os registos baseados na 'data_entrada'
+    // Importante: Usamos 'data_entrada' em vez de 'created_at'
+    $contagemManutencoes[] = \App\Models\Maintenance::whereMonth('data_entrada', $dataReferencia->month)
+        ->whereYear('data_entrada', $dataReferencia->year)
+        ->count();
+}
 
     // 3. Gráfico de Rosca: Stock por Artigo/Peça (Real)
 $dadosStock = StockItem::select('nome', DB::raw('sum(quantidade) as total'))
