@@ -71,7 +71,7 @@ class MaintenanceController extends Controller
         $maquina = \App\Models\Machine::find($request->machine_id);
         \App\Models\Activity::create([
             'type' => 'maintenance',
-            'description' => "Manutenção registada para o {$maquina->nome}" . ($request->peca_nome ? " (Peça: {$request->peca_nome})" : ""),
+            'description' => "Manutenção registada para o {$maquina->numero_interno}" . ($request->nome ? " (Peça: {$request->peca_nome})" : ""),
             'user_name' => auth()->user()->name,
             'status' => 'pendente'
         ]);

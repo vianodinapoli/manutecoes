@@ -153,7 +153,7 @@
             $('#tabelaAtividades').DataTable({
                 language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json" },
                 pageLength: 5,
-                order: [[3, "asc"]],
+                order: [[3, "desc"]],
                 dom: '<"d-flex justify-content-between align-items-center mb-3"f>rt<"d-flex justify-content-between align-items-center mt-3"ip>'
             });
 
