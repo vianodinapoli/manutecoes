@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 
 class MaterialPurchaseController extends Controller
 {
+    // Status que impedem a edição por usuários comuns
+    protected $lockedStatuses = ['Finalizado', 'Rejeitado'];
+
     public function index()
     {
         $compras = MaterialPurchase::with('user')->orderBy('created_at', 'desc')->get();
@@ -43,9 +46,9 @@ class MaterialPurchaseController extends Controller
     {
         $compra = MaterialPurchase::findOrFail($id);
 
-        // BLOQUEIO: Se estiver Finalizado e não for Admin, não entra na tela de edição
-        if ($compra->status === 'Finalizado' && !auth()->user()->hasRole('super-admin')) {
-            return redirect()->route('compras.index')->with('error', 'Este pedido está finalizado e não pode ser editado.');
+        // BLOQUEIO: Se o status for Finalizado ou Rejeitado e não for Admin
+        if (in_array($compra->status, $this->lockedStatuses) && !auth()->user()->hasRole('super-admin')) {
+            return redirect()->route('compras.index')->with('error', 'Este pedido está ' . strtolower($compra->status) . ' e não pode ser editado.');
         }
 
         return view('compras.edit', compact('compra'));
@@ -55,9 +58,9 @@ class MaterialPurchaseController extends Controller
     {
         $compra = MaterialPurchase::findOrFail($id);
 
-        // BLOQUEIO: Impede salvar alterações se estiver finalizado (segurança de back-end)
-        if ($compra->status === 'Finalizado' && !auth()->user()->hasRole('super-admin')) {
-            return redirect()->route('compras.index')->with('error', 'Ação não permitida para pedidos finalizados.');
+        // BLOQUEIO: Segurança de back-end
+        if (in_array($compra->status, $this->lockedStatuses) && !auth()->user()->hasRole('super-admin')) {
+            return redirect()->route('compras.index')->with('error', 'Ação não permitida para pedidos encerrados.');
         }
 
         $data = $request->all();
@@ -79,15 +82,17 @@ class MaterialPurchaseController extends Controller
         $compra = MaterialPurchase::findOrFail($id);
         $user = auth()->user();
 
-        // BLOQUEIO: Se já estiver Finalizado, apenas Admin pode reabrir ou mudar
-        if ($compra->status === 'Finalizado' && !$user->hasRole('super-admin')) {
-            return back()->with('error', 'Apenas administradores podem alterar o status de um pedido finalizado.');
+        // BLOQUEIO: Impede usuário comum de alterar status de pedidos já finalizados ou rejeitados
+        if (in_array($compra->status, $this->lockedStatuses) && !$user->hasRole('super-admin')) {
+            return back()->with('error', 'Apenas administradores podem reabrir pedidos finalizados ou rejeitados.');
         }
 
         if ($user->hasRole('super-admin')) {
             $allowedStatus = ['Pendente', 'Em processo', 'Aprovado', 'Rejeitado', 'Finalizado'];
         } else {
-            $allowedStatus = ['Em processo', 'Finalizado'];
+            // Usuário comum só pode mover para estes status se o pedido não estiver bloqueado
+            $allowedStatus = ['Em processo', 'Finalizado', 'Rejeitado'];
+            
             if (!in_array($request->status, $allowedStatus)) {
                 return back()->with('error', 'Acesso negado para este status.');
             }
@@ -110,6 +115,12 @@ class MaterialPurchaseController extends Controller
     public function destroy($id)
     {
         $compra = MaterialPurchase::findOrFail($id);
+        
+        // Opcional: Impedir que usuários apaguem se estiver finalizado (mesmo que o botão suma na view)
+        if (in_array($compra->status, $this->lockedStatuses) && !auth()->user()->hasRole('super-admin')) {
+            return back()->with('error', 'Não é possível eliminar um registro finalizado.');
+        }
+
         $compra->delete();
         return redirect()->route('compras.index')->with('success', 'Eliminado com sucesso!');
     }

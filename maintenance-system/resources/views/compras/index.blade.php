@@ -147,24 +147,36 @@
                             <td><span class="small text-muted">{{ $compra->created_at->format('d/m/Y') }}</span></td>
 
                             {{-- Ações --}}
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-2">
-                                    <a href="{{ route('compras.show', $compra->id) }}" class="btn btn-action text-info" title="Visualizar"><i class="bi bi-eye"></i></a>
+                          {{-- Coluna Ações --}}
+<td class="text-center">
+    <div class="d-flex justify-content-center gap-2">
+        {{-- Visualizar --}}
+        <a href="{{ route('compras.show', $compra->id) }}" class="btn btn-action text-info" title="Visualizar">
+            <i class="bi bi-eye"></i>
+        </a>
 
-                                    @if($compra->status !== 'Finalizado' || auth()->user()->hasRole('super-admin'))
-                                        <a href="{{ route('compras.edit', $compra->id) }}" class="btn btn-action text-warning" title="Editar"><i class="bi bi-pencil"></i></a>
-                                    @endif
+        {{-- Editar: Bloqueia se Finalizado ou Rejeitado (exceto Admin) --}}
+        @php
+            $podeEditar = !in_array($compra->status, ['Finalizado', 'Rejeitado']) || auth()->user()->hasRole('super-admin');
+        @endphp
 
-                                    @if(auth()->user()->hasRole('super-admin'))
-                                        <form action="{{ route('compras.destroy', $compra->id) }}" method="POST" class="m-0">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="btn btn-action text-danger" title="Eliminar" onclick="return confirm('Apagar permanentemente?')">
-                                                <i class="bi bi-trash3"></i>
-                                            </button>
-                                        </form>
-                                    @endif
-                                </div>
-                            </td>
+        @if($podeEditar)
+            <a href="{{ route('compras.edit', $compra->id) }}" class="btn btn-action text-warning" title="Editar">
+                <i class="bi bi-pencil"></i>
+            </a>
+        @endif
+
+        {{-- Eliminar: Apenas Admin --}}
+        @if(auth()->user()->hasRole('super-admin'))
+            <form action="{{ route('compras.destroy', $compra->id) }}" method="POST" class="m-0">
+                @csrf @method('DELETE')
+                <button type="submit" class="btn btn-action text-danger" title="Eliminar" onclick="return confirm('Apagar permanentemente?')">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </form>
+        @endif
+    </div>
+</td>
                         </tr>
                     @endforeach
                 </tbody>
