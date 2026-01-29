@@ -136,8 +136,8 @@
                             $status_lower = strtolower($maintenance->status);
                             
                             $badge_class = match($status_lower) {
-                                'pendente' => 'bg-warning',
-                                'em_manutencao' => 'bg-info',
+                                'Pendente' => 'bg-warning',
+                                'Em Manutenção' => 'bg-info',
                                 default => 'bg-secondary',
                             };
                             

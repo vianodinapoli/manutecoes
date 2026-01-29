@@ -122,9 +122,9 @@
                                     <td>
                                         @php
                                             $badge_class = match($maintenance->status) {
-                                                'Pendente', 'pendente' => 'bg-warning text-dark',
-                                                'Em Progresso', 'em progresso' => 'bg-info',
-                                                'Concluída', 'concluída' => 'bg-success',
+                                                'Pendente', 'Pendente' => 'bg-warning text-dark',
+                                                'Em Progresso', 'Em Progresso' => 'bg-info',
+                                                'Concluída', 'Concluída' => 'bg-success',
                                                 default => 'bg-secondary',
                                             };
                                         @endphp

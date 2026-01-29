@@ -42,7 +42,7 @@ class MaintenanceController extends Controller
     public function createFromMachine(Machine $machine)
     {
         $maintenance = new Maintenance([
-            'status' => 'em_manutencao',
+            'status' => 'Em Manutenção',
             'scheduled_date' => now(),
             'machine_id' => $machine->id,
         ]);
