@@ -54,28 +54,38 @@ class MaterialPurchaseController extends Controller
         return view('compras.edit', compact('compra'));
     }
 
-    public function update(Request $request, $id)
-    {
-        $compra = MaterialPurchase::findOrFail($id);
+   public function update(Request $request, $id)
+{
+    $compra = MaterialPurchase::findOrFail($id);
 
-        // BLOQUEIO: Segurança de back-end
-        if (in_array($compra->status, $this->lockedStatuses) && !auth()->user()->hasRole('super-admin')) {
-            return redirect()->route('compras.index')->with('error', 'Ação não permitida para pedidos encerrados.');
-        }
-
-        $data = $request->all();
-        
-        if ($request->has('metadata')) {
-            $data['metadata'] = array_merge($compra->metadata ?? [], $request->metadata);
-        }
-
-        if ($request->hasFile('quotation_file')) {
-            $data['quotation_file'] = $request->file('quotation_file')->store('quotations', 'public');
-        }
-
-        $compra->update($data);
-        return redirect()->route('compras.index')->with('success', 'Solicitação atualizada!');
+    // Bloqueio de segurança
+    if (in_array($compra->status, $this->lockedStatuses) && !auth()->user()->hasRole('super-admin')) {
+        return redirect()->route('compras.index')->with('error', 'Não é permitido editar pedidos encerrados.');
     }
+
+    // Pega os dados básicos
+    $data = $request->only(['item_name', 'quantity', 'price']);
+    
+    // Processa o Metadata (Placa, Urgência, Descrição)
+    if ($request->has('metadata')) {
+        $data['metadata'] = array_merge($compra->metadata ?? [], $request->metadata);
+    }
+
+    // Processa o Ficheiro (Agora com o nome correto: quotation_file)
+    if ($request->hasFile('quotation_file')) {
+        // Remove o antigo se existir
+        if ($compra->quotation_file) {
+            \Storage::disk('public')->delete($compra->quotation_file);
+        }
+        
+        // Guarda o novo
+        $data['quotation_file'] = $request->file('quotation_file')->store('quotations', 'public');
+    }
+
+    $compra->update($data);
+
+    return redirect()->route('compras.index')->with('success', 'Solicitação atualizada com sucesso!');
+}
 
     public function updateStatus(Request $request, $id)
     {
