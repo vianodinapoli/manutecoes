@@ -15,7 +15,7 @@ return new class extends Migration
         $table->decimal('price', 10, 2)->nullable();
         
         // Status solicitado
-        $table->enum('status', ['Pendente', 'Em processo', 'Aprovado', 'Rejeitado'])
+        $table->enum('status', ['Pendente', 'Em processo', 'Aprovado', 'Rejeitado', 'Finalizado'])
               ->default('Pendente');
         
         // Arquivo e Metadados

@@ -1,59 +1,89 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ⚙️ Sistema Integrado de Gestão Industrial & Manutenção (SIGI)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Este projeto é uma plataforma completa para o controlo de ativos industriais, integrando o ciclo de vida das máquinas, operações de manutenção, gestão de stock e fluxos de aprovação hierárquicos.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🚀 Visão Geral do Sistema
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+O sistema foi desenhado para centralizar quatro áreas críticas da operação industrial:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 1. Registo de Máquinas (Ativos)
+* **Catálogo Técnico:** Registo de marca, modelo, número de série e localização.
+* **Monitorização de Estado:** Indicadores visuais de máquinas em operação, paradas ou em manutenção crítica.
 
-## Learning Laravel
+### 2. Gestão de Manutenção
+* **Submissão de Avarias:** Interface para operadores reportarem falhas em tempo real.
+* **Ordens de Trabalho:** Fluxo completo desde a abertura do chamado até à validação técnica final.
+* **Histórico:** Registo permanente de intervenções por máquina para análise de fiabilidade.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 3. Gestão de Stock e Peças
+* **Inventário:** Controle de quantidades, categorias e armazéns.
+* **Consumo Vinculado:** Registo automático de que peça foi utilizada em qual manutenção.
+* **Alertas:** Notificações de rutura de stock para peças críticas.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 4. Requisições e Permissões (RBAC)
+* **Níveis de Acesso:** Implementação rigorosa via Spatie (Super Admin, Técnico, Operador).
+* **Fluxo de Aprovação:** Requisições de material que exigem validação de superiores antes da saída de stock.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 🛠️ Guia de Instalação (Máquina Local)
 
-### Premium Partners
+Siga rigorosamente a ordem abaixo para configurar o ambiente de desenvolvimento:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### 1. Preparação de Ficheiros
+```bash
+# Instalar dependências do Backend (PHP)
+composer install
 
-## Contributing
+# Criar ficheiro de configuração local
+cp .env.example .env
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# Gerar chave única de segurança
+php artisan key:generate
 
-## Code of Conduct
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Executar migrations e o seeder de permissões específico
+php artisan db:seed --class=RoleAndPermissionSeeder
 
-## Security Vulnerabilities
+# Instalar dependências do Node.js
+npm install
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Compilar assets (CSS/JS) para o navegador
+npm run build
 
-## License
+# Iniciar o servidor local
+php artisan serve
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+
+# Em caso de usar MYSQL, ajustar o .env conforme abaixo:
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=nome_do_teu_banco
+DB_USERNAME=root
+DB_PASSWORD=
+
+
+🔐 Credenciais de Acesso Rápido
+Após a instalação, utilize os seguintes dados para aceder ao sistema:
+
+URL: http://127.0.0.1:8000
+
+Email: admin@sistema.com
+
+Password: password
+
+Nota: Por questões de segurança, altere a palavra-passe após o primeiro acesso no painel de perfil.
+
+🏗️ Pilha Tecnológica
+Framework: Laravel 10+
+
+Permissões: Spatie Laravel Permission
+
+Frontend: Tailwind CSS & Blade Components
+
+Base de Dados: MySQL / PostgreSQL / SQLite

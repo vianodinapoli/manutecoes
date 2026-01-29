@@ -4,143 +4,103 @@ namespace App\Http\Controllers;
 
 use App\Models\MaterialPurchase;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class MaterialPurchaseController extends Controller
 {
-    /**
-     * Exibe a lista de compras (Página Principal)
-     */
     public function index()
     {
-        // Ordena pelos mais recentes
-        $compras = MaterialPurchase::latest()->paginate(10);
+        $compras = MaterialPurchase::with('user')->orderBy('created_at', 'desc')->get();
         return view('compras.index', compact('compras'));
     }
 
-    /**
-     * Exibe o formulário de criação
-     */
     public function create()
     {
         return view('compras.create');
     }
 
-    /**
-     * Salva a nova compra no banco de dados
-     */
     public function store(Request $request)
 {
+    // 1. Validação aponta para o campo dentro do array metadata
     $request->validate([
-        'item_name'    => 'required|string|max:255',
-        'quantity'     => 'required|integer|min:1',
-        'price'        => 'nullable|numeric',
-        'quotation'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-        'metadata'     => 'nullable|array',
+        'item_name' => 'required',
+        'metadata.urgencia' => 'required', 
+        'quotation_file' => 'nullable|file|mimes:pdf,jpg,png|max:2048'
     ]);
 
-    $data = $request->all();
+    $data = $request->only(['item_name', 'quantity', 'price']);
+    $data['user_id'] = auth()->id();
+    $data['status'] = 'Pendente';
+    
+    // 2. Aqui capturamos o array metadata completo (urgencia, placa, etc)
+    $data['metadata'] = $request->metadata;
 
-    // --- AQUI ESTÁ A MUDANÇA ---
-    // Adiciona o ID do utilizador autenticado aos dados que serão salvos
-    $data['user_id'] = auth()->id(); 
-
-    // Tratamento do Upload do Ficheiro
-    if ($request->hasFile('quotation')) {
-        $path = $request->file('quotation')->store('cotacoes', 'public');
-        $data['quotation_file'] = $path;
+    if ($request->hasFile('quotation_file')) {
+        $data['quotation_file'] = $request->file('quotation_file')->store('quotations', 'public');
     }
 
-    MaterialPurchase::create($data);
+    \App\Models\MaterialPurchase::create($data);
 
-    return redirect()->route('compras.index')
-        ->with('success', 'Pedido de compra registado com sucesso!');
+    return redirect()->route('compras.index')->with('success', 'Pedido criado!');
 }
 
-    /**
-     * Atualiza apenas o status da compra (Ação rápida na tabela)
-     */
-    public function updateStatus(Request $request, MaterialPurchase $compra)
+    public function update(Request $request, $id)
     {
+        $compra = MaterialPurchase::findOrFail($id);
+        
+        $data = $request->all();
+        
+        // Se houver alteração no array de metadata, faz o merge para não apagar dados antigos
+        if ($request->has('metadata')) {
+            $data['metadata'] = array_merge($compra->metadata ?? [], $request->metadata);
+        }
+
+        if ($request->hasFile('quotation_file')) {
+            $data['quotation_file'] = $request->file('quotation_file')->store('quotations', 'public');
+        }
+
+        $compra->update($data);
+        
+        return redirect()->route('compras.index')->with('success', 'Solicitação atualizada!');
+    }
+
+    public function show($id)
+    {
+        $compra = MaterialPurchase::with('user')->findOrFail($id);
+        return view('compras.show', compact('compra'));
+    }
+
+    public function edit($id)
+    {
+        $compra = MaterialPurchase::findOrFail($id);
+        return view('compras.edit', compact('compra'));
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $compra = MaterialPurchase::findOrFail($id);
+        $user = auth()->user();
+
+        if ($user->hasRole('super-admin')) {
+            $allowedStatus = ['Pendente', 'Em processo', 'Aprovado', 'Rejeitado', 'Finalizado'];
+        } else {
+            $allowedStatus = ['Em processo', 'Finalizado'];
+            if (!in_array($request->status, $allowedStatus)) {
+                return back()->with('error', 'Acesso negado para este status.');
+            }
+        }
+
         $request->validate([
-            'status' => 'required|in:Pendente,Em processo,Aprovado,Rejeitado'
+            'status' => 'required|in:' . implode(',', $allowedStatus),
         ]);
 
-        $compra->update([
-            'status' => $request->status
-        ]);
-
-        return redirect()->back()->with('success', "Status da compra #{$compra->id} atualizado!");
+        $compra->update(['status' => $request->status]);
+        return back()->with('success', "Status atualizado!");
     }
 
-    /**
-     * Elimina um registo e o ficheiro associado
-     */
-    public function destroy(MaterialPurchase $compra)
+    public function destroy($id)
     {
-        // Remove o ficheiro do storage antes de apagar o registo
-        if ($compra->quotation_file) {
-            Storage::disk('public')->delete($compra->quotation_file);
-        }
-
+        $compra = MaterialPurchase::findOrFail($id);
         $compra->delete();
-
-        return redirect()->route('compras.index')
-            ->with('success', 'Registo eliminado com sucesso.');
+        return redirect()->route('compras.index')->with('success', 'Eliminado com sucesso!');
     }
-
-    /**
- * Exibe o formulário de edição
- */
-public function edit(MaterialPurchase $compra)
-{
-    return view('compras.edit', compact('compra'));
-}
-
-/**
- * Atualiza os dados da compra
- */
-public function update(Request $request, MaterialPurchase $compra, $id)
-{
-    $request->validate([
-        'item_name' => 'required|string|max:255',
-        'quantity'  => 'required|integer|min:1',
-        'price'     => 'nullable|numeric',
-        'metadata'  => 'nullable|array'
-    ]);
-
-    $data = $request->all();
-
-    if ($request->hasFile('quotation')) {
-        // Apaga o ficheiro antigo se existir um novo
-        if ($compra->quotation_file) {
-            Storage::disk('public')->delete($compra->quotation_file);
-        }
-        $data['quotation_file'] = $request->file('quotation')->store('cotacoes', 'public');
-    }
-
-    $compra->update($data);
-
-    return redirect()->route('compras.index')->with('success', 'Compra atualizada!');
-
-
-
-$this->authorize('editar status');
-    // Verifica se o utilizador logado tem a permissão específica
-    if (!auth()->user()->can('editar status')) {
-        return redirect()->back()->with('error', 'Apenas Super Admins podem alterar o status!');
-    }
-
-    // Lógica para mudar o status...
-
-}
-
-public function show(MaterialPurchase $compra)
-{
-    // O Laravel já carrega o Model automaticamente pelo ID na rota
-    return view('compras.show', compact('compra'));
-}
-
-
-
 }

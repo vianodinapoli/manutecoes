@@ -71,7 +71,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="quotation" class="form-label">Anexar Cotação / Foto</label>
-                            <input type="file" name="quotation" id="quotation" class="form-control">
+                            <input type="file" name="quotation_file" id="quotation" class="form-control">
                             <small class="text-muted italic">PDF, JPG, PNG (Máximo 2MB)</small>
                         </div>
                     </div>

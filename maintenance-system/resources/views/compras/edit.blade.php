@@ -50,7 +50,7 @@
                             <label for="urgencia" class="form-label">Nível de Urgência</label>
                             <select name="metadata[urgencia]" id="urgencia" class="form-select">
                                 <option value="Normal" {{ ($compra->metadata['urgencia'] ?? '') == 'Normal' ? 'selected' : '' }}>Normal</option>
-                                <option value="Alta" {{ ($compra->metadata['urgencia'] ?? '') == 'Alta' ? 'selected' : '' }}>Alta - Carro parado na box</option>
+                                <option value="Alta" {{ ($compra->metadata['urgencia'] ?? '') == 'Alta' ? 'selected' : '' }}>Alta - Carro parado na oficina</option>
                                 <option value="Crítica" {{ ($compra->metadata['urgencia'] ?? '') == 'Crítica' ? 'selected' : '' }}>Crítica - Aguardando peça para entrega</option>
                             </select>
                         </div>
