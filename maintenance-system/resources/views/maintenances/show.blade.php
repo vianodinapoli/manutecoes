@@ -146,15 +146,15 @@
                 {{-- ---------------------------------------------------- --}}
                 {{-- SECÇÃO 3: TEMPOS E CUSTOS --}}
                 {{-- ---------------------------------------------------- --}}
-                <h5 class="mt-4 mb-3 border-bottom pb-1 text-primary">3. Agendamento, Duração e Custos</h5>
+                <h5 class="mt-4 mb-3 border-bottom pb-1 text-primary">3. Extras</h5>
                 
                 <div class="row mb-4">
-                    <div class="col-md-3">
+                    {{-- <div class="col-md-3">
                         <span class="data-label">Agendado para:</span> {{ optional($maintenance->scheduled_date)->format('d/m/Y H:i') ?? 'N/A' }}
                     </div>
                     <div class="col-md-3">
                         <span class="data-label">Início Real (Start Date):</span> {{ optional($maintenance->start_date)->format('d/m/Y H:i') ?? 'N/A' }}
-                    </div>
+                    </div> --}}
                     <div class="col-md-3">
                         <span class="data-label">Concluído em (End Date):</span> {{ optional($maintenance->end_date)->format('d/m/Y H:i') ?? 'Em Aberto' }}
                     </div>
@@ -200,25 +200,59 @@
     </div>
 </div>
 
-                <div class="row">
-                    <div class="col-md-6 offset-md-3">
-                        @php
-                            $costEUR = $maintenance->total_cost ?? 0;
-                            $costMZN = $costEUR * $exchangeRate; 
-                        @endphp
-                        
-                        <div class="alert alert-success text-center">
-                            <h4 class="mb-1">Custo Total da Intervenção</h4>
-                            <p class="mb-0">
-                                <span class="data-label">EUR:</span> **€ {{ number_format($costEUR, 2, ',', '.') }}**
-                            </p>
-                            <p class="mb-0">
-                                <span class="data-label">MZN:</span> **MZN {{ number_format($costMZN, 2, ',', '.') }}**
-                            </p>
-                            <span class="small text-muted">Taxa: 1 EUR = {{ number_format($exchangeRate, 2) }} MZN</span>
+               <div class="row justify-content-center my-4">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
+            <div class="card-body p-0">
+                {{-- Cabeçalho Sutil --}}
+                <div class="bg-light px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="text-uppercase fw-bold text-secondary mb-0" style="letter-spacing: 1px;">
+                        <i class="bi bi-wallet2 me-2"></i>Resumo Financeiro
+                    </h6>
+                    <span class="badge rounded-pill bg-soft-success text-success px-3" style="background-color: #e8f5e9;">
+                        Taxa: 1€ = {{ number_format($exchangeRate, 2) }} MT
+                    </span>
+                </div>
+
+                {{-- Área de Valores --}}
+                <div class="p-4 bg-white">
+                    @php
+                        $costEUR = $maintenance->total_cost ?? 0;
+                        $costMZN = $costEUR * $exchangeRate; 
+                    @endphp
+
+                    <div class="row align-items-center">
+                        {{-- Coluna Euro --}}
+                        <div class="col text-center border-end">
+                            <small class="text-muted d-block text-uppercase small fw-semibold">Custo em Euros</small>
+                            <h3 class="fw-bold text-dark mt-1 mb-0">
+                                <span class="fs-5 text-muted">€</span>{{ number_format($costEUR, 2, ',', '.') }}
+                            </h3>
+                        </div>
+
+                        {{-- Coluna Metical --}}
+                        <div class="col text-center">
+                            <small class="text-muted d-block text-uppercase small fw-semibold">Custo em Meticais</small>
+                            <h3 class="fw-bold text-primary mt-1 mb-0">
+                                {{ number_format($costMZN, 2, ',', '.') }} <span class="fs-6 fw-normal">MT</span>
+                            </h3>
                         </div>
                     </div>
                 </div>
+
+                {{-- Footer com Data (Opcional) --}}
+                @if($maintenance->end_date)
+                    <div class="card-footer bg-light border-0 py-2 text-center">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar-check me-1"></i> 
+                            Concluído em: {{ $maintenance->end_date->format('d/m/Y H:i') }}
+                        </small>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
             </div>
 
             {{-- Ficheiros Anexados (Não serão impressos) --}}
@@ -226,12 +260,12 @@
                 <h5 class="mb-2">📎 Ficheiros Anexados ({{ $maintenance->files->count() }})</h5>
                 @if($maintenance->files->isNotEmpty())
                     <div class="list-group list-group-flush">
-                        @foreach($maintenance->files as $file)
-                            <a href="{{ $file->url }}" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-1 small">
-                                <div>📁 {{ $file->filename }}</div>
-                                <span class="badge bg-secondary">{{ round($file->filesize / 1024 / 1024, 2) }} MB</span>
-                            </a>
-                        @endforeach
+     @foreach($maintenance->files as $file)
+    {{-- MUDE O LINK NESTA LINHA ABAIXO --}}
+   <a href="{{ route('file.download', $file->id) }}" target="_blank">
+    📁 {{ $file->filename }}
+</a>
+@endforeach
                     </div>
                 @else
                     <small class="text-muted">Nenhum ficheiro anexado.</small>

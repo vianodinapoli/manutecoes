@@ -91,6 +91,11 @@ Route::middleware(['auth', 'role:super-admin'])->prefix('admin')->name('admin.')
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
 
+Route::get('/download-file/{id}', function ($id) {
+    $file = \App\Models\MaintenanceFile::findOrFail($id);
+    return response()->file(storage_path('app/public/' . $file->filepath));
+})->name('file.download');
+
 });
 
 // Rotas de Autenticação do Breeze (Login, Register, Logout, etc.)

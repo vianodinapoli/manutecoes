@@ -12,10 +12,6 @@
             </a>
         </div>
         
-        @if(session('info'))
-            <div class="alert alert-info shadow-sm">{{ session('info') }}</div>
-        @endif
-        
         <form action="{{ $maintenance->id ? route('maintenances.update', $maintenance->id) : route('maintenances.store') }}" 
               method="POST" 
               id="maintenanceForm"
@@ -75,40 +71,70 @@
                         </div>
                         <div class="col-12 col-md-4">
                             <label class="form-label fw-bold">Data de Entrada <span class="text-danger">*</span></label>
-                            <input type="date" name="data_entrada" class="form-control" value="{{ old('data_entrada', optional($maintenance->data_entrada ?? now())->format('Y-m-d')) }}" {{ $maintenance->id ? 'readonly' : 'required' }}>
+                            <input type="date" name="data_entrada" class="form-control" value="{{ old('data_entrada', optional($maintenance->data_entrada ?? now())->format('Y-m-d')) }}" required>
                         </div>
                         <div class="col-12 col-md-4">
-                            <label class="form-label fw-bold">Data Agendada</label>
-                            <input type="datetime-local" name="scheduled_date" class="form-control" value="{{ old('scheduled_date', optional($maintenance->scheduled_date)->format('Y-m-d\TH:i')) }}">
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-bold">Folha de Obra / Ref.</label>
-                            <input type="text" name="work_sheet_ref" class="form-control" value="{{ old('work_sheet_ref', $maintenance->work_sheet_ref ?? '') }}">
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-bold">Nº de Horas / KMS</label>
-                            <input type="number" name="hours_kms" class="form-control" value="{{ old('hours_kms', $maintenance->hours_kms ?? '') }}">
-                        </div>
-                        <div class="col-12 col-md-4">
-                            <label class="form-label fw-bold">Horas Totais de Trabalho</label>
-                            <input type="number" step="0.1" name="horas_trabalho" class="form-control" value="{{ old('horas_trabalho', $maintenance->horas_trabalho ?? '') }}" placeholder="Ex: 8.5">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label fw-bold">Descrição da Falha <span class="text-danger">*</span></label>
-                            <textarea name="failure_description" class="form-control" rows="3" required>{{ old('failure_description', $maintenance->failure_description ?? '') }}</textarea>
-                        </div>
-                        <div class="col-12 col-md-6">
                             <label class="form-label fw-bold">Status da Manutenção</label>
                             <select name="status" class="form-select bg-light fw-bold" required>
                                 <option value="pendente" {{ $currentStatus == 'pendente' ? 'selected' : '' }}>🟡 Pendente</option>
                                 <option value="em_manutencao" {{ $currentStatus == 'em_manutencao' ? 'selected' : '' }}>🟠 Em Manutenção</option>
                                 <option value="concluida" {{ $currentStatus == 'concluida' ? 'selected' : '' }}>🟢 Concluída</option>
-                                <option value="cancelada" {{ $currentStatus == 'cancelada' ? 'selected' : '' }}>🔴 Cancelada</option>
                             </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Descrição da Falha <span class="text-danger">*</span></label>
+                            <textarea name="failure_description" class="form-control" rows="3" required>{{ old('failure_description', $maintenance->failure_description ?? '') }}</textarea>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {{-- Secção: Dados Operacionais --}}
+<div class="card shadow-sm mb-4 border-secondary">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">📋 Dados Operacionais e Referências</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            {{-- Folha de Obra / Ref --}}
+            <div class="col-12 col-md-4">
+                <label class="form-label fw-bold text-muted">Folha de Obra / Ref.</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-hash"></i></span>
+                    <input type="text" name="work_sheet_ref" 
+                           class="form-control" 
+                           placeholder="Ex: FO-2024-001"
+                           value="{{ old('work_sheet_ref', $maintenance->work_sheet_ref ?? '') }}">
+                </div>
+            </div>
+
+            {{-- Horas/KMS na Entrada --}}
+            <div class="col-12 col-md-4">
+                <label class="form-label fw-bold text-muted">Horas/KMS na Entrada</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-speedometer2"></i></span>
+                    <input type="number" name="hours_kms" 
+                           class="form-control" 
+                           placeholder="0"
+                           value="{{ old('hours_kms', $maintenance->hours_kms ?? '') }}">
+                </div>
+            </div>
+
+            {{-- Total de Horas Trabalhadas --}}
+            <div class="col-12 col-md-4">
+                <label class="form-label fw-bold text-muted">Horas de Mão-de-Obra</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-clock-history"></i></span>
+                    <input type="number" step="0.01" name="horas_trabalho" 
+                           class="form-control" 
+                           placeholder="0.00"
+                           value="{{ old('horas_trabalho', $maintenance->horas_trabalho ?? '0.00') }}">
+                    <span class="input-group-text">h</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
             {{-- Secção: Peças do Stock --}}
             <div class="card shadow-sm mb-4 border-info">
@@ -130,23 +156,20 @@
                             <tbody id="itemsBody">
                                 <tr class="item-row">
                                     <td class="p-3">
-                                        <select name="items[0][id]" class="form-select item-select select2- peças">
+                                        <select name="items[0][id]" class="form-select item-select">
                                             <option value="">-- Selecione a Peça --</option>
                                             @foreach($items as $item)
                                                 <option value="{{ $item->id }}" data-stock="{{ $item->quantidade }}">
-                                                    [{{ $item->referencia }}] {{ $item->nome }} ({{ $item->marca_fabricante }})
+                                                    [{{ $item->referencia }}] {{ $item->nome }}
                                                 </option>
                                             @endforeach
                                         </select>
                                     </td>
-                                    <td class="p-3">
-                                        <div class="input-group">
-                                            <input type="text" class="form-control stock-display text-center fw-bold" readonly value="0">
-                                            <span class="input-group-text">un</span>
-                                        </div>
+                                    <td class="p-3 text-center">
+                                        <input type="text" class="form-control stock-display text-center fw-bold" readonly value="0">
                                     </td>
                                     <td class="p-3">
-                                        <input type="number" name="items[0][quantity]" class="form-control text-center" step="0.01" min="0" placeholder="0.00">
+                                        <input type="number" name="items[0][quantity]" class="form-control text-center" step="0.01" min="0">
                                     </td>
                                     <td class="p-3 text-center">
                                         <button type="button" class="btn btn-outline-danger btn-sm remove-item">×</button>
@@ -158,7 +181,7 @@
                 </div>
             </div>
 
-            {{-- Secção: Custos Finais e Ficheiros --}}
+            {{-- NOVO: Secção de Custos e Prazos + Anexos --}}
             <div class="row g-4 mb-4">
                 <div class="col-12 col-md-6">
                     <div class="card shadow-sm h-100">
@@ -170,7 +193,7 @@
                             </div>
                             <div class="mb-0">
                                 <label class="form-label">Data de Conclusão Efetiva</label>
-                                <input type="datetime-local" name="end_date" class="form-control" value="{{ old('end_date', optional($maintenance->end_date)->format('Y-m-d\TH:i')) }}">
+                                <input type="datetime-local" name="end_date" class="form-control" value="{{ old('end_date', isset($maintenance->end_date) ? $maintenance->end_date->format('Y-m-d\TH:i') : '') }}">
                             </div>
                         </div>
                     </div>
@@ -178,11 +201,11 @@
                 <div class="col-12 col-md-6">
                     <div class="card shadow-sm h-100">
                         <div class="card-body">
-                            <h5 class="card-title fw-bold mb-3">📎 Anexos</h5>
-                            <div id="dropZone" class="border-dashed rounded p-4 text-center bg-light" style="cursor: pointer; border: 2px dashed #ccc;">
+                            <h5 class="card-title fw-bold mb-3">📎 Anexos (Fotos/Docs)</h5>
+                            <div id="dropZone" class="border-dashed rounded p-4 text-center bg-light transition-all" style="cursor: pointer; border: 2px dashed #ccc;">
                                 <p class="mb-1">Arraste ficheiros ou <strong>clique aqui</strong></p>
                                 <input type="file" id="fileInput" multiple class="d-none">
-                                <small class="text-muted" id="fileStatus">Nenhum ficheiro selecionado.</small>
+                                <small class="text-muted d-block" id="fileStatus">0 ficheiros selecionados</small>
                             </div>
                             <div id="fileList" class="mt-3 small"></div>
                         </div>
@@ -200,12 +223,14 @@
 
     <style>
         .border-dashed { border-style: dashed !important; }
-        .item-row:hover { background-color: #f8f9fa; }
-        .is-invalid { border-color: #dc3545 !important; }
+        .drop-active { background-color: #e3f2fd !important; border-color: #0d6efd !important; }
+        .transition-all { transition: all 0.3s ease; }
     </style>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
+        $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });
+
         $(document).ready(function() {
             let attachedFiles = [];
             let itemIndex = 1;
@@ -229,45 +254,52 @@
                 if ($('.item-row').length > 1) $(this).closest('tr').remove();
             });
 
-            // --- Lógica de Ficheiros ---
+            // --- Lógica de Ficheiros (Drag & Drop) ---
             const dropZone = $('#dropZone');
             const fileInput = $('#fileInput');
 
             dropZone.on('click', () => fileInput.click());
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(name => {
+                dropZone.on(name, (e) => { e.preventDefault(); e.stopPropagation(); });
+            });
+
+            dropZone.on('dragover', () => dropZone.addClass('drop-active'));
+            dropZone.on('dragleave drop', () => dropZone.removeClass('drop-active'));
+
+            dropZone.on('drop', (e) => handleFiles(e.originalEvent.dataTransfer.files));
             fileInput.on('change', function() { handleFiles(this.files); });
 
             function handleFiles(files) {
-                for (let file of files) {
-                    attachedFiles.push(file);
-                }
+                for (let file of files) { attachedFiles.push(file); }
                 updateFileList();
             }
 
             function updateFileList() {
-                $('#fileList').empty();
+                const list = $('#fileList');
+                list.empty();
                 attachedFiles.forEach((file, index) => {
-                    $('#fileList').append(`<div class="d-flex justify-content-between align-items-center mb-1 p-1 border-bottom">
+                    list.append(`<div class="d-flex justify-content-between align-items-center mb-1 p-2 bg-white border rounded">
                         <span>📄 ${file.name}</span>
-                        <button type="button" class="btn btn-link text-danger p-0" onclick="removeFile(${index})">Remover</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile(${index})">×</button>
                     </div>`);
                 });
                 $('#fileStatus').text(attachedFiles.length + ' ficheiro(s) selecionado(s)');
             }
 
-            window.removeFile = (index) => {
-                attachedFiles.splice(index, 1);
-                updateFileList();
-            };
+            window.removeFile = (index) => { attachedFiles.splice(index, 1); updateFileList(); };
 
             // --- Submissão AJAX ---
             $('#submitButton').on('click', function() {
                 const btn = $(this);
                 const form = $('#maintenanceForm');
+                
+                if(!form[0].checkValidity()) { form[0].reportValidity(); return; }
+
                 const formData = new FormData(form[0]);
+                attachedFiles.forEach(file => formData.append('maintenance_files[]', file));
 
                 btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> A Guardar...');
-
-                attachedFiles.forEach(file => formData.append('maintenance_files[]', file));
 
                 $.ajax({
                     url: form.attr('action'),
@@ -281,8 +313,7 @@
                     },
                     error: function(xhr) {
                         btn.prop('disabled', false).text('Tentar Novamente');
-                        let msg = xhr.responseJSON?.message || 'Erro na submissão.';
-                        alert(msg);
+                        alert(xhr.responseJSON?.message || 'Erro ao guardar.');
                     }
                 });
             });

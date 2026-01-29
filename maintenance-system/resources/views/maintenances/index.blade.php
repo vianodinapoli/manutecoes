@@ -124,8 +124,8 @@
                         <th>Status</th>
                         <th>Avaria Reportada</th>
                         <th>Data de Entrada</th>
-                        <th>Agendado para</th>
-                        <th>Início Real</th>
+                        {{-- <th>Agendado para</th> --}}
+                        {{-- <th>Início Real</th> --}}
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -169,9 +169,9 @@
                                 {{ optional($maintenance->data_entrada)->format('d/m/Y') ?? 'N/A' }}
                             </td>
                             
-                            <td>{{ optional($maintenance->scheduled_date)->format('d/m/Y H:i') ?? 'N/A' }}</td>
+                            {{-- <td>{{ optional($maintenance->scheduled_date)->format('d/m/Y H:i') ?? 'N/A' }}</td> --}}
                             
-                            <td>{{ optional($maintenance->start_date)->format('d/m/Y H:i') ?? 'Pendente' }}</td>
+                            {{-- <td>{{ optional($maintenance->start_date)->format('d/m/Y H:i') ?? 'Pendente' }}</td> --}}
 
                             <td>
                                 <a href="{{ route('maintenances.show', $maintenance->id) }}" class="btn btn-sm btn-outline-info me-1">Detalhes</a>
