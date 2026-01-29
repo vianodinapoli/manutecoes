@@ -19,37 +19,49 @@ class MaterialPurchaseController extends Controller
     }
 
     public function store(Request $request)
-{
-    // 1. Validação aponta para o campo dentro do array metadata
-    $request->validate([
-        'item_name' => 'required',
-        'metadata.urgencia' => 'required', 
-        'quotation_file' => 'nullable|file|mimes:pdf,jpg,png|max:2048'
-    ]);
+    {
+        $request->validate([
+            'item_name' => 'required',
+            'metadata.urgencia' => 'required', 
+            'quotation_file' => 'nullable|file|mimes:pdf,jpg,png|max:2048'
+        ]);
 
-    $data = $request->only(['item_name', 'quantity', 'price']);
-    $data['user_id'] = auth()->id();
-    $data['status'] = 'Pendente';
-    
-    // 2. Aqui capturamos o array metadata completo (urgencia, placa, etc)
-    $data['metadata'] = $request->metadata;
+        $data = $request->only(['item_name', 'quantity', 'price']);
+        $data['user_id'] = auth()->id();
+        $data['status'] = 'Pendente';
+        $data['metadata'] = $request->metadata;
 
-    if ($request->hasFile('quotation_file')) {
-        $data['quotation_file'] = $request->file('quotation_file')->store('quotations', 'public');
+        if ($request->hasFile('quotation_file')) {
+            $data['quotation_file'] = $request->file('quotation_file')->store('quotations', 'public');
+        }
+
+        MaterialPurchase::create($data);
+        return redirect()->route('compras.index')->with('success', 'Pedido criado!');
     }
 
-    \App\Models\MaterialPurchase::create($data);
+    public function edit($id)
+    {
+        $compra = MaterialPurchase::findOrFail($id);
 
-    return redirect()->route('compras.index')->with('success', 'Pedido criado!');
-}
+        // BLOQUEIO: Se estiver Finalizado e não for Admin, não entra na tela de edição
+        if ($compra->status === 'Finalizado' && !auth()->user()->hasRole('super-admin')) {
+            return redirect()->route('compras.index')->with('error', 'Este pedido está finalizado e não pode ser editado.');
+        }
+
+        return view('compras.edit', compact('compra'));
+    }
 
     public function update(Request $request, $id)
     {
         $compra = MaterialPurchase::findOrFail($id);
-        
+
+        // BLOQUEIO: Impede salvar alterações se estiver finalizado (segurança de back-end)
+        if ($compra->status === 'Finalizado' && !auth()->user()->hasRole('super-admin')) {
+            return redirect()->route('compras.index')->with('error', 'Ação não permitida para pedidos finalizados.');
+        }
+
         $data = $request->all();
         
-        // Se houver alteração no array de metadata, faz o merge para não apagar dados antigos
         if ($request->has('metadata')) {
             $data['metadata'] = array_merge($compra->metadata ?? [], $request->metadata);
         }
@@ -59,26 +71,18 @@ class MaterialPurchaseController extends Controller
         }
 
         $compra->update($data);
-        
         return redirect()->route('compras.index')->with('success', 'Solicitação atualizada!');
-    }
-
-    public function show($id)
-    {
-        $compra = MaterialPurchase::with('user')->findOrFail($id);
-        return view('compras.show', compact('compra'));
-    }
-
-    public function edit($id)
-    {
-        $compra = MaterialPurchase::findOrFail($id);
-        return view('compras.edit', compact('compra'));
     }
 
     public function updateStatus(Request $request, $id)
     {
         $compra = MaterialPurchase::findOrFail($id);
         $user = auth()->user();
+
+        // BLOQUEIO: Se já estiver Finalizado, apenas Admin pode reabrir ou mudar
+        if ($compra->status === 'Finalizado' && !$user->hasRole('super-admin')) {
+            return back()->with('error', 'Apenas administradores podem alterar o status de um pedido finalizado.');
+        }
 
         if ($user->hasRole('super-admin')) {
             $allowedStatus = ['Pendente', 'Em processo', 'Aprovado', 'Rejeitado', 'Finalizado'];
@@ -95,6 +99,12 @@ class MaterialPurchaseController extends Controller
 
         $compra->update(['status' => $request->status]);
         return back()->with('success', "Status atualizado!");
+    }
+
+    public function show($id)
+    {
+        $compra = MaterialPurchase::with('user')->findOrFail($id);
+        return view('compras.show', compact('compra'));
     }
 
     public function destroy($id)
