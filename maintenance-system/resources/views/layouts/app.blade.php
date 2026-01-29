@@ -103,7 +103,7 @@
 
                     <x-nav-link :href="route('machines.index')" :active="request()->routeIs('machines.*')" class="nav-item rounded">
                         <i class="fas fa-tools"></i> 
-                        <span class="nav-text">Máquinas</span>
+                        <span class="nav-text">Equipamento/Máquinas</span>
                     </x-nav-link>
                     
                     <x-nav-link :href="route('maintenances.index')" :active="request()->routeIs('maintenances.*')" class="nav-item rounded">

@@ -109,7 +109,7 @@
             <div class="btn-group">
                
                 <a href="{{ route('machines.create') }}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle me-1"></i> Adicionar Nova Máquina
+                    <i class="bi bi-plus-circle me-1"></i> Adicionar
                 </a>
             </div>
         </div>
@@ -122,7 +122,7 @@
 
         @if ($machines->isEmpty())
             <div class="alert alert-info">
-                Ainda não há máquinas registadas. Adicione uma nova máquina para começar!
+                Ainda não há máquinas registadas. Adicione uma nova Equipamento/máquina para começar!
             </div>
         @else
 

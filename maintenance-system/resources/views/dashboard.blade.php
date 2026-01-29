@@ -27,7 +27,7 @@
         <div class="row g-3 mb-4">
             @php
                 $stats = [
-                    ['title' => 'EQUIPAMENTOS', 'value' => $totalMaquinas, 'icon' => 'bi-gear-fill', 'color' => 'primary'],
+                    ['title' => 'EQUIPAMENTOS/MÁQUINAS', 'value' => $totalMaquinas, 'icon' => 'bi-gear-fill', 'color' => 'primary'],
                     ['title' => 'AVARIADOS', 'value' => $maquinasParadas, 'icon' => 'bi-pause-btn-fill', 'color' => 'warning'],
                     ['title' => 'STOCK CRÍTICO', 'value' => $stockCritico, 'icon' => 'bi-exclamation-triangle-fill', 'color' => 'danger'],
                     ['title' => 'COMPRAS PEND.', 'value' => $comprasPendentes, 'icon' => 'bi-cart-check-fill', 'color' => 'success'],

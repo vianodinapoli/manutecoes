@@ -89,7 +89,7 @@
             <h4>🛠️ Manutenções Ativas (Pendente / Em Andamento)</h4>
             
             <a href="{{ route('machines.index') }} " class="btn btn-primary shadow-sm">
-                ⚙️ Ver Máquinas
+                ⚙️ Ver Equipamentos/Máquinas
             </a>
         </div>
         
@@ -120,7 +120,7 @@
                 <thead class="table-dark">
                     <tr>
                         <th># ID</th>
-                        <th>Máquina (Nº Interno)</th>
+                        <th>(Nº Interno)</th>
                         <th>Status</th>
                         <th>Avaria Reportada</th>
                         <th>Data de Entrada</th>
