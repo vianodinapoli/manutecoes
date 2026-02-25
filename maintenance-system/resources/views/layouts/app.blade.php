@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
 
     <style>
         /* Transição suave da Sidebar */

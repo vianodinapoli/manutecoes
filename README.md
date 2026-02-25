@@ -45,7 +45,7 @@ php artisan key:generate
 
 
 # Executar migrations e o seeder de permissões específico
-php artisan migrate --seed --class=RoleAndPermissionSeeder
+php artisan db:seed --class=RoleAndPermissionSeeder
 
 # Instalar dependências do Node.js
 npm install
