@@ -10,6 +10,8 @@ use App\Http\Controllers\StockItemController;
 use App\Http\Controllers\MaterialPurchaseController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\FuelController;
+
 
 
 // -------------------------------------------------------------
@@ -90,6 +92,11 @@ Route::middleware(['auth', 'role:super-admin'])->prefix('admin')->name('admin.')
     Route::post('/users/{user}/toggle', [UserController::class, 'toggleAdmin'])->name('users.toggle');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
+
+Route::post('/combustivel/entrada', [FuelController::class, 'storeEntry'])->name('fuel.storeEntry');
+
+Route::get('/combustivel', [FuelController::class, 'index'])->name('fuel.index');
+Route::post('/combustivel', [FuelController::class, 'store'])->name('fuel.store');
 
 Route::get('/download-file/{id}', function ($id) {
     $file = \App\Models\MaintenanceFile::findOrFail($id);

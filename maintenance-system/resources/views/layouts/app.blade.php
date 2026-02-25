@@ -122,6 +122,11 @@
                         <span class="nav-text">Requisições/Compras</span>
                     </x-nav-link>
 
+                    <x-nav-link :href="route('fuel.index')" :active="request()->routeIs('fuel.*')" class="nav-item rounded">
+    <i class="fas fa-gas-pump"></i> 
+    <span class="nav-text">Gestão de Combustível</span>
+</x-nav-link>
+
                     <hr class="border-gray-700 my-4">
 
                     <x-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.edit')" class="nav-item rounded">
