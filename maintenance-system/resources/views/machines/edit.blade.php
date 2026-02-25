@@ -2,47 +2,55 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Editar Máquina: {{ $machine->name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Máquina: {{ $machine->numero_interno }}</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 </head>
 <body>
-    <h1>✏️ Editar Máquina: {{ $machine->name }}</h1>
-
-    <p>
-        <a href="{{ route('machines.index') }}">Voltar à Lista</a> | 
-        <a href="{{ route('machines.show', $machine->id) }}">Ver Detalhes</a>
-    </p>
-    
-    <form method="POST" action="{{ route('machines.update', $machine->id) }}">
-        @csrf 
-        @method('PUT') <div>
-            <label for="name">Nome da Máquina:</label>
-            <input type="text" id="name" name="name" required value="{{ old('name', $machine->name) }}">
-            @error('name') <div style="color: red;">{{ $message }}</div> @enderror
-        </div>
-        <br>
+    <x-app-layout>
+    <div class="container mt-5"> 
         
-        <div>
-            <label for="serial_number">Número de Série:</label>
-            <input type="text" id="serial_number" name="serial_number" required value="{{ old('serial_number', $machine->serial_number) }}">
-            @error('serial_number') <div style="color: red;">{{ $message }}</div> @enderror
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>✏️ Editar Máquina: <span class="text-primary">{{ $machine->numero_interno }}</span></h1>
         </div>
-        <br>
 
-        <div>
-            <label for="location">Localização:</label>
-            <input type="text" id="location" name="location" required value="{{ old('location', $machine->location) }}">
-            @error('location') <div style="color: red;">{{ $message }}</div> @enderror
+        <div class="mb-4 d-flex gap-2">
+            <a href="{{ route('machines.index') }}" class="btn btn-secondary">
+                ⬅️ Voltar à Lista
+            </a>
+            <a href="{{ route('machines.show', $machine->id) }}" class="btn btn-info">
+                👁️ Ver Detalhes
+            </a>
         </div>
-        <br>
-
-        <div>
-            <label for="description">Descrição:</label>
-            <textarea id="description" name="description">{{ old('description', $machine->description) }}</textarea>
-            @error('description') <div style="color: red;">{{ $message }}</div> @enderror
+        
+        <div class="card shadow-sm p-4">
+            <form method="POST" action="{{ route('machines.update', $machine->id) }}">
+                @csrf 
+                @method('PUT') 
+                
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        <strong>Por favor, corrija os erros de validação abaixo:</strong>
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                
+                {{-- O partial 'machines.form' é incluído aqui, contendo todos os campos, incluindo o novo dropdown. --}}
+                @include('machines.form') 
+                
+                <button type="submit" class="btn btn-success btn-lg mt-4 w-100">
+                    ✅ Atualizar Máquina
+                </button>
+            </form>
         </div>
-        <br>
+    </div>
 
-        <button type="submit">Atualizar Máquina</button>
-    </form>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</x-app-layout>
 </body>
 </html>

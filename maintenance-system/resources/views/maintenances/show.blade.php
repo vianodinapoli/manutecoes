@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes da Manutenção #{{ $maintenance->id }}</title>
+    
+    {{-- GARANTINDO O BOOTSTRAP --}}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    
+    {{-- CSS CUSTOMIZADO PARA LAYOUT DE IMPRESSÃO (A4) --}}
+    <style>
+        /* Estilos Visuais Normais */
+        .card-header { font-weight: bold; }
+        .data-label { font-weight: bold; }
+
+        /* Estilo para impressão A4 */
+        @media print {
+            body {
+                font-size: 11pt;
+                margin: 0;
+                padding: 0;
+            }
+            .container {
+                width: 210mm; /* Largura A4 */
+                min-height: 297mm; /* Altura A4 */
+                padding: 10mm;
+                box-shadow: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            /* Forçar a impressão de cores e bordas */
+            .card-header, .bg-primary, .bg-info, .bg-dark, .bg-success, .bg-secondary, .alert {
+                background-color: #f0f0f0 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+                color: #000 !important;
+                border: 1px solid #000;
+            }
+            .card {
+                border: 1px solid #000 !important;
+                box-shadow: none !important;
+            }
+            .text-primary, .text-success {
+                color: #000 !important; 
+            }
+        }
+    </style>
+</head>
+<body>
+    <x-app-layout>
+    <div class="container mt-4"> 
+        
+        {{-- BOTÕES DE AÇÃO (NÃO IMPRIMIR) --}}
+        <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+            <h3>Detalhes da Manutenção: <span class="text-primary">:{{ $maintenance->machine->numero_interno }}</span></h3>
+            <div>
+                <a href="javascript:window.print()" class="btn btn-primary me-2">
+                    🖨️ Imprimir (A4)
+                </a>
+                <a href="{{ route('maintenances.edit', $maintenance->id) }}" class="btn btn-warning me-2">
+                    ✏️ Editar
+                </a>
+                <a href="{{ route('maintenances.index') }}" class="btn btn-secondary">
+                    ⬅️ Voltar à Lista
+                </a>
+            </div>
+        </div>
+
+        {{-- LAYOUT PRINCIPAL (PRONTO PARA IMPRESSÃO) --}}
+        <div class="card shadow-sm mb-5">
+            <div class="card-header bg-dark text-white text-center">
+                <h5 class="mb-0">REGISTO DE INTERVENÇÃO TÉCNICA: {{ $maintenance->machine->numero_interno }}</h5>
+            </div>
+            <div class="card-body">
+                
+                {{-- ---------------------------------------------------- --}}
+                {{-- SECÇÃO 1: INFORMAÇÕES BÁSICAS E DADOS INICIAIS --}}
+                {{-- ---------------------------------------------------- --}}
+                <h5 class="mt-2 mb-3 border-bottom pb-1 text-danger">1. Dados do Equipamento e Início da Intervenção</h5>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <span class="data-label">Máquina (Nº Interno):</span> {{ $maintenance->machine->numero_interno ?? 'N/A' }}
+                    </div>
+                    <div class="col-md-4">
+                        <span class="data-label">Tipo de Equipamento:</span> {{ $maintenance->machine->tipo_equipamento ?? 'N/A' }}
+                    </div>
+                    <div class="col-md-4">
+                        <span class="data-label">Localização:</span> {{ $maintenance->machine->localizacao ?? 'N/A' }}
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <span class="data-label">Nome do Motorista/Operador:</span> {{ $maintenance->nome_motorista ?? 'N/A' }}
+                    </div>
+                    <div class="col-md-4">
+                        <span class="data-label">Data de Entrada:</span> {{ optional($maintenance->data_entrada)->format('d/m/Y') ?? 'N/A' }}
+                    </div>
+                    <div class="col-md-4">
+                        <span class="data-label">Status Atual:</span> 
+                        @php
+                            // Usa a variável normalizada do Controller (minúsculas)
+                            $safeStatus = str_replace('_', ' ', $maintenance->status);
+                            $badge_class = match($maintenance->status) {
+                                'Pendente' => 'bg-warning text-dark',
+                                'Em_manutencao' => 'bg-info',
+                                'Concluida' => 'bg-success',
+                                'Cancelada' => 'bg-secondary',
+                                default => 'bg-secondary',
+                            };
+                        @endphp
+                        <span class="badge {{ $badge_class }}">{{ ucfirst($safeStatus) }}</span>
+                    </div>
+                </div>
+
+                {{-- ---------------------------------------------------- --}}
+                {{-- SECÇÃO 2: DESCRIÇÕES E DETALHES DE REGISTO --}}
+                {{-- ---------------------------------------------------- --}}
+                <h5 class="mt-4 mb-3 border-bottom pb-1 text-primary">2. Descrição da Ocorrência e Detalhes da Execução</h5>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <span class="data-label">Folha de Obra / Ref.:</span> {{ $maintenance->work_sheet_ref ?? 'N/A' }}
+                    </div>
+                    <div class="col-md-4">
+                        <span class="data-label">Nº de Horas/KMS na Entrada:</span> {{ $maintenance->hours_kms ?? 'N/A' }}
+                    </div>
+                    <div class="col-md-4">
+                        <span class="data-label">Total de Horas Trabalhadas:</span> {{ $maintenance->horas_trabalho ?? '0.00' }} h
+                    </div>
+                </div>
+
+                <div class="mb-4 p-3 border rounded bg-light">
+                    <span class="data-label d-block mb-1">⚠️ Descrição da Falha (Ocorrência):</span>
+                    <p class="mb-0">{{ $maintenance->failure_description }}</p>
+                </div>
+                
+                <div class="mb-4 p-3 border rounded bg-light">
+                    <span class="data-label d-block mb-1">🛠️ Notas do Técnico / Resumo da Intervenção:</span>
+                    <p class="mb-0">{{ $maintenance->technician_notes ?? 'Ainda não foram adicionadas notas técnicas ou resumo da intervenção.' }}</p>
+                </div>
+
+                {{-- ---------------------------------------------------- --}}
+                {{-- SECÇÃO 3: TEMPOS E CUSTOS --}}
+                {{-- ---------------------------------------------------- --}}
+                <h5 class="mt-4 mb-3 border-bottom pb-1 text-primary">3. Extras</h5>
+                
+                <div class="row mb-4">
+                    {{-- <div class="col-md-3">
+                        <span class="data-label">Agendado para:</span> {{ optional($maintenance->scheduled_date)->format('d/m/Y H:i') ?? 'N/A' }}
+                    </div>
+                    <div class="col-md-3">
+                        <span class="data-label">Início Real (Start Date):</span> {{ optional($maintenance->start_date)->format('d/m/Y H:i') ?? 'N/A' }}
+                    </div> --}}
+                    <div class="col-md-3">
+                        <span class="data-label">Concluído em (End Date):</span> {{ optional($maintenance->end_date)->format('d/m/Y H:i') ?? 'Em Aberto' }}
+                    </div>
+                    <div class="col-md-3">
+                        <span class="data-label">Registo Criado em:</span> {{ $maintenance->created_at->format('d/m/Y H:i') }}
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4 border-start border-info border-2">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">📦 Peças Utilizadas</h5>
+    </div>
+    <div class="card-body">
+        @if($maintenance->movements && $maintenance->movements->count() > 0)
+            <table class="table table-sm table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nome do Artigo / Peça</th>
+                        <th>Referência</th>
+                        <th class="text-center">Quantidade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($maintenance->movements as $movement)
+                        <tr>
+                            {{-- Acedemos ao stockItem através do relacionamento --}}
+                            <td>
+                                @if($movement->stockItem)
+                                    {{ $movement->stockItem->nome_artigo ?? $movement->stockItem->marca_fabricante }}
+                                @else
+                                    <span class="text-danger italic">Artigo removido do stock</span>
+                                @endif
+                            </td>
+                            <td>{{ $movement->stockItem->referencia ?? 'N/A' }}</td>
+                            <td class="text-center fw-bold">{{ $movement->quantity }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @else
+            <p class="text-muted italic">Nenhuma peça foi registada nesta intervenção.</p>
+        @endif
+    </div>
+</div>
+
+               <div class="row justify-content-center my-4">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 15px;">
+            <div class="card-body p-0">
+                {{-- Cabeçalho Sutil --}}
+                <div class="bg-light px-4 py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="text-uppercase fw-bold text-secondary mb-0" style="letter-spacing: 1px;">
+                        <i class="bi bi-wallet2 me-2"></i>Resumo Financeiro
+                    </h6>
+                    <span class="badge rounded-pill bg-soft-success text-success px-3" style="background-color: #e8f5e9;">
+                        Taxa: 1€ = {{ number_format($exchangeRate, 2) }} MT
+                    </span>
+                </div>
+
+                {{-- Área de Valores --}}
+                <div class="p-4 bg-white">
+                    @php
+                        $costEUR = $maintenance->total_cost ?? 0;
+                        $costMZN = $costEUR * $exchangeRate; 
+                    @endphp
+
+                    <div class="row align-items-center">
+                        {{-- Coluna Euro --}}
+                        <div class="col text-center border-end">
+                            <small class="text-muted d-block text-uppercase small fw-semibold">Custo em Euros</small>
+                            <h3 class="fw-bold text-dark mt-1 mb-0">
+                                <span class="fs-5 text-muted">€</span>{{ number_format($costEUR, 2, ',', '.') }}
+                            </h3>
+                        </div>
+
+                        {{-- Coluna Metical --}}
+                        <div class="col text-center">
+                            <small class="text-muted d-block text-uppercase small fw-semibold">Custo em Meticais</small>
+                            <h3 class="fw-bold text-primary mt-1 mb-0">
+                                {{ number_format($costMZN, 2, ',', '.') }} <span class="fs-6 fw-normal">MT</span>
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Footer com Data (Opcional) --}}
+                @if($maintenance->end_date)
+                    <div class="card-footer bg-light border-0 py-2 text-center">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar-check me-1"></i> 
+                            Concluído em: {{ $maintenance->end_date->format('d/m/Y H:i') }}
+                        </small>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+
+            {{-- Ficheiros Anexados (Não serão impressos) --}}
+            <div class="card-footer no-print">
+                <h5 class="mb-2">📎 Ficheiros Anexados ({{ $maintenance->files->count() }})</h5>
+                @if($maintenance->files->isNotEmpty())
+                    <div class="list-group list-group-flush">
+     @foreach($maintenance->files as $file)
+    {{-- MUDE O LINK NESTA LINHA ABAIXO --}}
+   <a href="{{ route('file.download', $file->id) }}" target="_blank">
+    📁 {{ $file->filename }}
+</a>
+@endforeach
+                    </div>
+                @else
+                    <small class="text-muted">Nenhum ficheiro anexado.</small>
+                @endif
+            </div>
+            
+        </div>
+        
+        <div class="mt-4 pb-4 text-center no-print">
+            <a href="{{ route('machines.show', $maintenance->machine->id) }}" class="btn btn-secondary btn-lg">
+                ⬅️ Voltar à Máquina
+            </a>
+        </div>
+        
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</x-app-layout>
+</body>
+</html>
