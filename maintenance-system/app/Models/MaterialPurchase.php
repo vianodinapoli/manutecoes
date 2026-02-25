@@ -9,25 +9,38 @@ class MaterialPurchase extends Model
 {
     use HasFactory;
 
-    // Nome da tabela definido na sua migration
     protected $table = 'material_purchases';
 
+    // Removemos item_name e quantity daqui, pois agora eles ficam na tabela de ITENS
     protected $fillable = [
-        'item_name',
-        'quantity',
-        'price',
+        'user_id',
+        'fornecedor',
+        'urgencia',
+        'description',
         'status',
-        'quotation_file',
-        'metadata',
-        'user_id' // Assumindo que você tem relação com usuário
     ];
 
-    protected $casts = [
-        'metadata' => 'array',
-    ];
-
+    // Relacionamento com o Usuário que criou a requisição
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relacionamento com os Itens (Artigos) da Compra
+     * Permite fazer: $purchase->items
+     */
+    public function items()
+    {
+        return $this->hasMany(MaterialPurchaseItem::class);
+    }
+
+    /**
+     * Relacionamento com os Anexos (Fotos/PDFs)
+     * Permite fazer: $purchase->attachments
+     */
+    public function attachments()
+    {
+        return $this->hasMany(MaterialPurchaseAttachment::class);
     }
 }
