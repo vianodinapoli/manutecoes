@@ -47,6 +47,44 @@ php artisan key:generate
 # Executar migrations e o seeder de permissões específico
 php artisan db:seed --class=RoleAndPermissionSeeder
 
+
+1. A Solução Rápida (Criar os tanques no PC B)
+Sempre que mudares de computador, como a base de dados começa vazia, precisas de correr as migrações e criar os tanques novamente:
+
+No computador novo, corre: php artisan migrate
+
+Cria os tanques via terminal: php artisan tinker
+
+Cola o comando:
+
+PHP
+App\Models\Tank::create(['nome' => 'Tanque da Fem', 'capacidade' => 43251, 'stock_atual' => 43251]);
+App\Models\Tank::create(['nome' => 'Bymoze', 'capacidade' => 20000, 'stock_atual' => 20000]);
+App\Models\Tank::create(['nome' => 'Bomba Móvel', 'capacidade' => 1000, 'stock_atual' => 1000]);
+App\Models\Tank::create(['nome' => 'Nitro', 'capacidade' => 24799, 'stock_atual' => 24799]);
+
+
+2. A Solução Profissional (Seeds)
+Para não teres de escrever isto sempre, podes criar um "Semeador" (Seeder). Assim, em qualquer computador novo, basta um comando para os tanques aparecerem.
+
+Cria o Seeder: php artisan make:seeder TankSeeder
+
+Abre database/seeders/TankSeeder.php e coloca isto no método run:
+
+PHP
+public function run(): void
+{
+    \App\Models\Tank::updateOrCreate(['nome' => 'Tanque da Fem'], ['capacidade' => 43251, 'stock_atual' => 0]);
+    \App\Models\Tank::updateOrCreate(['nome' => 'Bymoze'], ['capacidade' => 20000, 'stock_atual' => 0]);
+    \App\Models\Tank::updateOrCreate(['nome' => 'Bomba Móvel'], ['capacidade' => 1000, 'stock_atual' => 0]);
+    \App\Models\Tank::updateOrCreate(['nome' => 'Nitro'], ['capacidade' => 24799, 'stock_atual' => 0]);
+}
+No outro computador, basta correr:
+
+Bash
+php artisan db:seed --class=TankSeeder
+
+
 # Instalar dependências do Node.js
 npm install
 
@@ -55,6 +93,8 @@ npm run build
 
 # Iniciar o servidor local
 php artisan serve
+
+
 
 
 
