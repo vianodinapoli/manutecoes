@@ -3,117 +3,141 @@
 namespace App\Http\Controllers;
 
 use App\Models\FuelLog;
+use App\Models\FuelEntry;
+use App\Models\Tank;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class FuelController extends Controller
 {
-   public function index()
-{
-    $capacidadeTotal = 20000;
+    public function index()
+    {
+        // 1. Pegar tanques reais da DB
+        $tanques = Tank::all();
+        
+        // Se não houver tanques na DB, o dashboard ficaria vazio. 
+        // Cálculos globais baseados nos tanques reais
+        $capacidadeTotal = $tanques->sum('capacidade');
+        $restante = $tanques->sum('stock_atual');
+        $percentagem = $capacidadeTotal > 0 ? ($restante / $capacidadeTotal) * 100 : 0;
 
-    // 1. Cálculos do Tanque (Soma direta)
-    $totalEntradas = \App\Models\FuelEntry::sum('quantity') ?: 0;
-    $totalSaidas = \App\Models\FuelLog::sum('quantity') ?: 0;
-    $restante = $totalEntradas - $totalSaidas;
-    
-    $percentagem = ($capacidadeTotal > 0) ? ($restante / $capacidadeTotal) * 100 : 0;
-    $percentagem = max(0, min(100, $percentagem));
+        // 2. Query de SAÍDAS (fuel_logs) com Join para pegar o nome do tanque
+        $saidas = DB::table('fuel_logs')
+            ->leftJoin('tanks', 'fuel_logs.tank_id', '=', 'tanks.id')
+            ->select(
+                'fuel_logs.date',
+                'fuel_logs.plate as ident',
+                'fuel_logs.company',
+                'fuel_logs.quantity',
+                'fuel_logs.operator',
+                'fuel_logs.driver',
+                'fuel_logs.start_counter',
+                'fuel_logs.end_counter',
+                'tanks.nome as tanque_nome',
+                DB::raw("'SAÍDA' as tipo"),
+                'fuel_logs.created_at'
+            );
 
-    // 2. Criar a lista unificada manualmente
-    // IMPORTANTE: Adicionei start_counter e end_counter aqui
-    $saidas = \App\Models\FuelLog::select(
-            'date', 
-            'plate as ident', 
-            'company', 
-            'quantity', 
-            'driver as responsavel', 
-            'start_counter', 
-            'end_counter'
-        )
-        ->selectRaw("'SAÍDA' as tipo, created_at")
-        ->get();
+        // 3. Query de ENTRADAS (fuel_entries) unida com a de Saídas
+        $historico = DB::table('fuel_entries')
+            ->leftJoin('tanks', 'fuel_entries.tank_id', '=', 'tanks.id')
+            ->select(
+                'fuel_entries.date',
+                'fuel_entries.supplier as ident',
+                DB::raw("'' as company"),
+                'fuel_entries.quantity',
+                DB::raw("'' as operator"),
+                DB::raw("'' as driver"),
+                DB::raw("NULL as start_counter"),
+                DB::raw("NULL as end_counter"),
+                'tanks.nome as tanque_nome',
+                DB::raw("'ENTRADA' as tipo"),
+                'fuel_entries.created_at'
+            )
+            ->union($saidas)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-    // Para as entradas, como não têm contadores, enviamos como null ou 0
-    $entradas = \App\Models\FuelEntry::select(
-            'date', 
-            'supplier as ident', 
-            \DB::raw("'' as company"), 
-            'quantity', 
-            \DB::raw("'' as responsavel"),
-            \DB::raw("NULL as start_counter"), 
-            \DB::raw("NULL as end_counter")
-        )
-        ->selectRaw("'ENTRADA' as tipo, created_at")
-        ->get();
-
-    // Juntamos e ordenamos
-    $historico = $saidas->concat($entradas)
-        ->sortByDesc('created_at')
-        ->take(30); // Aumentei para 30 para o DataTable ter mais dados
-
-    return view('fuel.index', compact('restante', 'capacidadeTotal', 'percentagem', 'historico'));
-}
-
-    // Nova função para salvar a entrada de combustível
-// public function storeEntry(Request $request)
-// {
-//     $request->validate([
-//         'date' => 'required|date',
-//         'quantity' => 'required|numeric|min:1',
-//     ]);
-
-//     // Em vez de $request->all(), use only() para pegar só o necessário
-//     \App\Models\FuelEntry::create($request->only(['date', 'quantity', 'supplier', 'invoice_no']));
-
-//     return back()->with('success', 'Tanque reabastecido com sucesso!');
-// }
-
-    // Para Registrar Saída (Abastecimento de Viatura)
-public function store(Request $request)
-{
-    // Remova o comentário da linha abaixo para testar se os dados chegam ao clicar no botão
-    // dd($request->all()); 
-
-    $request->validate([
-        'date' => 'required|date',
-        'plate' => 'required',
-        'start_counter' => 'required|numeric',
-        'end_counter' => 'required|numeric',
-    ]);
-
-    $quantidade = $request->end_counter - $request->start_counter;
-
-    \App\Models\FuelLog::create([
-        'date' => $request->date,
-        'plate' => $request->plate,
-        'company' => $request->company,
-        'start_counter' => $request->start_counter,
-        'end_counter' => $request->end_counter,
-        'quantity' => $quantidade,
-        'operator' => $request->operator,
-        'driver' => $request->driver,
-    ]);
-
-    return redirect()->back()->with('success', 'Abastecimento registado!');
-}
-
-// Para Registrar Entrada (Atestar Tanque)
-public function storeEntry(Request $request)
-{
-    // 1. Validação estrita
-    $validated = $request->validate([
-        'date'     => 'required|date',
-        'quantity' => 'required|numeric|min:1',
-        'supplier' => 'nullable|string',
-    ]);
-
-    // 2. Gravação direta usando os dados validados
-    try {
-        \App\Models\FuelEntry::create($validated);
-        return redirect()->back()->with('success', 'Stock atualizado com sucesso!');
-    } catch (\Exception $e) {
-        // Se der erro de base de dados, isto vai mostrar o que é
-        return redirect()->back()->with('error', 'Erro ao salvar: ' . $e->getMessage());
+        return view('fuel.index', compact('tanques', 'capacidadeTotal', 'restante', 'percentagem', 'historico'));
     }
-}
+
+    // Criar novo Tanque (Configuração)
+    public function storeTank(Request $request)
+    {
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'capacidade' => 'required|numeric|min:0',
+        ]);
+
+        Tank::create([
+            'nome' => $request->nome,
+            'capacidade' => $request->capacidade,
+            'stock_atual' => $request->capacidade, // Começa cheio ou ajuste como preferir
+        ]);
+
+        return redirect()->back()->with('success', 'Tanque cadastrado com sucesso!');
+    }
+
+    // Registrar Saída (Abastecimento de Viatura)
+    public function store(Request $request)
+    {
+        $request->validate([
+            'tank_id' => 'required|exists:tanks,id',
+            'date' => 'required|date',
+            'plate' => 'required',
+            'start_counter' => 'required|numeric',
+            'end_counter' => 'required|numeric',
+        ]);
+
+        $quantidade = $request->end_counter - $request->start_counter;
+
+        // 1. Criar o Log
+        FuelLog::create([
+            'tank_id' => $request->tank_id,
+            'date' => $request->date,
+            'plate' => $request->plate,
+            'company' => $request->company ?? 'N/A',
+            'start_counter' => $request->start_counter,
+            'end_counter' => $request->end_counter,
+            'quantity' => $quantidade,
+            'operator' => $request->operator ?? auth()->user()->name ?? 'Sistema',
+            'driver' => $request->driver ?? 'Não informado',
+        ]);
+
+        // 2. Dar baixa no stock do tanque selecionado
+        $tanque = Tank::find($request->tank_id);
+        if ($tanque) {
+            $tanque->stock_atual -= $quantidade;
+            $tanque->save();
+        }
+
+        return redirect()->back()->with('success', 'Abastecimento registado e stock atualizado!');
+    }
+
+    // Registrar Entrada (Reforço de Cisterna)
+    public function storeEntry(Request $request)
+    {
+        $request->validate([
+            'tank_id' => 'required|exists:tanks,id',
+            'quantity' => 'required|numeric|min:0',
+            'date' => 'required|date',
+        ]);
+
+        // 1. Regista o histórico de entrada
+        FuelEntry::create([
+            'date' => $request->date,
+            'quantity' => $request->quantity,
+            'supplier' => $request->supplier,
+            'tank_id' => $request->tank_id,
+        ]);
+
+        // 2. SOMA o stock no tanque correspondente
+        $tanque = Tank::find($request->tank_id);
+        if ($tanque) {
+            $tanque->stock_atual += $request->quantity;
+            $tanque->save();
+        }
+
+        return redirect()->back()->with('success', 'Stock reforçado com sucesso!');
+    }
 }

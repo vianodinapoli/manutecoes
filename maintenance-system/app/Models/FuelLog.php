@@ -8,6 +8,7 @@ class FuelLog extends Model
 {
  // Adicione este array aqui:
     protected $fillable = [
+        'tank_id',
         'date',
         'plate',
         'company',

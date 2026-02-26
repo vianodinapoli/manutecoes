@@ -98,6 +98,17 @@ Route::post('/combustivel/entrada', [FuelController::class, 'storeEntry'])->name
 Route::get('/combustivel', [FuelController::class, 'index'])->name('fuel.index');
 Route::post('/combustivel', [FuelController::class, 'store'])->name('fuel.store');
 
+
+Route::prefix('combustivel')->group(function () {
+    // Suas rotas atuais...
+    Route::get('/', [FuelController::class, 'index'])->name('fuel.index');
+    Route::post('/store', [FuelController::class, 'store'])->name('fuel.store');
+    Route::post('/entry', [FuelController::class, 'storeEntry'])->name('fuel.storeEntry');
+
+    // ADICIONE ESTA LINHA:
+    Route::post('/tanks/store', [FuelController::class, 'storeTank'])->name('fuel.tanks.store');
+});
+
 Route::get('/download-file/{id}', function ($id) {
     $file = \App\Models\MaintenanceFile::findOrFail($id);
     return response()->file(storage_path('app/public/' . $file->filepath));

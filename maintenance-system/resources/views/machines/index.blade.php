@@ -42,7 +42,7 @@
 <body >
     <x-app-layout>
 
-    <div class="container-fluid mt-5 w-100">
+    <div class="container-fluid mt-5 w-100%">
 
         <div class="row g-2 mb-4">
     <div class="col-md-3">
