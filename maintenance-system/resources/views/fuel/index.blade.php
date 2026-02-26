@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Estilos de ecrã vs Impressão */
         .print-header, #print-footer { display: none; }
@@ -125,6 +125,17 @@
                     </form>
                 </div>
             </div>
+         <div class="row g-3 mb-4">
+    <div class="col-md-8 mx-auto"> <div class="card card-fuel shadow-sm p-3">
+            <h6 class="fw-bold text-muted mb-3 small text-uppercase text-center">
+                <i class="bi bi-graph-up me-2"></i>Consumo Diário por Empresa (L)
+            </h6>
+            <div style="height: 220px; position: relative;">
+                <canvas id="consumptionChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
         </div>
 
         <div class="card mb-4 shadow-sm border-0 d-print-none">
@@ -137,10 +148,10 @@
                             <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}">
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    {{-- <div class="col-md-3">
                         <label class="small fw-bold">Empresa</label>
                         <input type="text" name="company" class="form-control form-control-sm" value="{{ request('company') }}" placeholder="Nome da empresa">
-                    </div>
+                    </div> --}}
                     <div class="col-md-3">
                         <label class="small fw-bold">Tanque</label>
                         <select name="filter_tank_id" class="form-select form-select-sm">
@@ -314,5 +325,50 @@
             const res = f - i;
             document.getElementById('qty').value = res > 0 ? res : 0;
         }
+
+
+       document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('consumptionChart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {!! json_encode($labels ?? []) !!},
+            datasets: [
+                {
+                    label: 'Saídas (Consumo)',
+                    data: {!! json_encode($dataSaidas ?? []) !!},
+                    backgroundColor: 'rgba(220, 53, 69, 0.7)', // Vermelho
+                    borderColor: 'rgb(220, 53, 69)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Entradas (Atesto)',
+                    data: {!! json_encode($dataEntradas ?? []) !!},
+                    backgroundColor: 'rgba(25, 135, 84, 0.7)', // Verde
+                    borderColor: 'rgb(25, 135, 84)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { stacked: true }, // Empilha para mostrar balanço
+                y: { 
+                    stacked: true,
+                    beginAtZero: true,
+                    title: { display: true, text: 'Litros (L)', font: { size: 10 } }
+                }
+            },
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+            }
+        }
+    });
+});
+
+        
     </script>
 </x-app-layout>
