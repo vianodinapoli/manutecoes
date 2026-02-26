@@ -116,7 +116,7 @@
                             </div>
 
                             <div class="col-12 text-end mt-4">
-                                <button type="submit" class="btn btn-primary px-5 fw-bold shadow rounded-pill">Confirmar Saída</button>
+                                <button type="submit" class="btn btn-primary px-5 fw-bold shadow rounded">Confirmar Saída</button>
                             </div>
                         </div>
                     </form>

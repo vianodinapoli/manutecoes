@@ -10,6 +10,8 @@ class FuelEntry extends Model
         'date',
         'quantity',
         'supplier',
-        'invoice_no'
+        'invoice_no',
+        'tank_id'
+        
     ];
 }
