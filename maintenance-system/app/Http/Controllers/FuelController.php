@@ -10,56 +10,100 @@ use Illuminate\Support\Facades\DB;
 
 class FuelController extends Controller
 {
-    public function index()
-    {
-        // 1. Pegar tanques reais da DB
-        $tanques = Tank::all();
-        
-        // Se não houver tanques na DB, o dashboard ficaria vazio. 
-        // Cálculos globais baseados nos tanques reais
-        $capacidadeTotal = $tanques->sum('capacidade');
-        $restante = $tanques->sum('stock_atual');
-        $percentagem = $capacidadeTotal > 0 ? ($restante / $capacidadeTotal) * 100 : 0;
+    public function index(Request $request)
+{
+    $tanques = \App\Models\Tank::all();
+    
+    // 1. Captura os filtros da URL
+    $fromDate = $request->from_date;
+    $toDate = $request->to_date;
+    $tankId = $request->filter_tank_id;
+    $company = $request->company;
 
-        // 2. Query de SAÍDAS (fuel_logs) com Join para pegar o nome do tanque
-        $saidas = DB::table('fuel_logs')
-            ->leftJoin('tanks', 'fuel_logs.tank_id', '=', 'tanks.id')
-            ->select(
-                'fuel_logs.date',
-                'fuel_logs.plate as ident',
-                'fuel_logs.company',
-                'fuel_logs.quantity',
-                'fuel_logs.operator',
-                'fuel_logs.driver',
-                'fuel_logs.start_counter',
-                'fuel_logs.end_counter',
-                'tanks.nome as tanque_nome',
-                DB::raw("'SAÍDA' as tipo"),
-                'fuel_logs.created_at'
-            );
+    // 2. Query de ENTRADAS (Ajustada para evitar o erro de coluna 'operator')
+    $queryEntradas = DB::table('fuel_entries')
+        ->leftJoin('tanks', 'fuel_entries.tank_id', '=', 'tanks.id')
+        ->select(
+            'fuel_entries.date',
+            'fuel_entries.supplier as ident',
+            DB::raw("'' as company"), 
+            'fuel_entries.quantity',
+            DB::raw("'' as operator"), // Criamos uma coluna vazia para não dar erro
+            DB::raw("'' as driver"),
+            DB::raw("NULL as start_counter"),
+            DB::raw("NULL as end_counter"),
+            'tanks.nome as tanque_nome',
+            DB::raw("'ENTRADA' as tipo"),
+            'fuel_entries.created_at'
+        );
 
-        // 3. Query de ENTRADAS (fuel_entries) unida com a de Saídas
-        $historico = DB::table('fuel_entries')
-            ->leftJoin('tanks', 'fuel_entries.tank_id', '=', 'tanks.id')
-            ->select(
-                'fuel_entries.date',
-                'fuel_entries.supplier as ident',
-                DB::raw("'' as company"),
-                'fuel_entries.quantity',
-                DB::raw("'' as operator"),
-                DB::raw("'' as driver"),
-                DB::raw("NULL as start_counter"),
-                DB::raw("NULL as end_counter"),
-                'tanks.nome as tanque_nome',
-                DB::raw("'ENTRADA' as tipo"),
-                'fuel_entries.created_at'
-            )
-            ->union($saidas)
+    // 3. Query de SAÍDAS
+    $querySaidas = DB::table('fuel_logs')
+        ->leftJoin('tanks', 'fuel_logs.tank_id', '=', 'tanks.id')
+        ->select(
+            'fuel_logs.date',
+            'fuel_logs.plate as ident',
+            'fuel_logs.company',
+            'fuel_logs.quantity',
+            'fuel_logs.operator',
+            'fuel_logs.driver',
+            'fuel_logs.start_counter',
+            'fuel_logs.end_counter',
+            'tanks.nome as tanque_nome',
+            DB::raw("'SAÍDA' as tipo"),
+            'fuel_logs.created_at'
+        );
+
+    // 4. APLICAR FILTROS GERAIS (Data e Tanque)
+    if ($fromDate) {
+        $queryEntradas->where('fuel_entries.date', '>=', $fromDate);
+        $querySaidas->where('fuel_logs.date', '>=', $fromDate);
+    }
+    if ($toDate) {
+        $queryEntradas->where('fuel_entries.date', '<=', $toDate);
+        $querySaidas->where('fuel_logs.date', '<=', $toDate);
+    }
+    if ($tankId) {
+        $queryEntradas->where('fuel_entries.tank_id', $tankId);
+        $querySaidas->where('fuel_logs.tank_id', $tankId);
+    }
+
+    // 5. FILTRO DE EMPRESA (Apenas nas Saídas)
+    if ($company) {
+        $querySaidas->where('fuel_logs.company', $company);
+        // Se filtramos por empresa, não mostramos entradas (pois entradas não têm empresa)
+        $historico = $querySaidas->orderBy('created_at', 'desc')->get();
+    } else {
+        // Se não houver empresa, une as duas tabelas
+        $historico = $queryEntradas->union($querySaidas)
             ->orderBy('created_at', 'desc')
             ->get();
-
-        return view('fuel.index', compact('tanques', 'capacidadeTotal', 'restante', 'percentagem', 'historico'));
     }
+
+    // 6. Dados para o Dashboard (Cards do topo)
+    $capacidadeTotal = $tanques->sum('capacidade');
+    $restante = $tanques->sum('stock_atual');
+    $percentagem = $capacidadeTotal > 0 ? ($restante / $capacidadeTotal) * 100 : 0;
+
+// ... (Mantém as queries de filtros anteriores) ...
+
+    $historico = $company ? $querySaidas : $queryEntradas->union($querySaidas);
+    $historico = $historico->orderBy('date', 'desc')->get();
+
+    // --- NOVIDADE: TOTAIS PARA O RELATÓRIO ---
+    $totalConsumidoFiltro = $historico->where('tipo', 'SAÍDA')->sum('quantity');
+    $totalEntradaFiltro = $historico->where('tipo', 'ENTRADA')->sum('quantity');
+    $contagemRegistos = $historico->count();
+
+    return view('fuel.index', compact(
+        'tanques', 'capacidadeTotal', 'restante', 'percentagem', 
+        'historico', 'totalConsumidoFiltro', 'totalEntradaFiltro', 'contagemRegistos'
+    ));
+
+
+
+    return view('fuel.index', compact('tanques', 'capacidadeTotal', 'restante', 'percentagem', 'historico'));
+}
 
     // Criar novo Tanque (Configuração)
     public function storeTank(Request $request)
