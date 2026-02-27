@@ -327,46 +327,48 @@
         }
 
 
-       document.addEventListener('DOMContentLoaded', function() {
+     document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('consumptionChart').getContext('2d');
     
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: {!! json_encode($labels ?? []) !!},
-            datasets: [
-                {
-                    label: 'Saídas (Consumo)',
-                    data: {!! json_encode($dataSaidas ?? []) !!},
-                    backgroundColor: 'rgba(220, 53, 69, 0.7)', // Vermelho
-                    borderColor: 'rgb(220, 53, 69)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Entradas (Atesto)',
-                    data: {!! json_encode($dataEntradas ?? []) !!},
-                    backgroundColor: 'rgba(25, 135, 84, 0.7)', // Verde
-                    borderColor: 'rgb(25, 135, 84)',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: { stacked: true }, // Empilha para mostrar balanço
-                y: { 
-                    stacked: true,
-                    beginAtZero: true,
-                    title: { display: true, text: 'Litros (L)', font: { size: 10 } }
+    // Verifica se existem dados para evitar erros de gráfico vazio
+    const chartLabels = {!! json_encode($labelsCompostas ?? []) !!};
+    const chartDatasets = {!! json_encode($datasets ?? []) !!};
+
+    if (chartLabels.length === 0) {
+        console.warn("Nenhum dado encontrado para os últimos 10 dias.");
+    }
+
+ new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: {!! json_encode($labelsCompostas) !!},
+        datasets: {!! json_encode($datasets) !!}
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: {
+                stacked: true, // Mantém as cores na mesma barra
+                ticks: {
+                    autoSkip: false,
+                    maxRotation: 45,
+                    font: { size: 10 }
                 }
             },
-            plugins: {
-                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+            y: {
+                stacked: true, // Empilha o volume
+                beginAtZero: true
+            }
+        },
+        plugins: {
+            tooltip: {
+                mode: 'index',
+                intersect: false
             }
         }
-    });
+    }
+});
 });
 
         

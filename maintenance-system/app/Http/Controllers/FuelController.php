@@ -88,33 +88,84 @@ class FuelController extends Controller
         $restante = $tanques->sum('stock_atual');
         $percentagem = $capacidadeTotal > 0 ? ($restante / $capacidadeTotal) * 100 : 0;
 
-  // 8. DADOS PARA O GRÁFICO (AGRUPADO POR TANQUE/EMPRESA)
-// Pegamos todos os tanques para serem as nossas Labels (barras)
-$labels = $tanques->pluck('nome')->toArray(); 
+ // 8. LÓGICA DO GRÁFICO (DUAS CORES - STACKED - ESPELHAMENTO)
+$ultimasDatas = $historico->pluck('date')->unique()->sort()->take(-10);
+$movimentosProcessados = collect();
+
+foreach ($historico->whereIn('date', $ultimasDatas) as $reg) {
+    $nomeTanque = trim($reg->tanque_nome);
+    $nomeEmpresa = trim($reg->company);
+
+    if ($reg->tipo == 'SAÍDA') {
+        // 1. REGISTRO PARA O TANQUE (SAÍDA)
+        $movimentosProcessados->push([
+            'date' => $reg->date,
+            'label' => $nomeTanque,
+            'tipo' => 'SAÍDA',
+            'quantity' => $reg->quantity
+        ]);
+
+        // 2. REGISTRO PARA A EMPRESA (ESPELHAMENTO)
+        // Só duplica se houver empresa e for diferente do tanque
+        if (!empty($nomeEmpresa) && $nomeEmpresa !== 'N/A' && strtolower($nomeEmpresa) !== strtolower($nomeTanque)) {
+            $movimentosProcessados->push([
+                'date' => $reg->date,
+                'label' => $nomeEmpresa,
+                'tipo' => 'SAÍDA',
+                'quantity' => $reg->quantity
+            ]);
+        }
+    } else {
+        // ENTRADA (ATESTO)
+        $movimentosProcessados->push([
+            'date' => $reg->date,
+            'label' => $nomeTanque,
+            'tipo' => 'ENTRADA',
+            'quantity' => $reg->quantity
+        ]);
+    }
+}
+
+// Agrupar por "Data - Nome" para criar as barras individuais no eixo X
+$dadosAgrupados = $movimentosProcessados->groupBy(function($item) {
+    return date('d/m', strtotime($item['date'])) . ' - ' . $item['label'];
+});
+
+$labelsCompostas = [];
 $dataSaidas = [];
 $dataEntradas = [];
 
-foreach ($tanques as $tanque) {
-    // Soma saídas deste tanque específico no histórico filtrado
-    $saidas = $historico->where('tipo', 'SAÍDA')
-                        ->where('tanque_nome', $tanque->nome)
-                        ->sum('quantity');
-    
-    // Soma entradas deste tanque específico no histórico filtrado
-    $entradas = $historico->where('tipo', 'ENTRADA')
-                         ->where('tanque_nome', $tanque->nome)
-                         ->sum('quantity');
-
-    $dataSaidas[] = $saidas;
-    $dataEntradas[] = $entradas;
+foreach ($dadosAgrupados as $chave => $movs) {
+    $labelsCompostas[] = explode(' - ', $chave); // Cria as duas linhas na label
+    $dataSaidas[] = $movs->where('tipo', 'SAÍDA')->sum('quantity');
+    $dataEntradas[] = $movs->where('tipo', 'ENTRADA')->sum('quantity');
 }
 
-// 9. RETURN (Passe as variáveis para a view)
+$datasets = [
+    [
+        'label' => 'Saídas (Consumo)',
+        'data' => $dataSaidas,
+        'backgroundColor' => '#db5246', // Vermelho
+        'stack' => 'combustivel',
+        'borderRadius' => 4
+    ],
+    [
+        'label' => 'Entradas (Atesto)',
+        'data' => $dataEntradas,
+        'backgroundColor' => '#62c48e', // Verde
+        'stack' => 'combustivel',
+        'borderRadius' => 4
+    ]
+];
+
+// 9. RETURN FINAL CORRIGIDO
 return view('fuel.index', compact(
-    'tanques', 'historico', 'labels', 'dataSaidas', 'dataEntradas',
+    'tanques', 'historico', 'labelsCompostas', 'datasets', 
     'totalConsumidoFiltro', 'totalEntradaFiltro', 'contagemRegistos',
     'capacidadeTotal', 'restante', 'percentagem'
-));}
+));
+
+    }
 
     // Registrar Saída (Abastecimento de Viatura)
     public function store(Request $request)
