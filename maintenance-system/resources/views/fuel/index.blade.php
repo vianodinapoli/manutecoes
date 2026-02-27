@@ -106,10 +106,16 @@
                                 <label class="small fw-bold text-primary">Total (L)</label>
                                 <input type="number" id="qty" name="quantity" class="form-control border-primary fw-bold text-primary" readonly>
                             </div>
-                            <div class="col-md-4">
-                                <label class="small fw-bold">Empresa</label>
-                                <input type="text" name="company" class="form-control">
-                            </div>
+                         <div class="col-md-4">
+    <label class="small fw-bold">Empresa</label>
+    <input type="text" name="company" list="empresas-list" class="form-control" placeholder="Selecione ou digite...">
+    <datalist id="empresas-list">
+        <option value="Tanque da Fem">
+        <option value="Bymoze">
+        <option value="Nitro">
+        <option value="Bomba Móvel">
+    </datalist>
+</div>
                             <div class="col-md-4">
                                 <label class="small fw-bold">Operador</label>
                                 <input type="text" name="operator" class="form-control">
