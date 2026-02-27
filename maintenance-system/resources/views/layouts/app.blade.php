@@ -117,10 +117,40 @@
                         <span class="nav-text">Stock</span>
                     </x-nav-link>
 
-                    <x-nav-link :href="route('compras.index')" :active="request()->routeIs('compras.*')" class="nav-item rounded">
-                        <i class="fas fa-shopping-cart"></i> 
-                        <span class="nav-text">Requisições/Compras</span>
-                    </x-nav-link>
+                   <div x-data="{ open: {{ request()->routeIs('suppliers.*', 'compras.*') ? 'true' : 'false' }} }" class="w-100">
+    <a @click="open = !open" 
+       class="nav-item rounded d-flex align-items-center justify-content-between cursor-pointer" 
+       :class="open ? 'bg-light text-primary' : ''"
+       style="cursor: pointer; padding: 0.5rem 1rem; text-decoration: none; color: inherit;">
+        
+        <div>
+            <i class="fas fa-shopping-cart"></i> 
+            <span class="nav-text ms-2">Pedidos Internos</span>
+        </div>
+        
+        <i class="fas fa-chevron-right transition-all" 
+           :style="open ? 'transform: rotate(90deg)' : ''" 
+           style="font-size: 0.7rem; transition: 0.3s;"></i>
+    </a>
+
+    <div x-show="open" 
+         x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 -translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         class="ps-3 mt-1">
+        
+        <x-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')" class="nav-item rounded d-block mb-1">
+            <i class="fas fa-truck me-2" style="font-size: 0.8rem;"></i> 
+            <span class="nav-text" style="font-size: 0.85rem;">Fornecedores</span>
+        </x-nav-link>
+
+        <x-nav-link :href="route('compras.index')" :active="request()->routeIs('compras.*')" class="nav-item rounded d-block">
+            <i class="fas fa-file-invoice-dollar me-2" style="font-size: 0.8rem;"></i> 
+            <span class="nav-text" style="font-size: 0.85rem;">Requisições</span>
+        </x-nav-link>
+    </div>
+</div>
 
                     <x-nav-link :href="route('fuel.index')" :active="request()->routeIs('fuel.*')" class="nav-item rounded">
     <i class="fas fa-gas-pump"></i> 
