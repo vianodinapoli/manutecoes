@@ -11,6 +11,7 @@ use App\Http\Controllers\MaterialPurchaseController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\FuelController;
+use App\Http\Controllers\SupplierController;
 
 
 
@@ -108,6 +109,9 @@ Route::prefix('combustivel')->group(function () {
     // ADICIONE ESTA LINHA:
     Route::post('/tanks/store', [FuelController::class, 'storeTank'])->name('fuel.tanks.store');
 });
+
+
+Route::resource('suppliers', SupplierController::class);
 
 Route::get('/download-file/{id}', function ($id) {
     $file = \App\Models\MaintenanceFile::findOrFail($id);
