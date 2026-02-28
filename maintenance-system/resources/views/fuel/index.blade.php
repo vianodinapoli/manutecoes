@@ -132,7 +132,7 @@
                 </div>
             </div>
          <div class="row g-3 mb-4">
-    <div class="col-md-8 mx-auto"> <div class="card card-fuel shadow-sm p-3">
+    <div class=""> <div class="card card-fuel shadow-sm p-3">
             <h6 class="fw-bold text-muted mb-3 small text-uppercase text-center">
                 <i class="bi bi-graph-up me-2"></i>Consumo Diário por Empresa (L)
             </h6>
@@ -160,7 +160,7 @@
                     </div> --}}
                     <div class="col-md-3">
                         <label class="small fw-bold">Tanque</label>
-                        <select name="filter_tank_id" class="form-select form-select-sm">
+                        <select name="filter_tank_id" class=" form-select-sm form-control bg-light"">
                             <option value="">Todos os Tanques</option>
                             @foreach($tanques as $t)
                                 <option value="{{ $t->id }}" {{ request('filter_tank_id') == $t->id ? 'selected' : '' }}>{{ $t->nome }}</option>
