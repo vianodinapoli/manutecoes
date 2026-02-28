@@ -224,9 +224,24 @@
                                 <strong>Op:</strong> {{ $item->operator ?: '---' }}<br>
                                 <strong>Mot:</strong> {{ $item->driver ?: '---' }}
                             </td>
-                            <td class="text-center d-print-none">
-                                <button class="btn btn-light btn-sm rounded-circle"><i class="bi bi-pencil"></i></button>
-                            </td>
+                       <td class="text-center d-print-none">
+    <div class="d-flex justify-content-center gap-1">
+        <button type="button" 
+        class="btn btn-sm btn-outline-primary rounded-circle btn-edit" 
+        data-id="{{ $item->id }}" 
+        data-tipo="{{ $item->tipo }}">
+    <i class="bi bi-pencil"></i>
+</button>
+
+        <button type="button" 
+                class="btn btn-sm btn-outline-danger rounded-circle btn-delete" 
+                data-id="{{ $item->id }}" 
+                data-tipo="{{ $item->tipo }}"
+                data-url="{{ $item->tipo == 'ENTRADA' ? route('fuel.entry.destroy', $item->id) : route('fuel.log.destroy', $item->id) }}">
+            <i class="bi bi-trash"></i>
+        </button>
+    </div>
+</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -289,7 +304,44 @@
             </div>
         </div>
     </div>
-
+<div class="modal fade" id="editLogModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="editLogForm">
+            @csrf
+            @method('PUT')
+            <input type="hidden" id="edit_log_id">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Abastecimento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Viatura/Placa</label>
+                        <input type="text" name="plate" id="edit_plate" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label>Contador Inicial</label>
+                            <input type="number" name="start_counter" id="edit_start" class="form-control" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label>Contador Final</label>
+                            <input type="number" name="end_counter" id="edit_end" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>Empresa</label>
+                        <input type="text" name="company" id="edit_company" list="empresas-list" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
@@ -301,6 +353,124 @@
     <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 
     <script>
+
+$(document).ready(function() {
+    console.log("JavaScript carregado e pronto!");
+
+    // Evento para o botão de EDITAR
+    $(document).on('click', '.btn-edit', function(e) {
+        e.preventDefault();
+        
+        const id = $(this).data('id');
+        const tipo = $(this).data('tipo');
+        
+        if (tipo === 'SAÍDA') {
+            const url = `/fuel-log/${id}/json`;
+            $.get(url, function(data) {
+                $('#edit_log_id').val(data.id);
+                $('#edit_plate').val(data.plate);
+                $('#edit_start').val(data.start_counter);
+                $('#edit_end').val(data.end_counter);
+                $('#edit_company').val(data.company);
+                
+                var myModal = new bootstrap.Modal(document.getElementById('editLogModal'));
+                myModal.show();
+            }).fail(function(xhr) {
+                alert("Erro ao buscar dados: " + xhr.statusText);
+            });
+        } else {
+            // AJUSTE: Implementação da busca para ENTRADA
+            const url = `/fuel-entry/${id}/json`;
+            $.get(url, function(data) {
+                // Preenche os campos no modal de entrada
+                // Nota: Verifique se os IDs abaixo correspondem aos inputs do seu #modalEntrada
+                $('#modalEntrada form').attr('action', `/fuel-entry/${id}`); // Muda a rota para UPDATE
+                $('#modalEntrada form').append('<input type="hidden" name="_method" value="PUT">');
+                
+                $('#modalEntrada select[name="tank_id"]').val(data.tank_id);
+                $('#modalEntrada input[name="date"]').val(data.date.split(' ')[0]);
+                $('#modalEntrada input[name="quantity"]').val(data.quantity);
+                $('#modalEntrada input[name="supplier"]').val(data.supplier || data.ident);
+                
+                var myModal = new bootstrap.Modal(document.getElementById('modalEntrada'));
+                myModal.show();
+            }).fail(function() {
+                alert("Erro ao buscar dados da entrada.");
+            });
+        }
+    });
+});
+
+// Evento de DELETE com RELOAD para atualizar os gráficos
+// Evento de DELETE ajustado
+$(document).off('click', '.btn-delete').on('click', '.btn-delete', function(e) {
+    e.preventDefault();
+    e.stopImmediatePropagation(); // Impede o disparo duplo
+
+    const button = $(this);
+    const url = button.data('url');
+
+    if (confirm('Tem certeza que deseja apagar este registo?')) {
+        button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                _method: 'DELETE',
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                // Força o reload para atualizar tanques e gráficos
+                window.location.reload();
+            },
+            error: function(xhr) {
+                // Se o status for 200 (OK), ele apagou, mas o AJAX achou que era erro
+                if(xhr.status === 200) {
+                    window.location.reload();
+                } else {
+                    alert('Erro ao apagar: ' + xhr.statusText);
+                    button.prop('disabled', false).html('<i class="bi bi-trash"></i>');
+                }
+            }
+        });
+    }
+});
+
+
+$(document).on('click', '.btn-delete', function() {
+    const button = $(this);
+    const url = button.data('url');
+    const row = button.closest('tr'); // Seleciona a linha da tabela
+
+    if (confirm('Tem certeza que deseja apagar este registo?')) {
+        // Desativa o botão para evitar cliques duplos
+        button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                _method: 'DELETE',
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                // Remove a linha com um efeito suave
+                row.fadeOut(400, function() {
+                    $(this).remove();
+                });
+                // Opcional: Mostrar um alerta rápido de sucesso (Toast)
+            },
+            error: function(xhr) {
+                alert('Erro ao apagar o registo. Tente novamente.');
+                button.prop('disabled', false).html('<i class="bi bi-trash"></i>');
+            }
+        });
+    }
+});
+
+
+
         $(document).ready(function() {
             $('#fuelTable').DataTable({
                 dom: '<"d-flex justify-content-between align-items-center mb-3"Bf>rtip',

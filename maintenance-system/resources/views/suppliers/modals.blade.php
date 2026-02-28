@@ -97,7 +97,7 @@
 
 
 
-// Modais de edição e exclusão seriam semelhantes, com formulários pré-preenchidos para edição e confirmação para exclusão.
+{{-- // Modais de edição e exclusão seriam semelhantes, com formulários pré-preenchidos para edição e confirmação para exclusão. --}}
 
 <div class="modal fade" id="modalEditSupplier" tabindex="-1">
     <div class="modal-dialog modal-lg">

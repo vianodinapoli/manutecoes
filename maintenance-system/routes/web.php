@@ -110,6 +110,20 @@ Route::prefix('combustivel')->group(function () {
     Route::post('/tanks/store', [FuelController::class, 'storeTank'])->name('fuel.tanks.store');
 });
 
+// Rotas para Saídas (Logs)
+Route::get('/fuel-log/{id}/edit', [FuelController::class, 'editLog'])->name('fuel.log.edit');
+Route::put('/fuel-log/{id}', [FuelController::class, 'updateLog'])->name('fuel.log.update');
+Route::delete('/fuel-log/{id}', [FuelController::class, 'destroyLog'])->name('fuel.log.destroy');
+
+// Rotas para Entradas (Entries)
+Route::get('/fuel-entry/{id}/edit', [FuelController::class, 'editEntry'])->name('fuel.entry.edit');
+Route::put('/fuel-entry/{id}', [FuelController::class, 'updateEntry'])->name('fuel.entry.update');
+Route::delete('/fuel-entry/{id}', [FuelController::class, 'destroyEntry'])->name('fuel.entry.destroy');
+
+// Rotas para buscar dados via AJAX
+Route::get('/fuel-log/{id}/json', [FuelController::class, 'getLogJson'])->name('fuel.log.json');
+Route::get('/fuel-entry/{id}/json', [FuelController::class, 'getEntryJson'])->name('fuel.entry.json');
+
 
 Route::resource('suppliers', SupplierController::class);
 

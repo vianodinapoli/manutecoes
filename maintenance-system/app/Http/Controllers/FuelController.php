@@ -24,6 +24,7 @@ class FuelController extends Controller
         $queryEntradas = DB::table('fuel_entries')
             ->leftJoin('tanks', 'fuel_entries.tank_id', '=', 'tanks.id')
             ->select(
+                'fuel_entries.id',
                 'fuel_entries.date',
                 'fuel_entries.supplier as ident',
                 DB::raw("'' as company"), 
@@ -41,6 +42,7 @@ class FuelController extends Controller
         $querySaidas = DB::table('fuel_logs')
             ->leftJoin('tanks', 'fuel_logs.tank_id', '=', 'tanks.id')
             ->select(
+                'fuel_logs.id',
                 'fuel_logs.date',
                 'fuel_logs.plate as ident',
                 'fuel_logs.company',
@@ -225,4 +227,52 @@ return view('fuel.index', compact(
 
         return redirect()->back()->with('success', 'Stock reforçado!');
     }
+
+
+ public function destroyLog($id)
+{
+    FuelLog::findOrFail($id)->delete();
+    return response()->json(['success' => true]);
+}
+
+public function destroyEntry($id)
+{
+    FuelEntry::findOrFail($id)->delete();
+    return response()->json(['success' => true]);
+}
+// Exemplo de Edit para Saída (Log)
+public function editLog($id)
+{
+    $log = FuelLog::findOrFail($id);
+    $tanques = Tank::all();
+    return view('fuel.edit_log', compact('log', 'tanques'));
+}
+
+
+public function getLogJson($id) {
+    return response()->json(FuelLog::findOrFail($id));
+}
+
+public function getEntryJson($id) {
+    return response()->json(FuelEntry::findOrFail($id));
+}
+
+// Método de Update (Exemplo para Saída)
+public function updateLog(Request $request, $id) {
+    $log = FuelLog::findOrFail($id);
+    
+    // 1. Reverter stock antigo (opcional, mas recomendado)
+    $tanque = Tank::find($log->tank_id);
+    $tanque->stock_atual += $log->quantity; 
+
+    // 2. Atualizar dados
+    $quantidade = $request->end_counter - $request->start_counter;
+    $log->update(array_merge($request->all(), ['quantity' => $quantidade]));
+
+    // 3. Aplicar stock novo
+    $tanque->stock_atual -= $quantidade;
+    $tanque->save();
+
+    return response()->json(['success' => true, 'message' => 'Atualizado com sucesso!']);
+}
 }
