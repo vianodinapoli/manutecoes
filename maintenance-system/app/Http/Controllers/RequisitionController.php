@@ -17,11 +17,32 @@ class RequisitionController extends Controller
         return view('requisicoes.index', compact('requisicoes'));
     }
 
-    public function create()
-    {
-        $fornecedores = Supplier::all();
-        return view('requisicoes.create', compact('fornecedores'));
+    // Substitua apenas o método create() no RequisitionController.php
+
+public function create(Request $request)
+{
+    $fornecedores = Supplier::all();
+
+    // ✅ Se vier de uma compra aprovada, carrega os dados dela
+    $compra = null;
+    $itensPreenchidos = [];
+
+    if ($request->has('compra_id')) {
+        $compra = \App\Models\MaterialPurchase::with('items')->find($request->compra_id);
+
+        if ($compra && $compra->status === 'Aprovado') {
+            foreach ($compra->items as $item) {
+                $itensPreenchidos[] = [
+                    'desc'  => $item->item_name,
+                    'qty'   => $item->quantity,
+                    'price' => 0, // Sem valor — homem das compras preenche
+                ];
+            }
+        }
     }
+
+    return view('requisicoes.create', compact('fornecedores', 'compra', 'itensPreenchidos'));
+}
 
     public function store(Request $request)
     {

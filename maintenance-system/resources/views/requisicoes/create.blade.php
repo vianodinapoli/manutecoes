@@ -302,5 +302,55 @@
                 }
             });
         }
+
+
+
+{{-- 
+    Adicione isto NO FINAL do create.blade.php, ANTES do </x-app-layout>
+    Substitui o addLinha() inicial pelo pré-preenchimento dos itens da compra aprovada
+--}}
+
+@if(isset($compra) && $compra)
+    // Aviso visual que vieram itens da compra aprovada
+    $(document).ready(function () {
+        // Banner informativo
+        $('.card-header.bg-secondary').after(`
+            <div class="alert alert-success alert-dismissible fade show mx-3 mt-3 mb-0 py-2" role="alert" style="font-size:0.85rem;">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong>Itens importados automaticamente</strong> do Pedido de Compra <strong>#{{ $compra->id }}</strong>.
+                Preencha apenas os <strong>preços unitários</strong> para finalizar.
+                <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+            </div>
+        `);
+
+        // Pré-preenche os itens vindos da compra aprovada
+        const itensDaCompra = @json($itensPreenchidos);
+
+        if (itensDaCompra.length > 0) {
+            // Limpa a linha vazia inicial
+            $('#tabela_itens tbody').empty();
+            contadorItens = 0;
+
+            itensDaCompra.forEach(function(item) {
+                contadorItens++;
+                const html = `
+                    <tr id="linha_${contadorItens}">
+                        <td><input type="text" class="form-control form-control-sm desc" value="${item.desc}" required></td>
+                        <td><input type="number" class="form-control form-control-sm text-center qty" value="${item.qty}" min="1" oninput="calcularLinha(${contadorItens})" required></td>
+                        <td><input type="number" class="form-control form-control-sm text-end price border-warning" placeholder="Inserir preço" step="0.01" oninput="calcularLinha(${contadorItens})" required></td>
+                        <td class="text-end fw-bold"><span id="subtotal_${contadorItens}">0.00</span> MT</td>
+                        <td class="text-center"><button type="button" class="btn btn-link text-danger p-0" onclick="removerLinha(${contadorItens})"><i class="bi bi-trash"></i></button></td>
+                    </tr>`;
+                $('#tabela_itens tbody').append(html);
+            });
+
+            calcularTotalGeral();
+        }
+    });
+@endif
+
     </script>
+
+
+
 </x-app-layout>
