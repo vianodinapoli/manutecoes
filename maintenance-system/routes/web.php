@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\FuelController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\RequisitionController;
 
 
 
@@ -124,8 +125,14 @@ Route::delete('/fuel-entry/{id}', [FuelController::class, 'destroyEntry'])->name
 Route::get('/fuel-log/{id}/json', [FuelController::class, 'getLogJson'])->name('fuel.log.json');
 Route::get('/fuel-entry/{id}/json', [FuelController::class, 'getEntryJson'])->name('fuel.entry.json');
 
-
+// Rotas de Requisições
+Route::get('/requisicoes', [RequisitionController::class, 'index'])->name('requisicoes.index');
+Route::get('/requisicoes/novo', [RequisitionController::class, 'create'])->name('requisicoes.create');
+Route::post('/requisicoes/store', [RequisitionController::class, 'store'])->name('requisicoes.store'); // Ajustado para plural
+Route::get('/requisicoes/{id}/json', [RequisitionController::class, 'showJson'])->name('requisicoes.json');
+Route::get('/requisicoes/{id}/pdf', [RequisitionController::class, 'gerarPdf'])->name('requisicoes.pdf');
 Route::resource('suppliers', SupplierController::class);
+// No seu arquivo routes/web.php
 
 Route::get('/download-file/{id}', function ($id) {
     $file = \App\Models\MaintenanceFile::findOrFail($id);

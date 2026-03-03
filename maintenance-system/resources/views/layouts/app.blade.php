@@ -117,38 +117,61 @@
                         <span class="nav-text">Stock</span>
                     </x-nav-link>
 
-                   <div x-data="{ open: {{ request()->routeIs('suppliers.*', 'compras.*') ? 'true' : 'false' }} }" class="w-100">
-    <a @click="open = !open" 
+                   <div x-data="{ open: {{ request()->routeIs('suppliers.*', 'compras.*', 'requisicao.*', 'requisicoes.*') ? 'true' : 'false' }} }" class="w-100 mb-2">
+    <div @click="open = !open" 
        class="nav-item rounded d-flex align-items-center justify-content-between cursor-pointer" 
-       :class="open ? 'bg-light text-primary' : ''"
-       style="cursor: pointer; padding: 0.5rem 1rem; text-decoration: none; color: inherit;">
+       :class="open ? 'bg-light text-primary fw-bold' : 'text-muted'"
+       style="cursor: pointer; padding: 0.6rem 1rem; transition: all 0.2s ease;">
         
-        <div>
-            <i class="fas fa-shopping-cart"></i> 
-            <span class="nav-text ms-2">Pedidos Internos</span>
+        <div class="d-flex align-items-center">
+            <i class="fas fa-shopping-cart" style="width: 20px;"></i> 
+            <span class="nav-text ms-2">Pedidos/Requisições</span>
         </div>
         
-        <i class="fas fa-chevron-right transition-all" 
+        <i class="fas fa-chevron-right" 
            :style="open ? 'transform: rotate(90deg)' : ''" 
-           style="font-size: 0.7rem; transition: 0.3s;"></i>
-    </a>
+           style="font-size: 0.7rem; transition: transform 0.3s ease;"></i>
+    </div>
 
     <div x-show="open" 
          x-cloak
+         x-collapse
          x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0 -translate-y-2"
-         x-transition:enter-end="opacity-100 translate-y-0"
-         class="ps-3 mt-1">
+         class="ps-3 mt-1" 
+         style="border-left: 2px solid #e9ecef; margin-left: 1.2rem;">
         
-        <x-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')" class="nav-item rounded d-block mb-1">
-            <i class="fas fa-truck me-2" style="font-size: 0.8rem;"></i> 
+
+         <x-nav-link :href="route('compras.index')" 
+            :active="request()->routeIs('compras.index')" 
+            class="nav-item rounded d-flex align-items-center py-2 px-3 text-decoration-none shadow-none mb-1">
+    <i class="fas fa-list-ul me-2" style="font-size: 0.8rem; width: 15px;"></i> 
+    <span class="nav-text" style="font-size: 0.85rem;">Pedidos internos</span>
+</x-nav-link>
+        <x-nav-link :href="route('suppliers.index')" 
+                    :active="request()->routeIs('suppliers.*')" 
+                    class="nav-item rounded d-flex align-items-center py-2 px-3 mb-1 text-decoration-none shadow-none">
+            <i class="fas fa-truck me-2" style="font-size: 0.8rem; width: 15px;"></i> 
             <span class="nav-text" style="font-size: 0.85rem;">Fornecedores</span>
         </x-nav-link>
 
-        <x-nav-link :href="route('compras.index')" :active="request()->routeIs('compras.*')" class="nav-item rounded d-block">
-            <i class="fas fa-file-invoice-dollar me-2" style="font-size: 0.8rem;"></i> 
-            <span class="nav-text" style="font-size: 0.85rem;">Requisições</span>
-        </x-nav-link>
+
+<x-nav-link :href="route('requisicoes.create')" 
+            :active="request()->routeIs('requisicoes.create')" 
+            class="nav-item rounded d-flex align-items-center py-2 px-3 text-decoration-none shadow-none">
+    <i class="fas fa-plus-circle me-2" style="font-size: 0.8rem; width: 15px;"></i> 
+    <span class="nav-text" style="font-size: 0.85rem;">Nova Requisição</span>
+</x-nav-link>
+
+<x-nav-link :href="route('requisicoes.index')" 
+            :active="request()->routeIs('requisicoes.index')" 
+            class="nav-item rounded d-flex align-items-center py-2 px-3 text-decoration-none shadow-none">
+    <i class="fas fa-list me-2" style="font-size: 0.8rem; width: 15px;"></i> 
+    <span class="nav-text" style="font-size: 0.85rem;">Lista de Requisições</span>
+</x-nav-link>
+
+        
+
+
     </div>
 </div>
 
