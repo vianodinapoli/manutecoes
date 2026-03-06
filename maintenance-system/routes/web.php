@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\FuelController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\RequisitionController;
+use App\Http\Controllers\DischargeController;
 
 
 
@@ -133,6 +134,11 @@ Route::get('/requisicoes/{id}/json', [RequisitionController::class, 'showJson'])
 Route::get('/requisicoes/{id}/pdf', [RequisitionController::class, 'gerarPdf'])->name('requisicoes.pdf');
 Route::resource('suppliers', SupplierController::class);
 // No seu arquivo routes/web.php
+
+
+Route::resource('discharges', DischargeController::class);
+Route::patch('discharges/{discharge}/confirm', [DischargeController::class, 'confirm'])->name('discharges.confirm');
+
 
 Route::get('/download-file/{id}', function ($id) {
     $file = \App\Models\MaintenanceFile::findOrFail($id);
