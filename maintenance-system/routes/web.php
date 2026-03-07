@@ -107,6 +107,8 @@ Route::prefix('combustivel')->group(function () {
     Route::get('/', [FuelController::class, 'index'])->name('fuel.index');
     Route::post('/store', [FuelController::class, 'store'])->name('fuel.store');
     Route::post('/entry', [FuelController::class, 'storeEntry'])->name('fuel.storeEntry');
+    Route::put('/fuel-entry/{id}', [FuelController::class, 'updateEntry'])->name('fuel.entry.update');
+    Route::post('/fuel-settlement', [FuelController::class, 'storeSettlement'])->name('fuel.settlement.store');
 
     // ADICIONE ESTA LINHA:
     Route::post('/tanks/store', [FuelController::class, 'storeTank'])->name('fuel.tanks.store');
