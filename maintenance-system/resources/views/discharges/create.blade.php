@@ -1,11 +1,34 @@
+@if(!request('modal'))
 <x-app-layout>
+@else
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background: transparent !important; padding: 0 !important; margin: 0 !important; }
+        .container { max-width: 100% !important; padding: 16px !important; }
+        .card { box-shadow: none !important; border: none !important; }
+        .card-header { border-radius: 0 !important; }
+        /* Esconder o botão Voltar e links de navegação dentro do modal */
+        .btn-voltar-modal { display: none; }
+    </style>
+</head>
+<body>
+@endif
+
     <div class="container py-4" style="max-width: 860px;">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold">
                     <i class="bi bi-ship me-2"></i>Registar Descarga — Operador do Porto
                 </h5>
+                @if(!request('modal'))
                 <a href="{{ route('discharges.index') }}" class="btn btn-outline-light btn-sm">Voltar</a>
+                @endif
             </div>
             <div class="card-body p-4">
 
@@ -62,7 +85,7 @@
                     </h6>
 
                     {{-- Linha Alta --}}
-                    <div class="card border-0 mb-3" style="background: #e8f0fe; border-left: 4px solid #1a56db !important; border-radius: 8px;">
+                    <div class="card border-0 mb-3" style="background:#e8f0fe;border-left:4px solid #1a56db !important;border-radius:8px;">
                         <div class="card-body py-3 px-4">
                             <div class="d-flex align-items-center mb-2">
                                 <span class="badge me-2" style="background:#1a56db;">ALTA</span>
@@ -93,7 +116,7 @@
                     </div>
 
                     {{-- Linha Baixa --}}
-                    <div class="card border-0 mb-3" style="background: #fde8e8; border-left: 4px solid #dc3545 !important; border-radius: 8px;">
+                    <div class="card border-0 mb-3" style="background:#fde8e8;border-left:4px solid #dc3545 !important;border-radius:8px;">
                         <div class="card-body py-3 px-4">
                             <div class="d-flex align-items-center mb-2">
                                 <span class="badge bg-danger me-2">BAIXA</span>
@@ -124,7 +147,7 @@
                     </div>
 
                     {{-- Total Geral --}}
-                    <div class="card border-0 mb-4" style="background: #f0fdf4; border-left: 4px solid #198754 !important; border-radius: 8px;">
+                    <div class="card border-0 mb-4" style="background:#f0fdf4;border-left:4px solid #198754 !important;border-radius:8px;">
                         <div class="card-body py-3 px-4">
                             <div class="row g-3 align-items-center">
                                 <div class="col-md-6">
@@ -143,7 +166,9 @@
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">
+                        @if(!request('modal'))
                         <a href="{{ route('discharges.index') }}" class="btn btn-light border px-4">Cancelar</a>
+                        @endif
                         <button type="submit" class="btn btn-primary px-5 fw-bold">
                             <i class="bi bi-check-circle me-1"></i>Registar Descarga
                         </button>
@@ -158,21 +183,19 @@
             document.getElementById('sacos_alta').value = n;
             calcAll();
         }
-
         function setLowBags(n) {
             document.getElementById('sacos_baixa').value = n;
             calcAll();
         }
-
         function calcAll() {
             const sacosAlta  = parseFloat(document.getElementById('sacos_alta').value) || 0;
             const pesoAlta   = parseFloat(document.getElementById('peso_saco_alta').value) || 0;
             const sacosBaixa = parseFloat(document.getElementById('sacos_baixa').value) || 0;
             const pesoBaixa  = parseFloat(document.getElementById('peso_saco_baixa').value) || 0;
 
-            const subAlta  = sacosAlta * pesoAlta;
-            const subBaixa = sacosBaixa * pesoBaixa;
-            const total    = subAlta + subBaixa;
+            const subAlta    = sacosAlta * pesoAlta;
+            const subBaixa   = sacosBaixa * pesoBaixa;
+            const total      = subAlta + subBaixa;
             const totalSacos = sacosAlta + sacosBaixa;
 
             document.getElementById('subtotal_alta').value        = subAlta.toLocaleString('pt-MZ', {minimumFractionDigits: 0});
@@ -180,8 +203,41 @@
             document.getElementById('total_sacos_display').value  = totalSacos;
             document.getElementById('total_weight_display').value = total.toLocaleString('pt-MZ', {minimumFractionDigits: 0});
         }
-
-        // Calcula ao carregar a página
         calcAll();
+
+        @if(request('modal'))
+        {{-- Após submit redirecionar a página pai em vez do iframe --}}
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            const data = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: data,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => {
+                if (res.ok || res.redirected) {
+                    // Avisar a página pai para fechar o modal e recarregar
+                    window.parent.postMessage('discharge:saved', '*');
+                } else {
+                    return res.text().then(html => {
+                        // Se houver erros de validação, mostrar no iframe
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    });
+                }
+            })
+            .catch(() => window.parent.postMessage('discharge:saved', '*'));
+        });
+        @endif
     </script>
+
+@if(!request('modal'))
 </x-app-layout>
+@else
+</body>
+</html>
+@endif

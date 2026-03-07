@@ -1,4 +1,6 @@
+@if(!request('modal'))
 <x-app-layout>
+@endif
     <div class="container py-4" style="max-width: 860px;">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
@@ -184,4 +186,6 @@
 
         calcAll();
     </script>
+@if(!request('modal'))
 </x-app-layout>
+@endif

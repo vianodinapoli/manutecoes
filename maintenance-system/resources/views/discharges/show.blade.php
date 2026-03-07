@@ -1,5 +1,7 @@
+@if(!request('modal'))
 <x-app-layout>
-    <div class="container py-4" style="max-width: 860px;">
+@endif
+<div class="container py-4" style="max-width: 860px;">
 
         @php
             $statusClass = match($discharge->status) {
@@ -187,4 +189,7 @@
             </div>
         </div>
     </div>
+
+@if(!request('modal'))
 </x-app-layout>
+@endif
