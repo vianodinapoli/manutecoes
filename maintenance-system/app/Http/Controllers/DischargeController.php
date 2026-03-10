@@ -15,8 +15,13 @@ class DischargeController extends Controller
         return view('discharges.index', compact('discharges'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        // Pedido normal (sem ?modal=1) → redireciona para o index
+        if (! $request->ajax() && ! $request->has('modal')) {
+            return redirect()->route('discharges.index');
+        }
+        // Pedido via fetch do modal → retorna só a view parcial
         return view('discharges.create');
     }
 
@@ -35,83 +40,89 @@ class DischargeController extends Controller
             'peso_saco_baixa'  => 'required_if:sacos_baixa,>0|numeric|min:0',
         ]);
 
-        $sacosAlta  = (int) $request->sacos_alta;
-        $sacosBaixa = (int) $request->sacos_baixa;
-        $pesoAlta   = (float) $request->peso_saco_alta;
-        $pesoBaixa  = (float) $request->peso_saco_baixa;
+        $sacosAlta    = (int)   $request->sacos_alta;
+        $sacosBaixa   = (int)   $request->sacos_baixa;
+        $pesoAlta     = (float) $request->peso_saco_alta;
+        $pesoBaixa    = (float) $request->peso_saco_baixa;
+        $totalAlta    = $sacosAlta  * $pesoAlta;
+        $totalBaixa   = $sacosBaixa * $pesoBaixa;
+        $totalSacos   = $sacosAlta  + $sacosBaixa;
+        $pesoEstimado = $totalAlta  + $totalBaixa;
 
-        $totalAlta   = $sacosAlta * $pesoAlta;
-        $totalBaixa  = $sacosBaixa * $pesoBaixa;
-        $totalSacos  = $sacosAlta + $sacosBaixa;
-        $pesoEstimado = $totalAlta + $totalBaixa;
-
-        $discharge = Discharge::create([
-            'data'               => $request->data,
-            'motorista'          => $request->motorista,
-            'matricula'          => $request->matricula,
-            'transportadora'     => $request->transportadora,
-            'numero_guia'        => $request->numero_guia,
-            'hora_saida_porto'   => $request->hora_saida_porto,
-            'registado_por'      => auth()->id(),
-            'sacos_alta'         => $sacosAlta,
-            'peso_saco_alta'     => $pesoAlta,
-            'total_alta'         => $totalAlta,
-            'sacos_baixa'        => $sacosBaixa,
-            'peso_saco_baixa'    => $pesoBaixa,
-            'total_baixa'        => $totalBaixa,
-            'total_sacos'        => $totalSacos,
+        Discharge::create([
+            'data'                => $request->data,
+            'motorista'           => $request->motorista,
+            'matricula'           => $request->matricula,
+            'transportadora'      => $request->transportadora,
+            'numero_guia'         => $request->numero_guia,
+            'hora_saida_porto'    => $request->hora_saida_porto,
+            'registado_por'       => auth()->id(),
+            'sacos_alta'          => $sacosAlta,
+            'peso_saco_alta'      => $pesoAlta,
+            'total_alta'          => $totalAlta,
+            'sacos_baixa'         => $sacosBaixa,
+            'peso_saco_baixa'     => $pesoBaixa,
+            'total_baixa'         => $totalBaixa,
+            'total_sacos'         => $totalSacos,
             'peso_total_estimado' => $pesoEstimado,
-            'status'             => 'in_transit',
+            'status'              => 'in_transit',
         ]);
 
         return redirect()->route('discharges.index')
-            ->with('success', 'Descarga registada com sucesso! Aguarda confirmação na balança.');
+            ->with('success', '✅ Descarga registada com sucesso! Aguarda confirmação na balança.');
     }
 
-    public function show(Discharge $discharge)
+    public function show(Request $request, Discharge $discharge)
     {
+        if (! $request->ajax() && ! $request->has('modal')) {
+            return redirect()->route('discharges.index');
+        }
         return view('discharges.show', compact('discharge'));
     }
 
-    public function edit(Discharge $discharge)
+    public function edit(Request $request, Discharge $discharge)
     {
+        if (! $request->ajax() && ! $request->has('modal')) {
+            return redirect()->route('discharges.index');
+        }
         return view('discharges.edit', compact('discharge'));
     }
 
     public function update(Request $request, Discharge $discharge)
     {
         $request->validate([
-            'data'           => 'required|date',
-            'motorista'      => 'required|string|max:100',
-            'matricula'      => 'required|string|max:20',
-            'transportadora' => 'required|string|max:100',
-            'numero_guia'    => 'required|string|unique:descargas,numero_guia,' . $discharge->id,
+            'data'             => 'required|date',
+            'motorista'        => 'required|string|max:100',
+            'matricula'        => 'required|string|max:20',
+            'transportadora'   => 'required|string|max:100',
+            'numero_guia'      => 'required|string|unique:descargas,numero_guia,' . $discharge->id,
             'hora_saida_porto' => 'nullable|date_format:H:i',
         ]);
 
-        $sacosAlta  = (int) $request->sacos_alta;
-        $sacosBaixa = (int) $request->sacos_baixa;
+        $sacosAlta  = (int)   $request->sacos_alta;
+        $sacosBaixa = (int)   $request->sacos_baixa;
         $pesoAlta   = (float) $request->peso_saco_alta;
         $pesoBaixa  = (float) $request->peso_saco_baixa;
 
         $discharge->update([
-            'data'               => $request->data,
-            'motorista'          => $request->motorista,
-            'matricula'          => $request->matricula,
-            'transportadora'     => $request->transportadora,
-            'numero_guia'        => $request->numero_guia,
-            'hora_saida_porto'   => $request->hora_saida_porto,
-            'sacos_alta'         => $sacosAlta,
-            'peso_saco_alta'     => $pesoAlta,
-            'total_alta'         => $sacosAlta * $pesoAlta,
-            'sacos_baixa'        => $sacosBaixa,
-            'peso_saco_baixa'    => $pesoBaixa,
-            'total_baixa'        => $sacosBaixa * $pesoBaixa,
-            'total_sacos'        => $sacosAlta + $sacosBaixa,
+            'data'                => $request->data,
+            'motorista'           => $request->motorista,
+            'matricula'           => $request->matricula,
+            'transportadora'      => $request->transportadora,
+            'numero_guia'         => $request->numero_guia,
+            'hora_saida_porto'    => $request->hora_saida_porto,
+            'sacos_alta'          => $sacosAlta,
+            'peso_saco_alta'      => $pesoAlta,
+            'total_alta'          => $sacosAlta * $pesoAlta,
+            'sacos_baixa'         => $sacosBaixa,
+            'peso_saco_baixa'     => $pesoBaixa,
+            'total_baixa'         => $sacosBaixa * $pesoBaixa,
+            'total_sacos'         => $sacosAlta + $sacosBaixa,
             'peso_total_estimado' => ($sacosAlta * $pesoAlta) + ($sacosBaixa * $pesoBaixa),
         ]);
 
-        return redirect()->route('discharges.index')->with('success', 'Descarga atualizada!');
+        return redirect()->route('discharges.index')
+            ->with('success', '✅ Descarga atualizada com sucesso!');
     }
 
     public function confirm(Request $request, Discharge $discharge)
@@ -131,12 +142,14 @@ class DischargeController extends Controller
         $discharge->sacos_confirmados    = $request->sacos_confirmados;
         $discharge->observacoes          = $request->observacoes;
         $discharge->confirmado_por       = auth()->id();
+        $discharge->status               = 'confirmed';
 
         $discharge->calculateTransportTime();
-$discharge->status = 'confirmed';    
-    $discharge->save();
+        $discharge->save();
 
-        $message = $discharge->status === 'in_transit'
+        $hasDivergence = $discharge->sacos_confirmados != $discharge->total_sacos;
+
+        $message = $hasDivergence
             ? '⚠️ Confirmado com divergência no número de sacos!'
             : '✅ Descarga confirmada com sucesso!';
 
@@ -146,6 +159,7 @@ $discharge->status = 'confirmed';
     public function destroy(Discharge $discharge)
     {
         $discharge->delete();
-        return redirect()->route('discharges.index')->with('success', 'Registo eliminado.');
+        return redirect()->route('discharges.index')
+            ->with('success', '🗑️ Registo eliminado.');
     }
 }

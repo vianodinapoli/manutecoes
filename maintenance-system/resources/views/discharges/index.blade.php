@@ -16,14 +16,12 @@
     .active-filters{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
     .filter-tag{display:inline-flex;align-items:center;gap:5px;background:#e7f1ff;color:#0d6efd;border:1px solid #b6d0ff;border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:500}
     .filter-tag .remove-tag{cursor:pointer;opacity:.6;font-size:.8rem}.filter-tag .remove-tag:hover{opacity:1}
-
     .table-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)}
     #dischargesTable thead tr{background:#f8f9fa}
     #dischargesTable thead th{font-size:.67rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#868e96;border-bottom:1px solid #e9ecef;padding:8px 12px;white-space:nowrap}
     #dischargesTable tbody td{padding:7px 12px;vertical-align:middle;border-bottom:1px solid #f1f3f5;font-size:.82rem}
     #dischargesTable tbody tr:hover{background:#f8f9ff}
     #dischargesTable tbody tr:last-child td{border-bottom:none}
-
     .sacos-wrap{display:flex;flex-direction:column;gap:3px}
     .saco-pill{display:inline-flex;align-items:center;gap:4px;border-radius:5px;padding:2px 7px;font-size:.7rem;font-weight:700;width:fit-content;line-height:1.4}
     .saco-pill.alta{background:#e8f0fe;color:#1a56db;border:1px solid #b8d4f8}
@@ -33,7 +31,6 @@
     .sacos-footer{display:flex;align-items:center;gap:5px;margin-top:1px}
     .sacos-total-badge{font-size:.62rem;font-weight:600;color:#6c757d;background:#f1f3f5;border-radius:4px;padding:1px 6px}
     .divergence-badge{display:inline-flex;align-items:center;gap:3px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:4px;padding:1px 6px;font-size:.6rem;font-weight:600}
-
     .kpi-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:transform .15s,box-shadow .15s;height:100%;position:relative;overflow:hidden}
     .kpi-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.08)}
     .kpi-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:14px 0 0 14px}
@@ -45,14 +42,9 @@
     .kpi-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:2rem;opacity:.1}
     .status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:.68rem;font-weight:600;white-space:nowrap}
     .action-btn{width:28px;height:28px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;border:1px solid;transition:all .15s;text-decoration:none;cursor:pointer;background:transparent}
-
     div.dataTables_wrapper div.dataTables_filter input{border-radius:8px;border:1px solid #dee2e6;padding:6px 12px;font-size:.82rem}
     div.dataTables_wrapper div.dataTables_length select{border-radius:8px;border:1px solid #dee2e6;padding:4px 8px;font-size:.82rem}
-
-    /* ── iframe modal ── */
-    .modal-iframe{width:100%;border:none;min-height:480px;display:block;}
-    .iframe-loading{display:flex;align-items:center;justify-content:center;height:300px;flex-direction:column;gap:12px;color:#adb5bd;}
-
+    .modal-loading{display:flex;align-items:center;justify-content:center;height:300px;flex-direction:column;gap:12px;color:#adb5bd;}
     @media print{
         .no-print{display:none!important}
         body *{visibility:hidden}
@@ -239,50 +231,35 @@
                     $hasDivergence = $discharge->sacos_confirmados
                         && $discharge->sacos_confirmados != $discharge->numero_sacos;
                 @endphp
-                <tr
-                    data-status="{{ $discharge->status }}"
+                <tr data-status="{{ $discharge->status }}"
                     data-transportadora="{{ strtolower($discharge->transportadora) }}"
                     data-data="{{ $discharge->data->format('Y-m-d') }}"
                     data-sacos-alta="{{ $sacosAlta }}"
                     data-sacos-baixa="{{ $sacosBaixa }}"
-                    data-divergencia="{{ $hasDivergence ? 'sim' : 'nao' }}"
-                >
+                    data-divergencia="{{ $hasDivergence ? 'sim' : 'nao' }}">
                     <td>
                         <span class="fw-bold text-dark" style="font-size:.8rem;">#{{ $discharge->id }}</span><br>
                         <span class="text-muted" style="font-size:.72rem;">{{ $discharge->data->format('d/m/Y') }}</span>
                     </td>
-                    <td>
-                        <span class="fw-bold text-primary" style="font-size:.78rem;">{{ $discharge->numero_guia }}</span>
-                    </td>
+                    <td><span class="fw-bold text-primary" style="font-size:.78rem;">{{ $discharge->numero_guia }}</span></td>
                     <td>
                         <span style="font-size:.78rem;font-weight:600;">{{ $discharge->motorista }}</span><br>
                         <span class="badge bg-dark bg-opacity-75" style="font-size:.6rem;letter-spacing:1px;margin-top:2px;">{{ $discharge->matricula }}</span>
                     </td>
-                    <td>
-                        <span class="text-secondary" style="font-size:.78rem;">{{ $discharge->transportadora }}</span>
-                    </td>
+                    <td><span class="text-secondary" style="font-size:.78rem;">{{ $discharge->transportadora }}</span></td>
                     <td>
                         <div class="sacos-wrap">
                             @if($sacosAlta > 0)
-                            <span class="saco-pill alta">
-                                <span class="pill-ref">Alta</span>
-                                <span class="pill-n">{{ $sacosAlta }}</span>
-                            </span>
+                            <span class="saco-pill alta"><span class="pill-ref">Alta</span><span class="pill-n">{{ $sacosAlta }}</span></span>
                             @endif
                             @if($sacosBaixa > 0)
-                            <span class="saco-pill baixa">
-                                <span class="pill-ref">Baixa</span>
-                                <span class="pill-n">{{ $sacosBaixa }}</span>
-                            </span>
+                            <span class="saco-pill baixa"><span class="pill-ref">Baixa</span><span class="pill-n">{{ $sacosBaixa }}</span></span>
                             @endif
                             @if($totalSacos > 0)
                             <div class="sacos-footer">
                                 <span class="sacos-total-badge">Total {{ $totalSacos }}</span>
                                 @if($hasDivergence)
-                                <span class="divergence-badge">
-                                    <i class="bi bi-exclamation-triangle-fill"></i>
-                                    Conf. {{ $discharge->sacos_confirmados }}
-                                </span>
+                                <span class="divergence-badge"><i class="bi bi-exclamation-triangle-fill"></i> Conf. {{ $discharge->sacos_confirmados }}</span>
                                 @endif
                             </div>
                             @endif
@@ -296,9 +273,7 @@
                     </td>
                     <td class="text-center">
                         @if($discharge->tempo_transporte)
-                        <span class="badge bg-opacity-15 text-dark fw-semibold" style="font-size:.68rem;">
-                            <i class="bi bi-clock me-1"></i>{{ $discharge->tempo_transporte }}min
-                        </span>
+                        <span class="badge bg-opacity-15 text-dark fw-semibold" style="font-size:.68rem;"><i class="bi bi-clock me-1"></i>{{ $discharge->tempo_transporte }}min</span>
                         @else
                         <span class="text-muted" style="font-size:.78rem;">—</span>
                         @endif
@@ -321,31 +296,21 @@
                                 <i class="bi bi-speedometer2 me-1"></i>Balança
                             </button>
                             @endif
-
-                            {{-- VER --}}
                             <button type="button"
-                                onclick="abrirModal('{{ route('discharges.show', $discharge->id) }}', 'Descarga #{{ $discharge->id }} — {{ $discharge->numero_guia }}', 'dark', true)"
-                                class="action-btn text-primary border-primary border-opacity-25"
-                                title="Ver">
+                                onclick="abrirModal('{{ route('discharges.show', $discharge->id) }}', 'Descarga #{{ $discharge->id }} — {{ $discharge->numero_guia }}', 'dark')"
+                                class="action-btn text-primary border-primary border-opacity-25" title="Ver">
                                 <i class="bi bi-eye"></i>
                             </button>
-
-                            {{-- EDITAR --}}
                             <button type="button"
                                 onclick="abrirModal('{{ route('discharges.edit', $discharge->id) }}', 'Editar Descarga #{{ $discharge->id }}', 'warning')"
-                                class="action-btn text-warning border-warning border-opacity-25"
-                                title="Editar">
+                                class="action-btn text-warning border-warning border-opacity-25" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </button>
-
-                            {{-- ELIMINAR --}}
                             @if(auth()->user()->hasRole('super-admin'))
                             <form action="{{ route('discharges.destroy', $discharge->id) }}" method="POST" class="m-0">
                                 @csrf @method('DELETE')
-                                <button type="submit"
-                                        class="action-btn text-danger border-danger border-opacity-25"
-                                        onclick="return confirm('Eliminar este registo?')"
-                                        title="Eliminar">
+                                <button type="submit" class="action-btn text-danger border-danger border-opacity-25"
+                                        onclick="return confirm('Eliminar este registo?')" title="Eliminar">
                                     <i class="bi bi-trash3"></i>
                                 </button>
                             </form>
@@ -360,49 +325,29 @@
     </div>
 </div>
 
-{{-- ═══════════════════════════════════════════
-     MODAL UNIVERSAL (iframe)
-═══════════════════════════════════════════ --}}
-<div class="modal fade" id="modalIframe" tabindex="-1">
+{{-- ═══ MODAL UNIVERSAL (fetch) ═══ --}}
+<div class="modal fade" id="modalPrincipal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
-            <div class="modal-header border-0 text-white" id="modalIframeHeader" style="background:linear-gradient(135deg,#1a56db,#0dcaf0);">
+            <div class="modal-header border-0 text-white" id="modalHeader" style="background:linear-gradient(135deg,#1a56db,#0dcaf0);">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-file-text" id="modalIframeIcon" style="font-size:1.1rem;"></i>
-                    <h5 class="modal-title fw-bold mb-0" id="modalIframeTitle">A carregar...</h5>
+                    <i class="bi bi-file-text" id="modalIcon" style="font-size:1.1rem;"></i>
+                    <h5 class="modal-title fw-bold mb-0" id="modalTitulo">A carregar...</h5>
                 </div>
-                <div class="d-flex align-items-center gap-2 ms-auto">
-                    {{-- Botão imprimir (só visível no modal de view) --}}
-                    <button id="btnImprimirDetalhe" type="button"
-                            class="btn btn-sm fw-bold px-3"
-                            style="display:none;border-radius:8px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);font-size:.72rem;"
-                            onclick="imprimirIframe()">
-                        <i class="bi bi-printer me-1"></i> Imprimir
-                    </button>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-0" style="min-height:500px;">
-                {{-- Loading --}}
-                <div id="iframeLoading" class="iframe-loading">
+            <div class="modal-body p-0" style="min-height:400px;">
+                <div id="modalLoading" class="modal-loading">
                     <div class="spinner-border text-primary" role="status"></div>
-                    <span style="font-size:.82rem;">A carregar página...</span>
+                    <span style="font-size:.82rem;">A carregar...</span>
                 </div>
-                {{-- iframe --}}
-                <iframe
-                    id="modalIframeEl"
-                    class="modal-iframe"
-                    style="display:none;"
-                    onload="iframeLoaded()"
-                ></iframe>
+                <div id="modalConteudo" style="display:none;padding:24px;"></div>
             </div>
         </div>
     </div>
 </div>
 
-{{-- ═══════════════════════════════════════════
-     MODAL BALANÇA
-═══════════════════════════════════════════ --}}
+{{-- ═══ MODAL BALANÇA ═══ --}}
 <div class="modal fade" id="modalConfirm" tabindex="-1">
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
@@ -415,8 +360,7 @@
                 <div class="modal-body p-4">
                     <div class="alert alert-info py-2 small mb-3 border-0" style="border-radius:10px;background:#e8f4fd;color:#1a56db;">
                         <i class="bi bi-info-circle me-1"></i>
-                        Guia <strong id="confirm_guia"></strong> —
-                        <strong id="confirm_sacos"></strong> sacos registados no porto
+                        Guia <strong id="confirm_guia"></strong> — <strong id="confirm_sacos"></strong> sacos registados no porto
                     </div>
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -436,7 +380,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="small fw-bold text-muted mb-1">Tara (kg)</label>
-                            <input type="number" name="tara" id="tara" class="form-control" style="border-radius:8px;" step="0.01" min="0" oninput="calcNetWeight()" required>
+                            <input type="number" name="tara" id="tara" class="form-control" style="border-radius:8px;" step="0.01" min="0" oninput="calcNetWeight()" >
                         </div>
                         <div class="col-12">
                             <label class="small fw-bold text-muted mb-1">Peso Líquido (kg)</label>
@@ -482,10 +426,8 @@
         <table style="width:100%;border-collapse:collapse;font-size:.75rem;">
             <thead>
                 <tr style="background:#1a56db;color:white;">
-                    <th style="padding:7px 10px;">Nº</th>
-                    <th style="padding:7px 10px;">Data</th>
-                    <th style="padding:7px 10px;">Guia</th>
-                    <th style="padding:7px 10px;">Motorista</th>
+                    <th style="padding:7px 10px;">Nº</th><th style="padding:7px 10px;">Data</th>
+                    <th style="padding:7px 10px;">Guia</th><th style="padding:7px 10px;">Motorista</th>
                     <th style="padding:7px 10px;">Transportadora</th>
                     <th style="padding:7px 10px;text-align:center;">▲ Alta</th>
                     <th style="padding:7px 10px;text-align:center;">▼ Baixa</th>
@@ -524,7 +466,7 @@
 
 <script>
 let dtTable;
-let _isViewModal = false;
+let _modalUrl = null;
 
 $(document).ready(function(){
     dtTable = $('#dischargesTable').DataTable({
@@ -561,28 +503,17 @@ $(document).ready(function(){
         $('#divergence_alert').toggleClass('d-none', !(c!==p&&c>0));
     });
 
-    // Limpar iframe ao fechar modal
-    document.getElementById('modalIframe').addEventListener('hidden.bs.modal', function(){
-        const iframe = document.getElementById('modalIframeEl');
-        iframe.style.display = 'none';
-        iframe.src = '';
-        document.getElementById('iframeLoading').style.display = 'flex';
+    // Limpar modal ao fechar
+    document.getElementById('modalPrincipal').addEventListener('hidden.bs.modal', function(){
+        document.getElementById('modalConteudo').innerHTML = '';
+        document.getElementById('modalConteudo').style.display = 'none';
+        document.getElementById('modalLoading').style.display = 'flex';
+        _modalUrl = null;
     });
-
-    // Escutar mensagem do iframe quando form é submetido
-window.addEventListener('message', function(e) {
-    if (e.data === 'discharge:saved') {
-        bootstrap.Modal.getInstance(document.getElementById('modalIframe')).hide();
-        window.location.reload();
-    }
-});
 });
 
-// ── Abrir modal com iframe ──
-function abrirModal(url, titulo, cor, isView = false) {
-    _isViewModal = isView;
-
-    // Cores do header
+// ── Abrir modal com fetch ──
+function abrirModal(url, titulo, cor) {
     const gradients = {
         primary: 'linear-gradient(135deg,#1a56db,#0dcaf0)',
         warning: 'linear-gradient(135deg,#fd7e14,#ffc107)',
@@ -596,69 +527,107 @@ function abrirModal(url, titulo, cor, isView = false) {
         success: 'check-circle',
     };
 
-    document.getElementById('modalIframeHeader').style.background = gradients[cor] || gradients.primary;
-    document.getElementById('modalIframeIcon').className = `bi bi-${icons[cor]||'file-text'}`;
-    document.getElementById('modalIframeTitle').textContent = titulo;
-    document.getElementById('btnImprimirDetalhe').style.display = isView ? 'inline-flex' : 'none';
+    _modalUrl = url;
+    document.getElementById('modalHeader').style.background = gradients[cor] || gradients.primary;
+    document.getElementById('modalIcon').className = `bi bi-${icons[cor]||'file-text'}`;
+    document.getElementById('modalTitulo').textContent = titulo;
+    document.getElementById('modalLoading').style.display = 'flex';
+    document.getElementById('modalConteudo').style.display = 'none';
+    document.getElementById('modalConteudo').innerHTML = '';
 
-    // Mostrar loading, esconder iframe
-    document.getElementById('iframeLoading').style.display = 'flex';
-    document.getElementById('modalIframeEl').style.display = 'none';
+  // Tirar o foco do botão antes de abrir o modal
+document.activeElement.blur();
+const modal = new bootstrap.Modal(document.getElementById('modalPrincipal'));
+modal.show();
 
-    // Carregar URL no iframe
-    document.getElementById('modalIframeEl').src = url + '?modal=1';
+    // fetch do HTML da página
+    fetch(url + '?modal=1', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'text/html',
+        }
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+    })
+    .then(html => {
+        // Extrair só o conteúdo útil (o que está dentro do body ou o HTML todo)
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
 
-    new bootstrap.Modal(document.getElementById('modalIframe')).show();
-}
+        // Tentar extrair o conteúdo do body, excluindo scripts do layout
+        let conteudo = doc.body ? doc.body.innerHTML : html;
 
-// ── Quando iframe carrega ──
-function iframeLoaded() {
-    const iframe = document.getElementById('modalIframeEl');
-    try {
-        // Ajustar altura ao conteúdo
-        const height = iframe.contentWindow.document.body.scrollHeight;
-        iframe.style.minHeight = Math.max(height, 480) + 'px';
+        // Injectar no modal
+        const div = document.getElementById('modalConteudo');
+        div.innerHTML = conteudo;
+        div.style.display = 'block';
+        document.getElementById('modalLoading').style.display = 'none';
 
-        // Interceptar submissão de forms dentro do iframe
-        // para recarregar a página pai após sucesso
-        const forms = iframe.contentWindow.document.querySelectorAll('form');
-        forms.forEach(form => {
-            form.addEventListener('submit', function(){
-                // Após submit do iframe, recarregar o index
-                setTimeout(() => {
-                    bootstrap.Modal.getInstance(document.getElementById('modalIframe')).hide();
-                    window.location.reload();
-                }, 800);
+        // Re-executar scripts inline do conteúdo injectado
+        div.querySelectorAll('script').forEach(oldScript => {
+            const newScript = document.createElement('script');
+            newScript.textContent = oldScript.textContent;
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+
+        // Interceptar submit dos forms para fazer via fetch
+        div.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                submeterFormModal(this);
             });
         });
-    } catch(e) {
-        // Cross-origin ou outro erro — deixar funcionar normalmente
-    }
-
-    document.getElementById('iframeLoading').style.display = 'none';
-    iframe.style.display = 'block';
+    })
+    .catch(err => {
+        document.getElementById('modalConteudo').innerHTML =
+            `<div class="alert alert-danger m-3">Erro ao carregar: ${err.message}</div>`;
+        document.getElementById('modalConteudo').style.display = 'block';
+        document.getElementById('modalLoading').style.display = 'none';
+    });
 }
 
-// ── Imprimir conteúdo do iframe (landscape) ──
-function imprimirIframe() {
-    const iframe = document.getElementById('modalIframeEl');
-    try {
-        const iframeWindow = iframe.contentWindow;
-        // Injectar estilo landscape temporariamente
-        const style = iframeWindow.document.createElement('style');
-        style.id = 'landscape-print-style';
-        style.textContent = '@page { size: A4 landscape; margin: 12mm; } .no-print { display: none !important; }';
-        iframeWindow.document.head.appendChild(style);
-        iframeWindow.print();
-        // Remover após print
-        setTimeout(() => {
-            const s = iframeWindow.document.getElementById('landscape-print-style');
-            if (s) s.remove();
-        }, 1000);
-    } catch(e) {
-        // Fallback: abrir em nova janela para imprimir
-        window.open(iframe.src + '&print=1', '_blank');
-    }
+// ── Submeter form dentro do modal ──
+function submeterFormModal(form) {
+    const data = new FormData(form);
+    const btn = form.querySelector('[type=submit]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A guardar...'; }
+
+    fetch(form.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(res => res.text())
+    .then(html => {
+        // Verificar se houve redirect (sucesso) ou se voltou HTML com erros
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const hasErrors = doc.querySelector('.alert-danger');
+
+        if (hasErrors) {
+            // Mostrar erros de validação
+            const div = document.getElementById('modalConteudo');
+            div.innerHTML = doc.body ? doc.body.innerHTML : html;
+            div.querySelectorAll('script').forEach(oldScript => {
+                const newScript = document.createElement('script');
+                newScript.textContent = oldScript.textContent;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+            div.querySelectorAll('form').forEach(f => {
+                f.addEventListener('submit', function(e) { e.preventDefault(); submeterFormModal(this); });
+            });
+        } else {
+            // Sucesso — fechar modal e recarregar
+            bootstrap.Modal.getInstance(document.getElementById('modalPrincipal')).hide();
+            window.location.reload();
+        }
+    })
+    .catch(() => {
+        bootstrap.Modal.getInstance(document.getElementById('modalPrincipal')).hide();
+        window.location.reload();
+    });
 }
 
 // ── Impressão relatório geral ──
@@ -717,6 +686,9 @@ function removeTag(key){
     const m={df:'filterDateFrom',dt:'filterDateTo',tr:'filterTransportadora',st:'filterStatus',tc:'filterTipoCarga',div:'filterDivergencia'};
     $(`#${m[key]}`).val(''); applyFilters();
 }
+
+
+
 </script>
 
 </x-app-layout>
