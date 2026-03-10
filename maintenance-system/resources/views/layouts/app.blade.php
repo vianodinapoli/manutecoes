@@ -327,7 +327,7 @@
                     {{-- Discharges --}}
                     <x-nav-link :href="route('discharges.index')" :active="request()->routeIs('discharges.*')" class="nav-item rounded">
                         <i class="fas fa-sign-out-alt"></i>
-                        <span class="nav-text">Campanhas/Nitrato</span>
+                        <span class="nav-text">Discharges</span>
                     </x-nav-link>
 
                     <hr class="border-gray-700 my-4">
@@ -369,6 +369,86 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    {{-- ── TOAST GLOBAL ── --}}
+    <style>
+        .toast-wrap{position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+        .toast-item{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 16px;min-width:280px;max-width:360px;box-shadow:0 8px 30px rgba(0,0,0,.12);pointer-events:all;transform:translateX(120%);transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0}
+        .toast-item.show{transform:translateX(0);opacity:1}
+        .toast-item.hide{transform:translateX(120%);opacity:0}
+        .toast-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
+        .toast-icon.success{background:#f0fdf4;color:#16a34a}
+        .toast-icon.error  {background:#fef2f2;color:#dc2626}
+        .toast-icon.warning{background:#fefce8;color:#d97706}
+        .toast-icon.info   {background:#f0f9ff;color:#0369a1}
+        .toast-body{flex:1;min-width:0}
+        .toast-title{font-size:.78rem;font-weight:700;color:#1e293b;margin-bottom:2px}
+        .toast-msg{font-size:.73rem;color:#64748b;line-height:1.4;word-break:break-word}
+        .toast-close{background:none;border:none;padding:0;color:#94a3b8;cursor:pointer;font-size:.9rem;flex-shrink:0;line-height:1;margin-top:1px}
+        .toast-close:hover{color:#475569}
+        .toast-progress{height:3px;border-radius:0 0 12px 12px;position:absolute;bottom:0;left:0;right:0;overflow:hidden}
+        .toast-progress-bar{height:100%;border-radius:inherit;transition:width linear}
+        .toast-progress-bar.success{background:#16a34a}
+        .toast-progress-bar.error  {background:#dc2626}
+        .toast-progress-bar.warning{background:#d97706}
+        .toast-progress-bar.info   {background:#0369a1}
+        .toast-item{position:relative}
+    </style>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+        function showToast(msg, type, title) {
+            type  = type  || 'success';
+            title = title || { success:'Sucesso', error:'Erro', warning:'Aviso', info:'Info' }[type];
+            var icons = { success:'bi-check-circle-fill', error:'bi-x-circle-fill', warning:'bi-exclamation-triangle-fill', info:'bi-info-circle-fill' };
+            var id = 'toast-' + Date.now();
+            var html =
+                '<div class="toast-item" id="'+id+'">' +
+                  '<div class="toast-icon '+type+'"><i class="bi '+icons[type]+'"></i></div>' +
+                  '<div class="toast-body">' +
+                    '<div class="toast-title">'+title+'</div>' +
+                    '<div class="toast-msg">'+msg+'</div>' +
+                  '</div>' +
+                  '<button class="toast-close" onclick="dismissToast(\''+id+'\')"><i class="bi bi-x"></i></button>' +
+                  '<div class="toast-progress"><div class="toast-progress-bar '+type+'" style="width:100%" id="bar-'+id+'"></div></div>' +
+                '</div>';
+            $('#toastWrap').append(html);
+            var el = document.getElementById(id);
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() { el.classList.add('show'); });
+            });
+            // Barra de progresso
+            var bar = document.getElementById('bar-'+id);
+            bar.style.transition = 'width 4s linear';
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() { bar.style.width = '0%'; });
+            });
+            // Auto-dismiss
+            setTimeout(function() { dismissToast(id); }, 4000);
+        }
+
+        function dismissToast(id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('hide');
+            setTimeout(function() { el && el.remove(); }, 350);
+        }
+
+        // Mostrar flash sessions automaticamente
+        @if(session('success'))
+            $(document).ready(function() { showToast('{{ addslashes(session('success')) }}', 'success'); });
+        @endif
+        @if(session('error'))
+            $(document).ready(function() { showToast('{{ addslashes(session('error')) }}', 'error'); });
+        @endif
+        @if(session('warning'))
+            $(document).ready(function() { showToast('{{ addslashes(session('warning')) }}', 'warning'); });
+        @endif
+        @if(session('info'))
+            $(document).ready(function() { showToast('{{ addslashes(session('info')) }}', 'info'); });
+        @endif
+    </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {

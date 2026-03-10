@@ -166,13 +166,13 @@
                             <i class="bi bi-eye"></i>
                         </a>
                         @can('gerir utilizadores')
-                        <form action="{{ route('stock-items.destroy', $item->id) }}" method="POST"
-                              onsubmit="return confirm('Apagar esta variação?')" style="display:contents;">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="action-icon danger" title="Eliminar">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
+                        <button type="button"
+                                class="action-icon danger btn-delete"
+                                title="Eliminar"
+                                data-action="{{ route('stock-items.destroy', $item->id) }}"
+                                data-label="{{ $item->referencia }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
                         @endcan
                     </div>
                     @endforeach
@@ -186,6 +186,45 @@
 
 </div>
 
+{{-- MODAL CONFIRMAÇÃO ELIMINAR --}}
+<div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+        <div class="confirm-icon"><i class="bi bi-trash3-fill"></i></div>
+        <div class="confirm-title">Eliminar variação?</div>
+        <div class="confirm-msg">Esta acção é irreversível. A referência será removida permanentemente do stock.</div>
+        <div class="confirm-id" id="confirmLabel">—</div>
+        <div class="confirm-actions">
+            <button class="confirm-cancel" onclick="closeConfirm()">
+                <i class="bi bi-x"></i> Cancelar
+            </button>
+            <button class="confirm-ok" id="confirmOkBtn">
+                <i class="bi bi-trash3"></i> Eliminar
+            </button>
+        </div>
+    </div>
+</div>
+
+<form id="deleteForm" method="POST" style="display:none;">
+    @csrf
+    @method('DELETE')
+</form>
+
+<style>
+    .confirm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+    .confirm-overlay.open{opacity:1;pointer-events:all}
+    .confirm-box{background:#fff;border-radius:14px;padding:28px 28px 22px;max-width:380px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,.18);transform:translateY(8px) scale(.98);transition:transform .2s;border-top:4px solid #dc2626}
+    .confirm-overlay.open .confirm-box{transform:none}
+    .confirm-icon{width:44px;height:44px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#dc2626;margin-bottom:14px}
+    .confirm-title{font-size:.95rem;font-weight:700;color:#1e293b;margin-bottom:6px}
+    .confirm-msg{font-size:.8rem;color:#64748b;line-height:1.5;margin-bottom:12px}
+    .confirm-id{font-size:.78rem;font-weight:700;color:#1e293b;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;display:inline-block;margin-bottom:18px}
+    .confirm-actions{display:flex;gap:8px;justify-content:flex-end}
+    .confirm-cancel{padding:7px 18px;border-radius:8px;font-size:.78rem;font-weight:600;border:1px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer;transition:all .15s}
+    .confirm-cancel:hover{background:#f8fafc;border-color:#cbd5e1}
+    .confirm-ok{padding:7px 18px;border-radius:8px;font-size:.78rem;font-weight:600;border:none;background:#dc2626;color:#fff;cursor:pointer;transition:all .15s}
+    .confirm-ok:hover{background:#b91c1c}
+</style>
+
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script>
 $(document).ready(function () {
@@ -195,6 +234,31 @@ $(document).ready(function () {
             $(this).toggle($(this).data("search").indexOf(v) > -1);
         });
     });
+
+    // Modal de eliminação
+    $(document).on('click', '.btn-delete', function () {
+        var action = $(this).data('action');
+        var label  = $(this).data('label');
+        $('#confirmLabel').text(label);
+        $('#deleteForm').attr('action', action);
+        $('#confirmOverlay').addClass('open');
+    });
+
+    $('#confirmOkBtn').on('click', function () {
+        $('#deleteForm').submit();
+    });
+
+    $('#confirmOverlay').on('click', function (e) {
+        if (e.target === this) closeConfirm();
+    });
+
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape') closeConfirm();
+    });
 });
+
+function closeConfirm() {
+    $('#confirmOverlay').removeClass('open');
+}
 </script>
 </x-app-layout>
