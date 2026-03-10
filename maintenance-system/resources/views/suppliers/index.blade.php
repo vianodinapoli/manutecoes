@@ -65,7 +65,7 @@
             <div class="kpi-card blue">
                 <div class="kpi-label">Total Fornecedores</div>
                 <div class="kpi-value" style="color:#1a56db;">{{ $suppliers->count() }}</div>
-                <div class="kpi-sub">registados</div>
+                <div class="kpi-sub">Registados</div>
                 <i class="bi bi-building kpi-icon" style="color:#1a56db;"></i>
             </div>
         </div>

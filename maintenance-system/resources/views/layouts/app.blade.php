@@ -24,6 +24,7 @@
             transition: all 0.3s ease-in-out;
             min-height: 100vh;
             z-index: 1000;
+            position: relative;
         }
 
         .sidebar-expanded { width: 260px !important; }
@@ -31,7 +32,8 @@
 
         .sidebar-collapsed .nav-text,
         .sidebar-collapsed .sidebar-title,
-        .sidebar-collapsed .admin-label {
+        .sidebar-collapsed .admin-label,
+        .sidebar-collapsed .nav-section-label {
             display: none;
         }
 
@@ -46,7 +48,7 @@
             font-size: 1.25rem;
         }
 
-        /* Estilo base partilhado por todos os itens */
+        /* ── Itens base ── */
         .nav-item,
         .nav-dropdown-trigger {
             display: flex;
@@ -72,7 +74,7 @@
             flex-shrink: 0;
         }
 
-        /* Chevron alinhado à direita */
+        /* ── Chevron ── */
         .nav-dropdown-trigger {
             cursor: pointer;
             user-select: none;
@@ -85,7 +87,7 @@
             flex-shrink: 0;
         }
 
-        /* Subitens — mesma cor e fonte, ligeiramente indentados */
+        /* ── Subitens expandidos ── */
         .nav-dropdown-items {
             margin-left: 1rem;
             border-left: 2px solid #4b5563;
@@ -103,16 +105,17 @@
             font-size: 0.8rem;
         }
 
-        /* Comportamento quando sidebar recolhida */
-        .sidebar-collapsed .nav-dropdown-trigger .nav-text,
-        .sidebar-collapsed .nav-dropdown-trigger .chevron {
-            display: none;
-        }
-
+        /* ── Sidebar comprimida: dropdown como flyout ── */
         .sidebar-collapsed .nav-dropdown-trigger {
             justify-content: center;
             padding-left: 0 !important;
             padding-right: 0 !important;
+            position: relative;
+        }
+
+        .sidebar-collapsed .nav-dropdown-trigger .nav-text,
+        .sidebar-collapsed .nav-dropdown-trigger .chevron {
+            display: none;
         }
 
         .sidebar-collapsed .nav-dropdown-trigger i.icon-main {
@@ -120,7 +123,63 @@
             font-size: 1.25rem;
         }
 
-        .sidebar-collapsed .nav-dropdown-items {
+        /* flyout panel */
+        .nav-flyout {
+            display: none;
+            position: absolute;
+            left: 80px;
+            top: 0;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            min-width: 200px;
+            z-index: 9999;
+            box-shadow: 4px 4px 16px rgba(0,0,0,.35);
+            padding: 6px 0;
+        }
+
+        .nav-flyout-label {
+            font-size: .65rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #6b7280;
+            padding: 6px 14px 4px;
+        }
+
+        .nav-flyout a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            font-size: .83rem;
+            color: #d1d5db;
+            text-decoration: none;
+            transition: background .15s;
+        }
+
+        .nav-flyout a:hover {
+            background: #374151;
+            color: #fff;
+        }
+
+        .nav-flyout a i {
+            width: 16px;
+            font-size: .8rem;
+            text-align: center;
+        }
+
+        /* wrapper posicionado para flyout */
+        .nav-dropdown-wrap {
+            position: relative;
+        }
+
+        .sidebar-collapsed .nav-dropdown-wrap:hover .nav-flyout {
+            display: block;
+        }
+
+        /* quando expandido, esconde flyout */
+        .sidebar-expanded .nav-flyout {
             display: none !important;
         }
     </style>
@@ -129,12 +188,10 @@
 
     <div class="min-h-screen bg-gray-100">
 
-        {{-- NAVBAR SUPERIOR --}}
         @include('layouts.navigation')
 
         <div class="flex">
 
-            {{-- SIDEBAR --}}
             <aside id="sidebar" class="sidebar-expanded bg-gray-800 text-white flex-shrink-0 shadow-lg">
 
                 <div class="p-4 flex items-center justify-between border-b border-gray-700">
@@ -146,84 +203,136 @@
 
                 <nav class="mt-4 px-2 space-y-1">
 
+                    {{-- Dashboard --}}
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="nav-item rounded">
                         <i class="fas fa-home"></i>
                         <span class="nav-text">Dashboard</span>
                     </x-nav-link>
 
+                    {{-- Equipamentos --}}
                     <x-nav-link :href="route('machines.index')" :active="request()->routeIs('machines.*')" class="nav-item rounded">
                         <i class="fas fa-tools"></i>
                         <span class="nav-text">Equipamento/Máquinas</span>
                     </x-nav-link>
 
-                    <x-nav-link :href="route('maintenances.index')" :active="request()->routeIs('maintenances.*')" class="nav-item rounded">
-                        <i class="fas fa-wrench"></i>
-                        <span class="nav-text">Manutenções</span>
-                    </x-nav-link>
+                    {{-- ── DROPDOWN MANUTENÇÕES ── --}}
+                    <div class="nav-dropdown-wrap"
+                         x-data="{ open: {{ request()->routeIs('maintenances.*') ? 'true' : 'false' }} }">
 
+                        <div @click="open = !open" class="nav-dropdown-trigger">
+                            <i class="fas fa-wrench icon-main"></i>
+                            <span class="nav-text">Manutenções</span>
+                            <i class="fas fa-chevron-right chevron" :style="open ? 'transform:rotate(90deg)' : ''"></i>
+                        </div>
+
+                        {{-- subitens expandidos --}}
+                        <div x-show="open" x-cloak x-collapse
+                             x-transition:enter="transition ease-out duration-200"
+                             class="nav-dropdown-items">
+                            <x-nav-link :href="route('maintenances.create')"
+                                        :active="request()->routeIs('maintenances.create')"
+                                        class="nav-item rounded">
+                                <i class="fas fa-plus-circle"></i>
+                                <span class="nav-text">Criar Manutenção</span>
+                            </x-nav-link>
+                            <x-nav-link :href="route('maintenances.index')"
+                                        :active="request()->routeIs('maintenances.index')"
+                                        class="nav-item rounded">
+                                <i class="fas fa-list"></i>
+                                <span class="nav-text">Ver Manutenções</span>
+                            </x-nav-link>
+                        </div>
+
+                        {{-- flyout quando sidebar comprimida --}}
+                        <div class="nav-flyout">
+                            <div class="nav-flyout-label">Manutenções</div>
+                            <a href="{{ route('maintenances.create') }}">
+                                <i class="fas fa-plus-circle"></i> Criar Manutenção
+                            </a>
+                            <a href="{{ route('maintenances.index') }}">
+                                <i class="fas fa-list"></i> Ver Manutenções
+                            </a>
+                        </div>
+                    </div>
+
+                    {{-- Stock --}}
                     <x-nav-link :href="route('stock-items.index')" :active="request()->routeIs('stock-items.*')" class="nav-item rounded">
                         <i class="fas fa-boxes"></i>
                         <span class="nav-text">Stock</span>
                     </x-nav-link>
 
-                    {{-- DROPDOWN PEDIDOS/REQUISIÇÕES --}}
-                    <div x-data="{ open: {{ request()->routeIs('suppliers.*', 'compras.*', 'requisicao.*', 'requisicoes.*') ? 'true' : 'false' }} }">
+                    {{-- ── DROPDOWN PEDIDOS/REQUISIÇÕES ── --}}
+                    <div class="nav-dropdown-wrap"
+                         x-data="{ open: {{ request()->routeIs('suppliers.*', 'compras.*', 'requisicao.*', 'requisicoes.*') ? 'true' : 'false' }} }">
 
                         <div @click="open = !open" class="nav-dropdown-trigger">
                             <i class="fas fa-shopping-cart icon-main"></i>
                             <span class="nav-text">Pedidos/Requisições</span>
-                            <i class="fas fa-chevron-right chevron" :style="open ? 'transform: rotate(90deg)' : ''"></i>
+                            <i class="fas fa-chevron-right chevron" :style="open ? 'transform:rotate(90deg)' : ''"></i>
                         </div>
 
-                        <div x-show="open"
-                             x-cloak
-                             x-collapse
+                        <div x-show="open" x-cloak x-collapse
                              x-transition:enter="transition ease-out duration-200"
                              class="nav-dropdown-items">
-
                             <x-nav-link :href="route('compras.index')"
                                         :active="request()->routeIs('compras.index')"
                                         class="nav-item rounded">
                                 <i class="fas fa-list-ul"></i>
                                 <span class="nav-text">Pedidos internos</span>
                             </x-nav-link>
-
                             <x-nav-link :href="route('suppliers.index')"
                                         :active="request()->routeIs('suppliers.*')"
                                         class="nav-item rounded">
                                 <i class="fas fa-truck"></i>
                                 <span class="nav-text">Fornecedores</span>
                             </x-nav-link>
-
                             <x-nav-link :href="route('requisicoes.create')"
                                         :active="request()->routeIs('requisicoes.create')"
                                         class="nav-item rounded">
                                 <i class="fas fa-plus-circle"></i>
                                 <span class="nav-text">Nova Requisição</span>
                             </x-nav-link>
-
                             <x-nav-link :href="route('requisicoes.index')"
                                         :active="request()->routeIs('requisicoes.index')"
                                         class="nav-item rounded">
                                 <i class="fas fa-list"></i>
                                 <span class="nav-text">Lista de Requisições</span>
                             </x-nav-link>
+                        </div>
 
+                        {{-- flyout quando sidebar comprimida --}}
+                        <div class="nav-flyout">
+                            <div class="nav-flyout-label">Pedidos / Requisições</div>
+                            <a href="{{ route('compras.index') }}">
+                                <i class="fas fa-list-ul"></i> Pedidos Internos
+                            </a>
+                            <a href="{{ route('suppliers.index') }}">
+                                <i class="fas fa-truck"></i> Fornecedores
+                            </a>
+                            <a href="{{ route('requisicoes.create') }}">
+                                <i class="fas fa-plus-circle"></i> Nova Requisição
+                            </a>
+                            <a href="{{ route('requisicoes.index') }}">
+                                <i class="fas fa-list"></i> Lista de Requisições
+                            </a>
                         </div>
                     </div>
 
+                    {{-- Combustível --}}
                     <x-nav-link :href="route('fuel.index')" :active="request()->routeIs('fuel.*')" class="nav-item rounded">
                         <i class="fas fa-gas-pump"></i>
                         <span class="nav-text">Gestão de Combustível</span>
                     </x-nav-link>
 
+                    {{-- Discharges --}}
                     <x-nav-link :href="route('discharges.index')" :active="request()->routeIs('discharges.*')" class="nav-item rounded">
                         <i class="fas fa-sign-out-alt"></i>
-                        <span class="nav-text">Discharges</span>
+                        <span class="nav-text">Campanhas/Nitrato</span>
                     </x-nav-link>
 
                     <hr class="border-gray-700 my-4">
 
+                    {{-- Perfil --}}
                     <x-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.edit')" class="nav-item rounded">
                         <i class="fas fa-user-circle"></i>
                         <span class="nav-text">Perfil</span>
@@ -233,7 +342,6 @@
                         <div class="admin-label pt-4 pb-2 px-4">
                             <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Administração</span>
                         </div>
-
                         <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" class="nav-item rounded">
                             <i class="fas fa-users-cog"></i>
                             <span class="nav-text">Utilizadores</span>
@@ -252,7 +360,6 @@
                         </div>
                     </header>
                 @endif
-
                 <div class="p-6">
                     {{ $slot }}
                 </div>
@@ -264,12 +371,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebar = document.getElementById('sidebar');
+        document.addEventListener('DOMContentLoaded', function () {
+            const sidebar  = document.getElementById('sidebar');
             const toggleBtn = document.getElementById('toggleBtn');
 
             const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-
             if (isCollapsed) {
                 sidebar.classList.remove('sidebar-expanded');
                 sidebar.classList.add('sidebar-collapsed');
