@@ -208,7 +208,7 @@
     {{-- CABEÇALHO DE IMPRESSÃO --}}
     <div class="print-header">
         <h5>Listagem de Equipamentos e Máquinas</h5>
-        <p>FEM OFICINAS · Extraído em {{ now()->format('d/m/Y H:i') }} · <span id="printFilterLabel"></span></p>
+        <p>BYMOZE - SG · Extraído em {{ now()->format('d/m/Y H:i') }} · <span id="printFilterLabel"></span></p>
     </div>
 
     {{-- TABELA --}}

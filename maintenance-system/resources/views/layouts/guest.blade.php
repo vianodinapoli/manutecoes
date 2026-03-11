@@ -336,7 +336,7 @@
             <a href="{{ route('dashboard') }}">
                 <img src="{{ asset('images/bymozelogo.png') }}" alt="Bymoze Logo">
             </a>
-            <span class="logo-badge">Platform</span>
+            <span class="logo-badge">Platforma</span>
         </div>
 
         <div class="form-body">

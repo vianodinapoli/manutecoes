@@ -142,7 +142,7 @@
     {{-- RODAPÉ --}}
     <div class="doc-footer">
         <div class="footer-left">
-            <strong>FEM OFICINAS</strong><br>
+            <strong>BYMOZE - SG</strong><br>
             Documento gerado automaticamente em {{ date('d/m/Y \à\s H:i') }}
         </div>
         <div class="signature-block">

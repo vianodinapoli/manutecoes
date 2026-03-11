@@ -64,6 +64,7 @@ Route::middleware('auth')->group(function () {
     // 3. Manutenções
     Route::resource('maintenances', MaintenanceController::class);
     
+    
     // 4. Rota especial de Manutenção (Se ela ainda existir)
     Route::get('maintenances/create-from-machine/{machine}', [MaintenanceController::class, 'createFromMachine'])
         ->name('maintenances.createFromMachine');

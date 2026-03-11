@@ -378,18 +378,33 @@
 </div>{{-- /skeleton-overlay --}}
 
 <script>
-    // Aguarda o DOM + recursos carregarem, depois dissolve o skeleton
-    window.addEventListener('load', function () {
-        const overlay = document.getElementById('skeleton-overlay');
-        if (!overlay) return;
+    // Usa DOMContentLoaded em vez de load — muito mais rápido
+document.addEventListener('DOMContentLoaded', function () {
+    const overlay = document.getElementById('skeleton-overlay');
+    if (!overlay) return;
 
-        // Pequeno delay para garantir que o conteúdo real já renderizou
+    function fadeOut() {
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.3s ease';
         setTimeout(function () {
-            overlay.classList.add('fade-out');
-            // Remove do DOM após a transição para não bloquear cliques
-            setTimeout(function () {
-                overlay.remove();
-            }, 450);
-        }, 300);
-    });
+            overlay.style.display = 'none';
+            overlay.remove();
+        }, 350);
+    }
+
+    // Aguarda jQuery + DataTables estarem prontos
+    const wait = setInterval(function () {
+        if (typeof $ !== 'undefined' && $.fn.dataTable) {
+            clearInterval(wait);
+            // Dá mais 500ms para o DataTables renderizar os dados
+            setTimeout(fadeOut, 500);
+        }
+    }, 100);
+
+    // Fallback — remove sempre após 4s
+    setTimeout(function () {
+        clearInterval(wait);
+        fadeOut();
+    }, 4000);
+});
 </script>

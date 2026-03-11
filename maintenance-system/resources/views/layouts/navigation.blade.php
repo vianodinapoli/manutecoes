@@ -8,11 +8,10 @@
                 
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        {{-- Pode usar um componente de Logo ou o seu logo da Porto Cargas --}}
-                        <img decoding="async" width="141" height="28" 
-                             src="https://fem.co.mz/wp-content/uploads/2023/03/logo_pequeno.png" 
-                             class="h-12 w-auto fill-current text-gray-800" alt="{{ config('app.name', 'Laravel') }}">
-                    </a>
+    <img src="{{ asset('images/bymozelogo.png') }}" 
+         class="h-12 w-auto object-contain" 
+         alt="{{ config('app.name', 'Laravel') }}">
+</a>
                 </div>
 
                 </div>

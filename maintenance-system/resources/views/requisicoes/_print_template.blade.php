@@ -9,22 +9,22 @@
         body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #222; padding: 30px; }
 
         .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; border-bottom: 2px solid #1a56db; padding-bottom: 16px; }
-        .company-name { font-size: 20px; font-weight: bold; color: #1a56db; }
+        .company-name { font-size: 20px; font-weight: bold; color: #4cb343; }
         .company-sub { font-size: 10px; color: #666; margin-top: 2px; }
 
         .doc-title { text-align: right; }
-        .doc-title h1 { font-size: 18px; font-weight: bold; color: #1a56db; }
+        .doc-title h1 { font-size: 18px; font-weight: bold; color: #4cb343; }
         .doc-title .doc-num { font-size: 13px; color: #444; margin-top: 4px; }
         .doc-title .doc-date { font-size: 11px; color: #888; margin-top: 2px; }
 
         .info-box { display: flex; gap: 20px; margin-bottom: 20px; }
-        .info-card { flex: 1; background: #f4f7fb; border-left: 3px solid #1a56db; padding: 10px 14px; border-radius: 3px; }
+        .info-card { flex: 1; background: #f4f7fb; border-left: 3px solid #4cb343; padding: 10px 14px; border-radius: 3px; }
         .info-card .label { font-size: 9px; text-transform: uppercase; color: #888; font-weight: bold; margin-bottom: 4px; }
         .info-card .value { font-size: 12px; font-weight: bold; color: #222; }
         .info-card .sub { font-size: 10px; color: #555; margin-top: 2px; }
 
         table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-        thead tr { background: #1a56db; color: white; }
+        thead tr { background: #4cb343; color: white; }
         thead th { padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; }
         thead th.right { text-align: right; }
         tbody tr { border-bottom: 1px solid #e8edf2; }
@@ -38,7 +38,7 @@
         .totals td { padding: 5px 10px; font-size: 11px; }
         .totals td.label { color: #666; }
         .totals td.value { text-align: right; font-weight: bold; }
-        .totals tr.total-final { background: #1a56db; color: white; border-radius: 3px; }
+        .totals tr.total-final { background: #4cb343; color: white; border-radius: 3px; }
         .totals tr.total-final td { padding: 8px 10px; font-size: 13px; }
 
         .footer { margin-top: 40px; border-top: 1px solid #ddd; padding-top: 16px; display: flex; justify-content: space-between; }
@@ -57,8 +57,8 @@
     {{-- CABEÇALHO --}}
     <div class="header">
         <div>
-            <div class="company-name">{{ config('FEM', 'FEM') }}</div>
-            <div class="company-sub">FÁBRICA DE EXPLOSIVO MOÇAMBIQUE</div>
+            <div class="company-name">{{ config('SG', 'BYMOZE') }}</div>
+            <div class="company-sub">BYMOZE | SG</div>
         </div>
         <div class="doc-title">
             <h1>REQUISIÇÃO DE COMPRA</h1>

@@ -184,12 +184,13 @@ class MaintenanceController extends Controller
         
         return view('maintenances.show', compact('maintenance', 'exchangeRate'));
     }
-
-    public function destroy(Maintenance $maintenance)
-    {
-        $machineId = $maintenance->machine_id; 
-        $maintenance->delete();
-        return redirect()->route('machines.show', $machineId)
-                         ->with('success', 'Eliminado com sucesso!');
-    }
+public function destroy(Maintenance $maintenance)
+{
+    $maintenance->delete();
+    return response()->json([
+        'success' => true,
+        'message' => 'Manutenção eliminada com sucesso.',
+        'redirect_url' => route('maintenances.index')
+    ]);
+}
 }
