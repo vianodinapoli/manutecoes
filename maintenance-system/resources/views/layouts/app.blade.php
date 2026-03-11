@@ -195,7 +195,7 @@
             <aside id="sidebar" class="sidebar-expanded bg-gray-800 text-white flex-shrink-0 shadow-lg">
 
                 <div class="p-4 flex items-center justify-between border-b border-gray-700">
-                    <span class="sidebar-title font-bold text-lg overflow-hidden whitespace-nowrap">FEM OFICINAS</span>
+                    <span class="sidebar-title font-bold text-lg overflow-hidden whitespace-nowrap">SG | BYMOZE</span>
                     <button id="toggleBtn" class="p-1 hover:bg-gray-700 rounded text-white outline-none">
                         <i class="fas fa-bars"></i>
                     </button>

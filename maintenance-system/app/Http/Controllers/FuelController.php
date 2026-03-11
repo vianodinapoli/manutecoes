@@ -83,11 +83,23 @@ class FuelController extends Controller
             ['label' => 'Entradas (Atesto)', 'data' => $dataEntradas, 'backgroundColor' => '#62c48e', 'stack' => 'combustivel', 'borderRadius' => 4],
         ];
 
+        // // ── Saldos por empresa (global, sem filtro de data) ──
+        // $saidasPorEmpresa = DB::table('fuel_logs')
+        //     ->select('company', DB::raw('SUM(quantity) as total'), DB::raw('COUNT(*) as movimentos'))
+        //     ->whereNotNull('company')->where('company', '!=', '')->where('company', '!=', 'N/A')
+        //     ->groupBy('company')->orderByDesc('total')->get();
+
         // ── Saldos por empresa (global, sem filtro de data) ──
-        $saidasPorEmpresa = DB::table('fuel_logs')
-            ->select('company', DB::raw('SUM(quantity) as total'), DB::raw('COUNT(*) as movimentos'))
-            ->whereNotNull('company')->where('company', '!=', '')->where('company', '!=', 'N/A')
-            ->groupBy('company')->orderByDesc('total')->get();
+$saidasPorEmpresa = DB::table('fuel_logs')
+    ->join('tanks', 'fuel_logs.tank_id', '=', 'tanks.id')
+    ->select('fuel_logs.company', DB::raw('SUM(fuel_logs.quantity) as total'), DB::raw('COUNT(*) as movimentos'))
+    ->whereNotNull('fuel_logs.company')
+    ->where('fuel_logs.company', '!=', '')
+    ->where('fuel_logs.company', '!=', 'N/A')
+    ->whereRaw('LOWER(TRIM(fuel_logs.company)) != LOWER(TRIM(tanks.owner))') // ← só dívida cruzada
+    ->groupBy('fuel_logs.company')
+    ->orderByDesc('total')
+    ->get();
 
         $acertosPorEmpresa = DB::table('fuel_settlements')
             ->select('company', DB::raw('SUM(quantity) as total_acertado'))
