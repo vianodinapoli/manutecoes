@@ -12,24 +12,34 @@
         .btn-action:hover { background-color: #f8f9fa; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         #modal-obs { word-break: break-word; white-space: pre-line; }
         .signature-font { font-family: 'Dancing Script', cursive; font-size: 2.2rem; color: #003d99; padding: 0 30px; display: inline-block; line-height: 1; }
+        .btn-emitir-req { font-size: 0.7rem; padding: 4px 10px; border-radius: 20px; font-weight: 700; background: linear-gradient(135deg, #198754, #20c997); color: white; border: none; white-space: nowrap; transition: 0.2s; }
+        .btn-emitir-req:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(25,135,84,0.3); color: white; }
 
-        /* Botão Emitir Requisição */
-        .btn-emitir-req {
-            font-size: 0.7rem;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #198754, #20c997);
-            color: white;
-            border: none;
-            white-space: nowrap;
-            transition: 0.2s;
-        }
-        .btn-emitir-req:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(25,135,84,0.3);
-            color: white;
-        }
+        /* ── Toast ── */
+        .toast-success{position:fixed;top:24px;right:24px;z-index:99999;background:#fff;border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.12);border-left:4px solid #16a34a;min-width:300px;transform:translateX(120%);transition:transform 0.35s cubic-bezier(.34,1.56,.64,1)}
+        .toast-success.show{transform:translateX(0)}
+        .toast-icon{width:36px;height:36px;background:#f0fdf4;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:1rem;flex-shrink:0}
+        .toast-text{flex:1}
+        .toast-title{font-size:.82rem;font-weight:700;color:#1e293b;margin-bottom:2px}
+        .toast-sub{font-size:.74rem;color:#94a3b8}
+        .toast-close{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:1rem;padding:0;line-height:1}
+        .toast-close:hover{color:#475569}
+
+        /* ── Modal confirmação ── */
+        .confirm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+        .confirm-overlay.open{opacity:1;pointer-events:all}
+        .confirm-box{background:#fff;border-radius:20px;max-width:400px;width:calc(100% - 32px);box-shadow:0 24px 64px rgba(0,0,0,.18);transform:scale(.93) translateY(10px);transition:transform .25s cubic-bezier(.34,1.56,.64,1);overflow:hidden}
+        .confirm-overlay.open .confirm-box{transform:scale(1) translateY(0)}
+        .confirm-header{background:#fef2f2;padding:28px 28px 20px;text-align:center;border-bottom:1px solid #fecaca}
+        .confirm-icon{width:56px;height:56px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#dc2626;margin:0 auto 14px}
+        .confirm-title{font-size:1.05rem;font-weight:700;color:#1e293b;margin-bottom:6px}
+        .confirm-sub{font-size:.82rem;color:#94a3b8;line-height:1.6}
+        .confirm-body{padding:20px 28px 24px}
+        .confirm-warning{display:flex;align-items:center;gap:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:.78rem;color:#92400e;margin-bottom:20px}
+        .confirm-actions{display:flex;gap:10px}
+        .confirm-actions button{flex:1;padding:11px;border-radius:10px;font-size:.82rem;font-weight:600;border:none;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+        .btn-cancel-confirm{background:#f1f5f9;color:#475569}.btn-cancel-confirm:hover{background:#e2e8f0}
+        .btn-delete-confirm{background:#dc2626;color:#fff;box-shadow:0 2px 8px rgba(220,38,38,.3)}.btn-delete-confirm:hover{background:#b91c1c}
 
         @media print {
             @page { size: A4; margin: 2cm; }
@@ -98,6 +108,14 @@
             </div>
         </div>
 
+        {{-- Flash session (redirect tradicional) --}}
+        @if(session('success'))
+        <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded"
+             style="background:#f0fdf4;border:1px solid #bbf7d0;font-size:.8rem;color:#166534;">
+            <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
+        </div>
+        @endif
+
         {{-- Tabela --}}
         <div class="table-responsive card shadow-sm p-3 border-0">
             <table id="comprasTable" class="table table-hover align-middle">
@@ -147,14 +165,12 @@
                                     {{ $compra->fornecedor ?? 'Fornecedor não indicado' }}
                                 </small>
                             </td>
-
                             <td class="text-center">
                                 <span class="badge px-3 py-2 fw-bold" style="{{ $urg_style }} border-radius: 20px; font-size: 0.65rem; letter-spacing: 0.5px;">
                                     <i class="bi bi-circle-fill me-1" style="font-size: 0.4rem; vertical-align: middle;"></i>
                                     {{ strtoupper($urgencia) }}
                                 </span>
                             </td>
-
                             <td class="text-center">
                                 <form action="{{ route('compras.status', $compra->id) }}" method="POST" class="m-0">
                                     @csrf @method('PATCH')
@@ -171,7 +187,6 @@
                                     </select>
                                 </form>
                             </td>
-
                             <td class="text-center">
                                 @if($compra->attachments->count() > 0 || $compra->items->count() > 0)
                                     <button type="button"
@@ -191,39 +206,38 @@
                                     <span class="text-muted small">---</span>
                                 @endif
                             </td>
-
                             <td><span class="small fw-semibold text-secondary">{{ $compra->user->name ?? 'N/A' }}</span></td>
                             <td><span class="small text-muted">{{ $compra->created_at->format('d/m/Y') }}</span></td>
-
                             <td class="text-center">
                                 <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-
-                                    {{-- ✅ BOTÃO EMITIR REQUISIÇÃO — aparece apenas quando Aprovado --}}
                                     @if($compra->status === 'Aprovado')
                                         <a href="{{ route('requisicoes.create', ['compra_id' => $compra->id]) }}"
-                                           class="btn btn-emitir-req"
-                                           title="Emitir Requisição de Compra">
+                                           class="btn btn-emitir-req" title="Emitir Requisição de Compra">
                                             <i class="bi bi-file-earmark-arrow-up me-1"></i> Emitir Req.
                                         </a>
                                     @endif
-
                                     @php
                                         $podeEditar = !in_array($compra->status, ['Finalizado', 'Rejeitado']) || auth()->user()->hasRole('super-admin');
                                     @endphp
-
                                     @if($podeEditar)
                                         <a href="{{ route('compras.edit', $compra->id) }}" class="btn btn-action text-warning" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                     @endif
-
                                     @if(auth()->user()->hasRole('super-admin'))
-                                        <form action="{{ route('compras.destroy', $compra->id) }}" method="POST" class="m-0">
+                                        {{-- Form oculto — submetido pelo modal --}}
+                                        <form id="deleteForm-{{ $compra->id }}"
+                                              action="{{ route('compras.destroy', $compra->id) }}"
+                                              method="POST" class="d-none">
                                             @csrf @method('DELETE')
-                                            <button type="submit" class="btn btn-action text-danger" title="Eliminar" onclick="return confirm('Apagar permanentemente?')">
-                                                <i class="bi bi-trash3"></i>
-                                            </button>
                                         </form>
+                                        <button type="button"
+                                                class="btn btn-action text-danger btn-delete"
+                                                title="Eliminar"
+                                                data-form="deleteForm-{{ $compra->id }}"
+                                                data-label="#{{ $compra->id }}">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
                                     @endif
                                 </div>
                             </td>
@@ -234,7 +248,43 @@
         </div>
     </div>
 
-    {{-- Modal --}}
+    {{-- TOAST --}}
+    {{-- Só aparece se vier da sessão após redirect --}}
+    <div class="toast-success" id="toastSuccess">
+        <div class="toast-icon"><i class="bi bi-check-lg"></i></div>
+        <div class="toast-text">
+            <div class="toast-title">Compra eliminada</div>
+            <div class="toast-sub">O registo foi removido com sucesso.</div>
+        </div>
+        <button class="toast-close" onclick="closeToast()"><i class="bi bi-x-lg"></i></button>
+    </div>
+
+    {{-- MODAL CONFIRMAÇÃO ELIMINAR --}}
+    <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-box">
+            <div class="confirm-header">
+                <div class="confirm-icon"><i class="bi bi-trash3-fill"></i></div>
+                <div class="confirm-title">Apagar solicitação?</div>
+                <div class="confirm-sub">Tens a certeza que queres eliminar a compra <strong id="confirmLabel"></strong>?</div>
+            </div>
+            <div class="confirm-body">
+                <div class="confirm-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    Esta acção é irreversível. Todos os itens e anexos associados serão removidos.
+                </div>
+                <div class="confirm-actions">
+                    <button class="btn-cancel-confirm" onclick="closeConfirm()">
+                        <i class="bi bi-x-lg"></i> Cancelar
+                    </button>
+                    <button class="btn-delete-confirm" id="confirmOkBtn">
+                        <i class="bi bi-trash3"></i> Apagar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Detalhes --}}
     <div class="modal fade" id="modalDetalhes" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 shadow">
@@ -315,6 +365,49 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/v/bs5/dt-2.0.8/datatables.min.js"></script>
     <script>
+        var _deleteFormId = null;
+
+        // ── Toast ──
+        function showToast() {
+            var t = document.getElementById('toastSuccess');
+            t.classList.add('show');
+            setTimeout(closeToast, 4000);
+        }
+        function closeToast() {
+            document.getElementById('toastSuccess').classList.remove('show');
+        }
+
+        // Mostra toast se vier sessão de sucesso após redirect
+        @if(session('deleted'))
+            document.addEventListener('DOMContentLoaded', function() { showToast(); });
+        @endif
+
+        // ── Modal confirmação ──
+        $(document).on('click', '.btn-delete', function() {
+            _deleteFormId = $(this).data('form');
+            $('#confirmLabel').text($(this).data('label'));
+            $('#confirmOverlay').addClass('open');
+        });
+
+        $('#confirmOkBtn').on('click', function() {
+            if (_deleteFormId) {
+                $('#' + _deleteFormId).submit();
+            }
+        });
+
+        $('#confirmOverlay').on('click', function(e) {
+            if (e.target === this) closeConfirm();
+        });
+
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape') closeConfirm();
+        });
+
+        function closeConfirm() {
+            $('#confirmOverlay').removeClass('open');
+        }
+
+        // ── DataTables ──
         $(document).ready(function() {
             var table = $('#comprasTable').DataTable({
                 language: { url: 'https://cdn.datatables.net/plug-ins/2.0.8/i18n/pt-BR.json' },
@@ -322,18 +415,19 @@
                 columnDefs: [{ orderable: false, targets: [3, 4, 7] }]
             });
 
-            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+            $.fn.dataTable.ext.search.push(function(settings, data) {
                 var min = $('#min-date').val();
                 var max = $('#max-date').val();
                 var dateStr = data[6];
-                if(!dateStr) return true;
-                var dateArr = dateStr.split('/');
-                var valDate = dateArr[2] + dateArr[1] + dateArr[0];
-                var minDate = min ? min.replace(/-/g, '') : null;
-                var maxDate = max ? max.replace(/-/g, '') : null;
-                if ((!minDate && !maxDate) || (minDate && !maxDate && valDate >= minDate) ||
-                    (!minDate && maxDate && valDate <= maxDate) || (minDate && maxDate && valDate >= minDate && valDate <= maxDate)) return true;
-                return false;
+                if (!dateStr) return true;
+                var p = dateStr.split('/');
+                var valDate = p[2] + p[1] + p[0];
+                var minD = min ? min.replace(/-/g, '') : null;
+                var maxD = max ? max.replace(/-/g, '') : null;
+                if (!minD && !maxD) return true;
+                if (minD && !maxD) return valDate >= minD;
+                if (!minD && maxD) return valDate <= maxD;
+                return valDate >= minD && valDate <= maxD;
             });
 
             $('#min-date, #max-date').on('change', function() { table.draw(); });
@@ -342,42 +436,37 @@
             $(document).on('click', '.btn-show-details', function() {
                 const btn = $(this);
                 try {
-                    const id         = btn.attr('data-id');
-                    const solicitante = btn.attr('data-solicitante');
-                    const fornecedor  = btn.attr('data-fornecedor');
-                    const obs         = btn.attr('data-obs');
-                    const itens       = JSON.parse(btn.attr('data-itens') || '[]');
-                    const anexos      = JSON.parse(btn.attr('data-anexos') || '[]');
-
-                    $('#modal-id').text(id);
-                    $('#modal-solicitante-nome').text(solicitante);
-                    $('#modal-assinatura-digital').text(solicitante);
-                    $('#modal-fornecedor').text(fornecedor);
-                    $('#modal-obs').text(obs);
+                    $('#modal-id').text(btn.attr('data-id'));
+                    $('#modal-solicitante-nome').text(btn.attr('data-solicitante'));
+                    $('#modal-assinatura-digital').text(btn.attr('data-solicitante'));
+                    $('#modal-fornecedor').text(btn.attr('data-fornecedor'));
+                    $('#modal-obs').text(btn.attr('data-obs'));
                     $('#modal-data-atual').text(new Date().toLocaleDateString('pt-BR'));
+
+                    const itens  = JSON.parse(btn.attr('data-itens') || '[]');
+                    const anexos = JSON.parse(btn.attr('data-anexos') || '[]');
 
                     let htmlItens = '';
                     itens.forEach(item => {
-                        htmlItens += `
-                            <tr class="small text-center">
-                                <td class="ps-3 text-start">${item.item_name}</td>
-                                <td class="fw-bold">${item.quantity}</td>
-                                <td>${item.destino}</td>
-                            </tr>`;
+                        htmlItens += `<tr class="small text-center">
+                            <td class="ps-3 text-start">${item.item_name}</td>
+                            <td class="fw-bold">${item.quantity}</td>
+                            <td>${item.destino}</td>
+                        </tr>`;
                     });
                     $('#modal-tabela-itens').html(htmlItens || '<tr><td colspan="3" class="text-center">Sem itens</td></tr>');
 
                     let htmlAnexos = '';
-                    if(anexos.length > 0) {
+                    if (anexos.length > 0) {
                         anexos.forEach(doc => {
                             htmlAnexos += `<a href="/storage/${doc.file_path}" target="_blank" class="btn btn-sm btn-outline-primary px-3 shadow-sm"><i class="bi bi-file-earmark-pdf"></i> ${doc.file_name}</a>`;
                         });
                     } else {
-                        htmlAnexos = '<span class="text-muted small italic">Nenhum documento anexado.</span>';
+                        htmlAnexos = '<span class="text-muted small">Nenhum documento anexado.</span>';
                     }
                     $('#modal-anexos-lista').html(htmlAnexos);
                 } catch (e) {
-                    console.error("Erro no Parse do Modal:", e);
+                    console.error('Erro no Parse do Modal:', e);
                 }
             });
         });

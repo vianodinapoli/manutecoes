@@ -16,7 +16,6 @@
     .kpi-label{font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;margin-bottom:2px}
     .kpi-value{font-size:1.4rem;font-weight:800;color:#1e293b;line-height:1}
 
-    /* ── Filter panel ── */
     .filter-panel{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 20px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
     .filter-title{font-size:.6rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#94a3b8;margin-bottom:10px;display:flex;align-items:center;gap:6px}
     .filter-group{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -34,7 +33,6 @@
     .filter-tag button:hover{color:#ef4444}
     #filtroAtivo{font-size:.7rem;color:#94a3b8;margin-left:auto}
 
-    /* ── Table card ── */
     .table-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
     #machinesTable thead th{font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:10px 14px;white-space:nowrap}
     #machinesTable tbody td{font-size:.82rem;color:#334155;padding:9px 14px;vertical-align:middle;border-bottom:1px solid #f1f5f9}
@@ -70,22 +68,34 @@
     .dataTables_wrapper .row{margin:0}
     .dataTables_wrapper .dataTables_length,.dataTables_wrapper .dataTables_filter{padding:0 0 10px}
 
-    /* ── Modal confirmação ── */
-    .confirm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
-    .confirm-overlay.open{opacity:1;pointer-events:all}
-    .confirm-box{background:#fff;border-radius:14px;padding:28px 28px 22px;max-width:380px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,.18);transform:translateY(8px) scale(.98);transition:transform .2s;border-top:4px solid #dc2626}
-    .confirm-overlay.open .confirm-box{transform:none}
-    .confirm-icon{width:44px;height:44px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#dc2626;margin-bottom:14px}
-    .confirm-title{font-size:.95rem;font-weight:700;color:#1e293b;margin-bottom:6px}
-    .confirm-msg{font-size:.8rem;color:#64748b;line-height:1.5;margin-bottom:12px}
-    .confirm-id{font-size:.78rem;font-weight:700;color:#1e293b;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;display:inline-block;margin-bottom:18px}
-    .confirm-actions{display:flex;gap:8px;justify-content:flex-end}
-    .confirm-cancel{padding:7px 18px;border-radius:8px;font-size:.78rem;font-weight:600;border:1px solid #e2e8f0;background:#fff;color:#475569;cursor:pointer;transition:all .15s}
-    .confirm-cancel:hover{background:#f8fafc;border-color:#cbd5e1}
-    .confirm-ok{padding:7px 18px;border-radius:8px;font-size:.78rem;font-weight:600;border:none;background:#dc2626;color:#fff;cursor:pointer;transition:all .15s}
-    .confirm-ok:hover{background:#b91c1c}
+    /* ── Toast de sucesso ── */
+    .toast-success{position:fixed;top:24px;right:24px;z-index:99999;background:#fff;border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.12);border-left:4px solid #16a34a;min-width:300px;transform:translateX(120%);transition:transform 0.35s cubic-bezier(.34,1.56,.64,1)}
+    .toast-success.show{transform:translateX(0)}
+    .toast-icon{width:36px;height:36px;background:#f0fdf4;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:1rem;flex-shrink:0}
+    .toast-text{flex:1}
+    .toast-title{font-size:.82rem;font-weight:700;color:#1e293b;margin-bottom:2px}
+    .toast-sub{font-size:.74rem;color:#94a3b8}
+    .toast-close{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:1rem;padding:0;line-height:1}
+    .toast-close:hover{color:#475569}
 
-    /* ── Print ── */
+    /* ── Modal confirmação ── */
+    .confirm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+    .confirm-overlay.open{opacity:1;pointer-events:all}
+    .confirm-box{background:#fff;border-radius:20px;max-width:400px;width:calc(100% - 32px);box-shadow:0 24px 64px rgba(0,0,0,.18);transform:scale(.93) translateY(10px);transition:transform .25s cubic-bezier(.34,1.56,.64,1);overflow:hidden}
+    .confirm-overlay.open .confirm-box{transform:scale(1) translateY(0)}
+    .confirm-header{background:#fef2f2;padding:28px 28px 20px;text-align:center;border-bottom:1px solid #fecaca}
+    .confirm-icon{width:56px;height:56px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#dc2626;margin:0 auto 14px}
+    .confirm-title{font-size:1.05rem;font-weight:700;color:#1e293b;margin-bottom:6px}
+    .confirm-sub{font-size:.82rem;color:#94a3b8;line-height:1.6}
+    .confirm-body{padding:20px 28px 24px}
+    .confirm-warning{display:flex;align-items:center;gap:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:.78rem;color:#92400e;margin-bottom:20px}
+    .confirm-id{font-size:.78rem;font-weight:700;color:#1e293b;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;display:inline-block;margin-bottom:16px}
+    .confirm-actions{display:flex;gap:10px}
+    .confirm-actions button{flex:1;padding:11px;border-radius:10px;font-size:.82rem;font-weight:600;border:none;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+    .btn-cancel-confirm{background:#f1f5f9;color:#475569}.btn-cancel-confirm:hover{background:#e2e8f0}
+    .btn-delete-confirm{background:#dc2626;color:#fff;box-shadow:0 2px 8px rgba(220,38,38,.3)}.btn-delete-confirm:hover{background:#b91c1c}
+    .btn-delete-confirm:disabled{background:#f87171;cursor:not-allowed;box-shadow:none}
+
     @media print {
         .no-print{display:none!important}
         .table-card{border:none!important;box-shadow:none!important}
@@ -176,17 +186,13 @@
                 <option value="Avariada">Avariada</option>
                 <option value="Desativada">Desativada</option>
             </select>
-
             <select id="filtroTipo" class="filter-select">
                 <option value="">Todos os tipos</option>
                 @foreach($machines->pluck('tipo_equipamento')->unique()->sort() as $tipo)
                 <option value="{{ $tipo }}">{{ Str::limit($tipo, 40) }}</option>
                 @endforeach
             </select>
-
-            <input type="text" id="filtroLocalizacao" class="filter-input"
-                   placeholder="Filtrar por localização...">
-
+            <input type="text" id="filtroLocalizacao" class="filter-input" placeholder="Filtrar por localização...">
             <button class="btn-filter" onclick="applyFilters()">
                 <i class="bi bi-check-lg"></i> Aplicar
             </button>
@@ -254,8 +260,7 @@
                             default         => 'dash-circle',
                         };
                     @endphp
-                    <tr
-                        data-status="{{ $machine->status }}"
+                    <tr data-status="{{ $machine->status }}"
                         data-tipo="{{ $machine->tipo_equipamento }}"
                         data-localizacao="{{ strtolower($machine->localizacao) }}">
                         <td><span class="fw-semibold">{{ $machine->numero_interno }}</span></td>
@@ -283,7 +288,7 @@
                                 <button type="button"
                                         class="action-btn danger btn-delete"
                                         title="Eliminar"
-                                        data-action="{{ route('machines.destroy', $machine->id) }}"
+                                        data-url="{{ route('machines.destroy', $machine->id) }}"
                                         data-label="{{ $machine->numero_interno }}">
                                     <i class="bi bi-trash"></i>
                                 </button>
@@ -296,38 +301,49 @@
         </div>
     </div>
     @endif
+</div>
 
+{{-- TOAST DE SUCESSO --}}
+<div class="toast-success" id="toastSuccess">
+    <div class="toast-icon"><i class="bi bi-check-lg"></i></div>
+    <div class="toast-text">
+        <div class="toast-title">Equipamento eliminado</div>
+        <div class="toast-sub">O registo foi removido com sucesso.</div>
+    </div>
+    <button class="toast-close" onclick="closeToast()"><i class="bi bi-x-lg"></i></button>
 </div>
 
 {{-- MODAL CONFIRMAÇÃO ELIMINAR --}}
 <div class="confirm-overlay" id="confirmOverlay">
     <div class="confirm-box">
-        <div class="confirm-icon"><i class="bi bi-trash3-fill"></i></div>
-        <div class="confirm-title">Eliminar equipamento?</div>
-        <div class="confirm-msg">Esta acção é irreversível. O equipamento e todo o seu histórico serão removidos permanentemente.</div>
-        <div class="confirm-id" id="confirmLabel">—</div>
-        <div class="confirm-actions">
-            <button class="confirm-cancel" onclick="closeConfirm()">
-                <i class="bi bi-x"></i> Cancelar
-            </button>
-            <button class="confirm-ok" id="confirmOkBtn">
-                <i class="bi bi-trash3"></i> Eliminar
-            </button>
+        <div class="confirm-header">
+            <div class="confirm-icon"><i class="bi bi-trash3-fill"></i></div>
+            <div class="confirm-title">Eliminar equipamento?</div>
+            <div class="confirm-sub">Tens a certeza que queres eliminar <strong id="confirmLabel"></strong>?</div>
+        </div>
+        <div class="confirm-body">
+            <div class="confirm-warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                Esta acção é irreversível. O equipamento e todo o seu histórico serão removidos permanentemente.
+            </div>
+            <div class="confirm-actions">
+                <button class="btn-cancel-confirm" onclick="closeConfirm()">
+                    <i class="bi bi-x-lg"></i> Cancelar
+                </button>
+                <button class="btn-delete-confirm" id="confirmOkBtn">
+                    <i class="bi bi-trash3"></i> Eliminar
+                </button>
+            </div>
         </div>
     </div>
 </div>
-
-{{-- Form oculto único reutilizável --}}
-<form id="deleteForm" method="POST" style="display:none;">
-    @csrf
-    @method('DELETE')
-</form>
 
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script>
 var dtTable;
 var activeFilters = { estado: '', tipo: '', localizacao: '' };
+var _deleteUrl = '';
 
 $(document).ready(function () {
     dtTable = $('#machinesTable').DataTable({
@@ -337,13 +353,11 @@ $(document).ready(function () {
         columnDefs: [{ orderable: false, targets: -1 }]
     });
 
-    // Filtro personalizado
     $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
         var row = $(dtTable.row(dataIndex).node());
         var estado      = row.data('status') || '';
         var tipo        = row.data('tipo') || '';
         var localizacao = (row.data('localizacao') || '').toLowerCase();
-
         if (activeFilters.estado      && estado !== activeFilters.estado) return false;
         if (activeFilters.tipo        && tipo   !== activeFilters.tipo)   return false;
         if (activeFilters.localizacao && !localizacao.includes(activeFilters.localizacao.toLowerCase())) return false;
@@ -354,6 +368,7 @@ $(document).ready(function () {
     $(window).on('resize', function () { dtTable.columns.adjust(); });
 });
 
+// ── Filtros ──
 function applyFilters() {
     activeFilters.estado      = $('#filtroEstado').val();
     activeFilters.tipo        = $('#filtroTipo').val();
@@ -403,17 +418,64 @@ function renderTags() {
     $('#filtroAtivo').text(hasAny ? count + ' resultado(s)' : '');
 }
 
-// ── Modal de eliminação ──
+function updatePrintLabel() {
+    var parts = [];
+    if (activeFilters.estado)      parts.push('Estado: ' + activeFilters.estado);
+    if (activeFilters.tipo)        parts.push('Tipo: ' + activeFilters.tipo);
+    if (activeFilters.localizacao) parts.push('Localização: ' + activeFilters.localizacao);
+    $('#printFilterLabel').text(parts.length ? 'Filtros: ' + parts.join(' · ') : 'Sem filtros aplicados');
+}
+
+// ── Toast ──
+function showToast() {
+    var toast = document.getElementById('toastSuccess');
+    toast.classList.add('show');
+    setTimeout(closeToast, 4000);
+}
+
+function closeToast() {
+    document.getElementById('toastSuccess').classList.remove('show');
+}
+
+// ── Modal de eliminação com fetch ──
 $(document).on('click', '.btn-delete', function() {
-    var action = $(this).data('action');
+    _deleteUrl = $(this).data('url');
     var label  = $(this).data('label');
     $('#confirmLabel').text(label);
-    $('#deleteForm').attr('action', action);
+    var btn = document.getElementById('confirmOkBtn');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-trash3"></i> Eliminar';
     $('#confirmOverlay').addClass('open');
 });
 
 $('#confirmOkBtn').on('click', function() {
-    $('#deleteForm').submit();
+    var btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> A eliminar...';
+
+    fetch(_deleteUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-HTTP-Method-Override': 'DELETE'
+        },
+        body: JSON.stringify({ _method: 'DELETE' })
+    })
+    .then(res => res.json())
+    .then(data => {
+        closeConfirm();
+        if (data.success) {
+            showToast();
+            setTimeout(() => { window.location.href = data.redirect_url; }, 1800);
+        } else {
+            alert('Erro ao eliminar. Tenta novamente.');
+        }
+    })
+    .catch(() => {
+        closeConfirm();
+        alert('Erro de ligação. Tenta novamente.');
+    });
 });
 
 $('#confirmOverlay').on('click', function(e) {
@@ -426,15 +488,6 @@ $(document).on('keydown', function(e) {
 
 function closeConfirm() {
     $('#confirmOverlay').removeClass('open');
-}
-
-
-function updatePrintLabel() {
-    var parts = [];
-    if (activeFilters.estado)      parts.push('Estado: ' + activeFilters.estado);
-    if (activeFilters.tipo)        parts.push('Tipo: ' + activeFilters.tipo);
-    if (activeFilters.localizacao) parts.push('Localização: ' + activeFilters.localizacao);
-    $('#printFilterLabel').text(parts.length ? 'Filtros: ' + parts.join(' · ') : 'Sem filtros aplicados');
 }
 </script>
 </x-app-layout>

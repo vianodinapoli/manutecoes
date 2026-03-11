@@ -132,9 +132,10 @@ Route::get('/fuel-entry/{id}/json', [FuelController::class, 'getEntryJson'])->na
 // Rotas de Requisições
 Route::get('/requisicoes', [RequisitionController::class, 'index'])->name('requisicoes.index');
 Route::get('/requisicoes/novo', [RequisitionController::class, 'create'])->name('requisicoes.create');
-Route::post('/requisicoes/store', [RequisitionController::class, 'store'])->name('requisicoes.store'); // Ajustado para plural
+Route::post('/requisicoes/store', [RequisitionController::class, 'store'])->name('requisicoes.store');
 Route::get('/requisicoes/{id}/json', [RequisitionController::class, 'showJson'])->name('requisicoes.json');
 Route::get('/requisicoes/{id}/pdf', [RequisitionController::class, 'gerarPdf'])->name('requisicoes.pdf');
+Route::delete('/requisicoes/{requisicao}', [RequisitionController::class, 'destroy'])->name('requisicoes.destroy'); // ← ADICIONAR
 Route::resource('suppliers', SupplierController::class);
 // No seu arquivo routes/web.php
 

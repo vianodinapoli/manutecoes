@@ -44,11 +44,19 @@ class SupplierController extends Controller
         return redirect()->route('suppliers.index')->with('success', 'Fornecedor cadastrado com sucesso!');
     }
 
-    public function destroy(Supplier $supplier)
-    {
+  public function destroy(Supplier $supplier)
+{
+    try {
         $supplier->delete();
-        return redirect()->back()->with('success', 'Fornecedor removido!');
+        return redirect()->route('suppliers.index')->with('deleted', true);
+    } catch (\Illuminate\Database\QueryException $e) {
+        if ($e->getCode() === '23000') {
+            return redirect()->route('suppliers.index')
+                ->with('error', "Não é possível eliminar \"{$supplier->name}\" porque tem registos associados.");
+        }
+        throw $e;
     }
+}
 
 
     public function update(Request $request, Supplier $supplier)

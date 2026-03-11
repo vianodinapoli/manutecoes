@@ -35,6 +35,33 @@
     .active-filters{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
     .filter-tag{display:inline-flex;align-items:center;gap:5px;background:#e7f1ff;color:#0d6efd;border:1px solid #b6d0ff;border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:500}
     .filter-tag .remove-tag{cursor:pointer;opacity:.6;font-size:.8rem}.filter-tag .remove-tag:hover{opacity:1}
+
+    /* ── Toast ── */
+    .toast-success{position:fixed;top:24px;right:24px;z-index:99999;background:#fff;border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.12);border-left:4px solid #16a34a;min-width:300px;transform:translateX(120%);transition:transform 0.35s cubic-bezier(.34,1.56,.64,1)}
+    .toast-success.show{transform:translateX(0)}
+    .toast-icon{width:36px;height:36px;background:#f0fdf4;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:1rem;flex-shrink:0}
+    .toast-text{flex:1}
+    .toast-title{font-size:.82rem;font-weight:700;color:#1e293b;margin-bottom:2px}
+    .toast-sub{font-size:.74rem;color:#94a3b8}
+    .toast-close{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:1rem;padding:0;line-height:1}
+    .toast-close:hover{color:#475569}
+
+    /* ── Modal confirmação ── */
+    .confirm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+    .confirm-overlay.open{opacity:1;pointer-events:all}
+    .confirm-box{background:#fff;border-radius:20px;max-width:400px;width:calc(100% - 32px);box-shadow:0 24px 64px rgba(0,0,0,.18);transform:scale(.93) translateY(10px);transition:transform .25s cubic-bezier(.34,1.56,.64,1);overflow:hidden}
+    .confirm-overlay.open .confirm-box{transform:scale(1) translateY(0)}
+    .confirm-header{background:#fef2f2;padding:28px 28px 20px;text-align:center;border-bottom:1px solid #fecaca}
+    .confirm-icon{width:56px;height:56px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#dc2626;margin:0 auto 14px}
+    .confirm-title{font-size:1.05rem;font-weight:700;color:#1e293b;margin-bottom:6px}
+    .confirm-sub{font-size:.82rem;color:#94a3b8;line-height:1.6}
+    .confirm-body{padding:20px 28px 24px}
+    .confirm-warning{display:flex;align-items:center;gap:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:.78rem;color:#92400e;margin-bottom:20px}
+    .confirm-actions{display:flex;gap:10px}
+    .confirm-actions button{flex:1;padding:11px;border-radius:10px;font-size:.82rem;font-weight:600;border:none;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+    .btn-cancel-confirm{background:#f1f5f9;color:#475569}.btn-cancel-confirm:hover{background:#e2e8f0}
+    .btn-delete-confirm{background:#dc2626;color:#fff;box-shadow:0 2px 8px rgba(220,38,38,.3)}.btn-delete-confirm:hover{background:#b91c1c}
+    .btn-delete-confirm:disabled{background:#f87171;cursor:not-allowed;box-shadow:none}
 </style>
 
 <div class="container-fluid py-4 px-4">
@@ -49,26 +76,6 @@
             <i class="bi bi-plus-lg me-1"></i> Nova Requisição
         </a>
     </div>
-
-    {{-- TOAST --}}
-    @if(session('success'))
-    <div class="position-fixed top-0 end-0 p-3" style="z-index:9999;">
-        <div id="successToast" class="toast show border-0"
-             style="border-radius:10px;min-width:260px;overflow:hidden;
-                    background:linear-gradient(135deg,rgba(25,135,84,.92),rgba(32,201,151,.92));
-                    backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.25)!important;
-                    box-shadow:0 8px 32px rgba(25,135,84,.3);">
-            <div class="d-flex align-items-center gap-3 px-3 py-3">
-                <i class="bi bi-check-circle-fill text-white" style="font-size:1.4rem;"></i>
-                <div style="font-size:.78rem;color:rgba(255,255,255,.95);line-height:1.4;">{{ session('success') }}</div>
-                <button type="button" class="btn-close btn-close-white opacity-75 ms-auto" data-bs-dismiss="toast" style="font-size:.55rem;"></button>
-            </div>
-            <div style="height:2px;background:rgba(255,255,255,.15);overflow:hidden;">
-                <div id="toastProgress" style="height:100%;width:100%;background:rgba(255,255,255,.6);transition:width 3.5s linear;"></div>
-            </div>
-        </div>
-    </div>
-    @endif
 
     {{-- KPI CARDS --}}
     <div class="row g-3 mb-4">
@@ -186,8 +193,10 @@
                                     onclick="visualizarReq({{ $req->id }})" title="Visualizar / Imprimir">
                                 <i class="bi bi-printer"></i>
                             </button>
-                            <button class="action-btn text-danger border-danger border-opacity-25"
-                                    onclick="cancelarReq({{ $req->id }})" title="Cancelar">
+                            <button class="action-btn text-danger border-danger border-opacity-25 btn-cancelar"
+                                    data-id="{{ $req->id }}"
+                                    data-label="#{{ $req->id }} — {{ $req->supplier->name }}"
+                                    title="Cancelar">
                                 <i class="bi bi-x-circle"></i>
                             </button>
                         </div>
@@ -200,12 +209,49 @@
     </div>
 </div>
 
+{{-- TOAST --}}
+<div class="toast-success" id="toastSuccess">
+    <div class="toast-icon"><i class="bi bi-check-lg"></i></div>
+    <div class="toast-text">
+        <div class="toast-title">Requisição cancelada</div>
+        <div class="toast-sub">O registo foi removido com sucesso.</div>
+    </div>
+    <button class="toast-close" onclick="closeToast()"><i class="bi bi-x-lg"></i></button>
+</div>
+
+{{-- MODAL CONFIRMAÇÃO --}}
+<div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+        <div class="confirm-header">
+            <div class="confirm-icon"><i class="bi bi-x-circle-fill"></i></div>
+            <div class="confirm-title">Cancelar requisição?</div>
+            <div class="confirm-sub">Tens a certeza que queres cancelar <strong id="confirmLabel"></strong>?</div>
+        </div>
+        <div class="confirm-body">
+            <div class="confirm-warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                Esta acção é irreversível e não pode ser desfeita.
+            </div>
+            <div class="confirm-actions">
+                <button class="btn-cancel-confirm" onclick="closeConfirm()">
+                    <i class="bi bi-x-lg"></i> Cancelar
+                </button>
+                <button class="btn-delete-confirm" id="confirmOkBtn">
+                    <i class="bi bi-x-circle"></i> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
 let dtTable;
+let _deleteId = null;
+
 $(document).ready(function(){
     dtTable = $('#reqTable').DataTable({
         language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json' },
@@ -215,16 +261,76 @@ $(document).ready(function(){
         lengthMenu: [5, 10, 15, 25, 50],
     });
 
-    @if(session('success'))
-    const toastEl = document.getElementById('successToast');
-    new bootstrap.Toast(toastEl, { delay: 3500 }).show();
-    setTimeout(()=>{ document.getElementById('toastProgress').style.width='0%'; }, 50);
-    toastEl.style.opacity='0'; toastEl.style.transform='translateX(60px) scale(0.95)';
-    toastEl.style.transition='all 0.5s cubic-bezier(0.34,1.56,0.64,1)';
-    setTimeout(()=>{ toastEl.style.opacity='1'; toastEl.style.transform='translateX(0) scale(1)'; }, 50);
+    @if(session('deleted'))
+        showToast();
     @endif
 });
 
+// ── Toast ──
+function showToast() {
+    var t = document.getElementById('toastSuccess');
+    t.classList.add('show');
+    setTimeout(closeToast, 4000);
+}
+function closeToast() {
+    document.getElementById('toastSuccess').classList.remove('show');
+}
+
+// ── Modal ──
+$(document).on('click', '.btn-cancelar', function() {
+    _deleteId = $(this).data('id');
+    $('#confirmLabel').text($(this).data('label'));
+    $('#confirmOkBtn').prop('disabled', false)
+        .html('<i class="bi bi-x-circle"></i> Confirmar');
+    $('#confirmOverlay').addClass('open');
+});
+
+$('#confirmOkBtn').on('click', function() {
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> A cancelar...';
+
+    fetch(`/requisicoes/${_deleteId}`, {
+    method: 'DELETE',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        'Accept': 'application/json',
+    }
+})
+.then(res => {
+    if (!res.ok) throw new Error('Erro HTTP: ' + res.status);
+    return res.json();
+})
+.then(data => {
+    closeConfirm();
+    if (data.success) {
+        showToast();
+        setTimeout(() => window.location.reload(), 1800);
+    } else {
+        alert('Erro ao cancelar. Tenta novamente.');
+    }
+})
+.catch(err => {
+    closeConfirm();
+    console.error(err);
+    alert('Erro de ligação. Tenta novamente.');
+});
+});
+
+$('#confirmOverlay').on('click', function(e) {
+    if (e.target === this) closeConfirm();
+});
+
+$(document).on('keydown', function(e) {
+    if (e.key === 'Escape') closeConfirm();
+});
+
+function closeConfirm() {
+    $('#confirmOverlay').removeClass('open');
+}
+
+// ── Filtros ──
 function applyFilters() {
     const df = $('#filterDateFrom').val();
     const dt = $('#filterDateTo').val();
@@ -268,18 +374,6 @@ function removeTag(key) {
 
 function visualizarReq(id) {
     window.open(`/requisicoes/${id}/pdf`, '_blank');
-}
-
-function cancelarReq(id) {
-    if (confirm('Tens a certeza que queres cancelar esta requisição?')) {
-        fetch(`/requisicoes/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'X-Requested-With': 'XMLHttpRequest',
-            }
-        }).then(() => window.location.reload());
-    }
 }
 </script>
 

@@ -108,6 +108,12 @@ public function create(Request $request)
         }
     }
 
+
+    public function destroy(Requisition $requisicao)
+{
+    $requisicao->delete();
+    return response()->json(['success' => true]);
+}
     public function gerarPdf($id)
     {
         $requisicao = Requisition::with(['supplier', 'items'])->findOrFail($id);

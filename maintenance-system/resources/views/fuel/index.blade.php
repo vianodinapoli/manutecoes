@@ -81,6 +81,24 @@
     .fuel-toast.show{transform:translateY(0);opacity:1}
     .fuel-toast.success{background:#fff;border-left:4px solid #198754;color:#1a1a2e}
     .fuel-toast.error{background:#fff;border-left:4px solid #dc3545;color:#1a1a2e}
+
+    /* ── Modal confirmação ── */
+    .confirm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+    .confirm-overlay.open{opacity:1;pointer-events:all}
+    .confirm-box{background:#fff;border-radius:20px;max-width:400px;width:calc(100% - 32px);box-shadow:0 24px 64px rgba(0,0,0,.18);transform:scale(.93) translateY(10px);transition:transform .25s cubic-bezier(.34,1.56,.64,1);overflow:hidden}
+    .confirm-overlay.open .confirm-box{transform:scale(1) translateY(0)}
+    .confirm-header{background:#fef2f2;padding:28px 28px 20px;text-align:center;border-bottom:1px solid #fecaca}
+    .confirm-icon{width:56px;height:56px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#dc2626;margin:0 auto 14px}
+    .confirm-title{font-size:1.05rem;font-weight:700;color:#1e293b;margin-bottom:6px}
+    .confirm-sub{font-size:.82rem;color:#94a3b8;line-height:1.6}
+    .confirm-body{padding:20px 28px 24px}
+    .confirm-warning{display:flex;align-items:center;gap:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:.78rem;color:#92400e;margin-bottom:20px}
+    .confirm-actions{display:flex;gap:10px}
+    .confirm-actions button{flex:1;padding:11px;border-radius:10px;font-size:.82rem;font-weight:600;border:none;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+    .btn-cancel-confirm{background:#f1f5f9;color:#475569}.btn-cancel-confirm:hover{background:#e2e8f0}
+    .btn-delete-confirm{background:#dc2626;color:#fff;box-shadow:0 2px 8px rgba(220,38,38,.3)}.btn-delete-confirm:hover{background:#b91c1c}
+    .btn-delete-confirm:disabled{background:#f87171;cursor:not-allowed;box-shadow:none}
+
     @media print{.no-print{display:none!important}}
 </style>
 
@@ -169,7 +187,6 @@
             </div>
             @endforeach
 
-            {{-- Totalizador --}}
             @php $totalDivida = collect($saldosEmpresas)->sum('divida'); $totalAcertado = collect($saldosEmpresas)->sum('acertado'); @endphp
             <div style="background:linear-gradient(135deg,#1a1a2e,#0d3b2e);border-radius:12px;padding:12px 14px;min-width:150px;max-width:180px;flex:1;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;">
                 <div style="position:absolute;right:-10px;bottom:-10px;font-size:3rem;opacity:.06;color:#fff;">⛽</div>
@@ -335,31 +352,18 @@
                 <tbody>
                 @foreach($historico as $item)
                 <tr>
-                    {{-- 1: DATA --}}
-                    <td>
-                        <span class="fw-bold text-dark" style="font-size:.8rem;">{{ date('d/m/Y', strtotime($item->date)) }}</span>
-                    </td>
-
-                    {{-- 2: TIPO --}}
+                    <td><span class="fw-bold text-dark" style="font-size:.8rem;">{{ date('d/m/Y', strtotime($item->date)) }}</span></td>
                     <td>
                         <span class="tipo-badge {{ $item->tipo == 'ENTRADA' ? 'entrada' : 'saida' }}">
                             <i class="bi bi-{{ $item->tipo == 'ENTRADA' ? 'arrow-up-circle-fill' : 'arrow-down-circle-fill' }}"></i>
                             {{ $item->tipo }}
                         </span>
                     </td>
-
-                    {{-- 3: TANQUE --}}
-                    <td>
-                        <span class="fw-semibold" style="font-size:.8rem;">{{ $item->tanque_nome }}</span>
-                    </td>
-
-                    {{-- 4: IDENTIFICAÇÃO --}}
+                    <td><span class="fw-semibold" style="font-size:.8rem;">{{ $item->tanque_nome }}</span></td>
                     <td>
                         <span style="font-size:.8rem;font-weight:600;">{{ $item->ident }}</span><br>
                         <span class="text-muted" style="font-size:.7rem;">{{ $item->company }}</span>
                     </td>
-
-                    {{-- 5: CONTADORES --}}
                     <td class="text-center" style="font-size:.78rem;">
                         @if($item->start_counter !== null)
                             <span class="badge bg-light text-dark border" style="font-size:.68rem;font-weight:600;">
@@ -369,27 +373,17 @@
                             <span class="text-muted">—</span>
                         @endif
                     </td>
-
-                    {{-- 6: QUANTIDADE --}}
                     <td class="text-end">
                         <span class="fw-bold" style="font-size:.85rem;color:{{ $item->tipo == 'ENTRADA' ? '#198754' : '#dc3545' }};">
                             {{ $item->tipo == 'ENTRADA' ? '+' : '-' }}{{ number_format($item->quantity, 0) }}L
                         </span>
                     </td>
-
-                    {{-- 7: OPERADOR / MOTORISTA --}}
                     <td>
                         <span style="font-size:.75rem;">
-                            @if($item->operator)
-                                <i class="bi bi-person-fill text-muted me-1"></i>{{ $item->operator }}<br>
-                            @endif
-                            @if($item->driver)
-                                <i class="bi bi-truck text-muted me-1"></i>{{ $item->driver }}
-                            @endif
+                            @if($item->operator)<i class="bi bi-person-fill text-muted me-1"></i>{{ $item->operator }}<br>@endif
+                            @if($item->driver)<i class="bi bi-truck text-muted me-1"></i>{{ $item->driver }}@endif
                         </span>
                     </td>
-
-                    {{-- 8: AÇÕES --}}
                     <td class="text-center no-print">
                         <div class="d-flex justify-content-center gap-1">
                             <button type="button"
@@ -403,6 +397,7 @@
                                 class="action-btn text-danger border-danger border-opacity-25 btn-delete"
                                 data-id="{{ $item->id }}"
                                 data-tipo="{{ $item->tipo }}"
+                                data-label="{{ $item->tipo }} — {{ $item->ident }} ({{ date('d/m/Y', strtotime($item->date)) }})"
                                 data-url="{{ $item->tipo == 'ENTRADA' ? route('fuel.entry.destroy', $item->id) : route('fuel.log.destroy', $item->id) }}"
                                 title="Eliminar">
                                 <i class="bi bi-trash3"></i>
@@ -413,6 +408,31 @@
                 @endforeach
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL CONFIRMAÇÃO ELIMINAR --}}
+<div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+        <div class="confirm-header">
+            <div class="confirm-icon"><i class="bi bi-trash3-fill"></i></div>
+            <div class="confirm-title">Eliminar registo?</div>
+            <div class="confirm-sub">Tens a certeza que queres eliminar<br><strong id="confirmLabel"></strong>?</div>
+        </div>
+        <div class="confirm-body">
+            <div class="confirm-warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                Esta acção afecta o stock do tanque e não pode ser desfeita.
+            </div>
+            <div class="confirm-actions">
+                <button class="btn-cancel-confirm" onclick="closeConfirm()">
+                    <i class="bi bi-x-lg"></i> Cancelar
+                </button>
+                <button class="btn-delete-confirm" id="confirmOkBtn">
+                    <i class="bi bi-trash3"></i> Eliminar
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -585,6 +605,9 @@
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 
 <script>
+let _deleteUrl = null;
+let _deleteRow = null;
+
 $(document).ready(function(){
     $('#fuelTable').DataTable({
         dom: '<"d-flex justify-content-between align-items-center mb-3"Bf>rtip',
@@ -598,6 +621,7 @@ $(document).ready(function(){
         columnDefs: [{ orderable: false, targets: 7 }]
     });
 
+    // ── Editar ──
     $(document).on('click', '.btn-edit', function(){
         const id   = $(this).data('id');
         const tipo = $(this).data('tipo');
@@ -609,7 +633,7 @@ $(document).ready(function(){
                 $('#edit_end').val(data.end_counter);
                 $('#edit_company').val(data.company);
                 new bootstrap.Modal(document.getElementById('editLogModal')).show();
-            }).fail(() => alert('Erro ao buscar dados.'));
+            }).fail(() => showToast('Erro ao buscar dados.', 'error'));
         } else {
             $.get(`/fuel-entry/${id}/json`, function(data){
                 $('#modalEntrada form').attr('action', `/fuel-entry/${id}`);
@@ -620,26 +644,59 @@ $(document).ready(function(){
                 $('#modalEntrada input[name="quantity"]').val(data.quantity);
                 $('#modalEntrada input[name="supplier"]').val(data.supplier || data.ident);
                 new bootstrap.Modal(document.getElementById('modalEntrada')).show();
-            }).fail(() => alert('Erro ao buscar dados.'));
+            }).fail(() => showToast('Erro ao buscar dados.', 'error'));
         }
     });
 
-    $(document).on('click', '.btn-delete', function(e){
-        e.preventDefault();
-        const btn = $(this), url = btn.data('url'), row = btn.closest('tr');
-        if (!confirm('Eliminar este registo?')) return;
-        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" style="width:10px;height:10px;"></span>');
-        $.ajax({
-            url, type: 'POST',
-            data: { _method: 'DELETE', _token: '{{ csrf_token() }}' },
-            success: () => row.fadeOut(300, function(){ $(this).remove(); }),
-            error: (xhr) => {
-                if (xhr.status === 200) { row.fadeOut(300, function(){ $(this).remove(); }); }
-                else { alert('Erro ao eliminar.'); btn.prop('disabled', false).html('<i class="bi bi-trash3"></i>'); }
-            }
-        });
+    // ── Abrir modal de confirmação ──
+    $(document).on('click', '.btn-delete', function(){
+        _deleteUrl = $(this).data('url');
+        _deleteRow = $(this).closest('tr');
+        $('#confirmLabel').text($(this).data('label'));
+        $('#confirmOkBtn').prop('disabled', false)
+            .html('<i class="bi bi-trash3"></i> Eliminar');
+        $('#confirmOverlay').addClass('open');
     });
 });
+
+// ── Confirmar eliminação ──
+$('#confirmOkBtn').on('click', function(){
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> A eliminar...';
+
+    $.ajax({
+        url: _deleteUrl,
+        type: 'POST',
+        data: { _method: 'DELETE', _token: '{{ csrf_token() }}' },
+        success: function(){
+            closeConfirm();
+            _deleteRow.fadeOut(300, function(){ $(this).remove(); });
+            showToast('Registo eliminado com sucesso.', 'success');
+        },
+        error: function(xhr){
+            closeConfirm();
+            if (xhr.status === 200) {
+                _deleteRow.fadeOut(300, function(){ $(this).remove(); });
+                showToast('Registo eliminado.', 'success');
+            } else {
+                showToast('Erro ao eliminar. Tenta novamente.', 'error');
+            }
+        }
+    });
+});
+
+$('#confirmOverlay').on('click', function(e){
+    if (e.target === this) closeConfirm();
+});
+
+$(document).on('keydown', function(e){
+    if (e.key === 'Escape') closeConfirm();
+});
+
+function closeConfirm(){
+    $('#confirmOverlay').removeClass('open');
+}
 
 function calc(){
     const i = parseFloat(document.getElementById('ci').value) || 0;
