@@ -239,36 +239,34 @@ $(document).ready(function () {
             datasets: [{
                 data: {!! json_encode($dadosStock->pluck('total')) !!},
                 backgroundColor: [
-                    /* Cyan puro e variações */
-                    '#00ffff','#00cccc','#009999','#006666','#00e5e5',
-                    '#33ffff','#66ffff','#99ffff','#00b3b3','#007a7a',
-                    /* Magenta puro e variações */
-                    '#ff00ff','#cc00cc','#990099','#660066','#e500e5',
-                    '#ff33ff','#ff66ff','#ff99ff','#b300b3','#7a007a',
-                    /* Yellow puro e variações */
-                    '#ffff00','#cccc00','#999900','#666600','#e5e500',
-                    '#ffff33','#ffff66','#ffff99','#b3b300','#7a7a00',
-                    /* Key/Black variações (substituído por tons escuros coloridos) */
-                    '#1a1a2e','#16213e','#0f3460','#533483','#2b2d42',
-                    /* Cyan + Magenta = Azul/Violeta */
-                    '#0000ff','#3300ff','#6600ff','#9900ff','#cc00ff',
-                    '#0033ff','#0066ff','#0099ff','#00ccff','#3366ff',
-                    /* Cyan + Yellow = Verde */
-                    '#00ff00','#00cc33','#00ff66','#00ff99','#00ffcc',
-                    '#33ff00','#66ff00','#99ff00','#ccff00','#66ff33',
-                    /* Magenta + Yellow = Vermelho/Laranja */
-                    '#ff0000','#ff3300','#ff6600','#ff9900','#ffcc00',
-                    '#ff0033','#ff0066','#ff0099','#ff00cc','#cc3300',
-                    /* Mistura C+M a 50% */
-                    '#7f00ff','#ff007f','#007fff','#00ff7f','#7fff00',
-                    '#ff7f00','#7f7fff','#ff7f7f','#7fff7f','#7f7f00',
-                    /* Mistura C+M+Y a várias percentagens */
-                    '#ff6680','#80ff66','#6680ff','#ffaa00','#00ffaa',
-                    '#aa00ff','#ff00aa','#00aaff','#aaff00','#ff5500',
-                    /* Tons vibrantes intermédios */
-                    '#ff4444','#44ff44','#4444ff','#ffaa44','#44ffaa',
-                    '#aa44ff','#ff44aa','#44aaff','#aaff44','#ff8844',
-                ],
+    /* Azuis & Índigos */
+    '#2563eb','#1d4ed8','#3b82f6','#60a5fa','#1e40af',
+    '#4f46e5','#6366f1','#818cf8','#3730a3','#a5b4fc',
+
+    /* Verdes & Teais */
+    '#059669','#10b981','#34d399','#047857','#6ee7b7',
+    '#0d9488','#14b8a6','#2dd4bf','#0f766e','#99f6e4',
+
+    /* Laranjas & Âmbares */
+    '#d97706','#f59e0b','#fbbf24','#b45309','#fcd34d',
+    '#ea580c','#f97316','#fb923c','#c2410c','#fed7aa',
+
+    /* Vermelhos & Rosas */
+    '#dc2626','#ef4444','#f87171','#b91c1c','#fca5a5',
+    '#db2777','#ec4899','#f472b6','#be185d','#fbcfe8',
+
+    /* Roxos & Violetas */
+    '#7c3aed','#8b5cf6','#a78bfa','#6d28d9','#c4b5fd',
+    '#9333ea','#a855f7','#c084fc','#7e22ce','#e9d5ff',
+
+    /* Cianos & Azuis claros */
+    '#0284c7','#0ea5e9','#38bdf8','#0369a1','#7dd3fc',
+    '#0891b2','#06b6d4','#67e8f9','#0e7490','#a5f3fc',
+
+    /* Limas & Amarelos */
+    '#65a30d','#84cc16','#a3e635','#4d7c0f','#bef264',
+    '#ca8a04','#eab308','#facc15','#a16207','#fef08a',
+],
                 hoverOffset: 10,
                 borderWidth: 0
             }]
