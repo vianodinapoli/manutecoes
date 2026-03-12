@@ -201,187 +201,183 @@
                     </button>
                 </div>
 
-                <nav class="mt-4 px-2 space-y-1">
+                {{-- 
+    SUBSTITUI o bloco <nav class="mt-4 px-2 space-y-1"> ... </nav>
+    no ficheiro resources/views/layouts/app.blade.php
+--}}
 
-                    {{-- Dashboard --}}
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="nav-item rounded">
-                        <i class="fas fa-home"></i>
-                        <span class="nav-text">Dashboard</span>
-                    </x-nav-link>
+<nav class="mt-4 px-2 space-y-1">
 
-                    {{-- Equipamentos --}}
-                    <x-nav-link :href="route('machines.index')" :active="request()->routeIs('machines.*')" class="nav-item rounded">
-                        <i class="fas fa-tools"></i>
-                        <span class="nav-text">Equipamento/Máquinas</span>
-                    </x-nav-link>
+    {{-- Dashboard --}}
+    @can('acesso dashboard')
+    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="nav-item rounded">
+        <i class="fas fa-home"></i>
+        <span class="nav-text">Dashboard</span>
+    </x-nav-link>
+    @endcan
 
-                    {{-- ── DROPDOWN MANUTENÇÕES ── --}}
-                    <div class="nav-dropdown-wrap"
-                         x-data="{ open: {{ request()->routeIs('maintenances.*') ? 'true' : 'false' }} }">
+    {{-- Equipamentos --}}
+    @can('acesso equipamentos')
+    <x-nav-link :href="route('machines.index')" :active="request()->routeIs('machines.*')" class="nav-item rounded">
+        <i class="fas fa-tools"></i>
+        <span class="nav-text">Equipamento/Máquinas</span>
+    </x-nav-link>
+    @endcan
 
-                        <div @click="open = !open" class="nav-dropdown-trigger">
-                            <i class="fas fa-wrench icon-main"></i>
-                            <span class="nav-text">Manutenções</span>
-                            <i class="fas fa-chevron-right chevron" :style="open ? 'transform:rotate(90deg)' : ''"></i>
-                        </div>
+    {{-- Manutenções --}}
+    @can('acesso manutencoes')
+    <div class="nav-dropdown-wrap"
+         x-data="{ open: {{ request()->routeIs('maintenances.*') ? 'true' : 'false' }} }">
 
-                        {{-- subitens expandidos --}}
-                        <div x-show="open" x-cloak x-collapse
-                             x-transition:enter="transition ease-out duration-200"
-                             class="nav-dropdown-items">
-                            <x-nav-link :href="route('maintenances.create')"
-                                        :active="request()->routeIs('maintenances.create')"
-                                        class="nav-item rounded">
-                                <i class="fas fa-plus-circle"></i>
-                                <span class="nav-text">Criar Manutenção</span>
-                            </x-nav-link>
-                            <x-nav-link :href="route('maintenances.index')"
-                                        :active="request()->routeIs('maintenances.index')"
-                                        class="nav-item rounded">
-                                <i class="fas fa-list"></i>
-                                <span class="nav-text">Ver Manutenções</span>
-                            </x-nav-link>
-                        </div>
+        <div @click="open = !open" class="nav-dropdown-trigger">
+            <i class="fas fa-wrench icon-main"></i>
+            <span class="nav-text">Manutenções</span>
+            <i class="fas fa-chevron-right chevron" :style="open ? 'transform:rotate(90deg)' : ''"></i>
+        </div>
 
-                        {{-- flyout quando sidebar comprimida --}}
-                        <div class="nav-flyout">
-                            <div class="nav-flyout-label">Manutenções</div>
-                            <a href="{{ route('maintenances.create') }}">
-                                <i class="fas fa-plus-circle"></i> Criar Manutenção
-                            </a>
-                            <a href="{{ route('maintenances.index') }}">
-                                <i class="fas fa-list"></i> Ver Manutenções
-                            </a>
-                        </div>
-                    </div>
+        <div x-show="open" x-cloak x-collapse
+             x-transition:enter="transition ease-out duration-200"
+             class="nav-dropdown-items">
+            <x-nav-link :href="route('maintenances.create')"
+                        :active="request()->routeIs('maintenances.create')"
+                        class="nav-item rounded">
+                <i class="fas fa-plus-circle"></i>
+                <span class="nav-text">Criar Manutenção</span>
+            </x-nav-link>
+            <x-nav-link :href="route('maintenances.index')"
+                        :active="request()->routeIs('maintenances.index')"
+                        class="nav-item rounded">
+                <i class="fas fa-list"></i>
+                <span class="nav-text">Ver Manutenções</span>
+            </x-nav-link>
+        </div>
 
-                    {{-- ── DROPDOWN STOCK / ARMAZÉM ── --}}
-<div class="nav-dropdown-wrap"
-     x-data="{ open: {{ request()->routeIs('stock-items.*', 'movimentos.*') ? 'true' : 'false' }} }">
-
-    <div @click="open = !open" class="nav-dropdown-trigger">
-        <i class="fas fa-boxes icon-main"></i>
-        <span class="nav-text">Stock / Armazém</span>
-        <i class="fas fa-chevron-right chevron" :style="open ? 'transform:rotate(90deg)' : ''"></i>
+        <div class="nav-flyout">
+            <div class="nav-flyout-label">Manutenções</div>
+            <a href="{{ route('maintenances.create') }}"><i class="fas fa-plus-circle"></i> Criar Manutenção</a>
+            <a href="{{ route('maintenances.index') }}"><i class="fas fa-list"></i> Ver Manutenções</a>
+        </div>
     </div>
+    @endcan
 
-    <div x-show="open" x-cloak x-collapse
-         x-transition:enter="transition ease-out duration-200"
-         class="nav-dropdown-items">
-        <x-nav-link :href="route('stock-items.index')"
-                    :active="request()->routeIs('stock-items.*')"
-                    class="nav-item rounded">
-            <i class="fas fa-boxes"></i>
-            <span class="nav-text">Stock</span>
+    {{-- Stock / Armazém --}}
+    @canany(['acesso stock', 'acesso movimentos'])
+    <div class="nav-dropdown-wrap"
+         x-data="{ open: {{ request()->routeIs('stock-items.*', 'movimentos.*') ? 'true' : 'false' }} }">
+
+        <div @click="open = !open" class="nav-dropdown-trigger">
+            <i class="fas fa-boxes icon-main"></i>
+            <span class="nav-text">Stock / Armazém</span>
+            <i class="fas fa-chevron-right chevron" :style="open ? 'transform:rotate(90deg)' : ''"></i>
+        </div>
+
+        <div x-show="open" x-cloak x-collapse
+             x-transition:enter="transition ease-out duration-200"
+             class="nav-dropdown-items">
+            @can('acesso stock')
+            <x-nav-link :href="route('stock-items.index')"
+                        :active="request()->routeIs('stock-items.*')"
+                        class="nav-item rounded">
+                <i class="fas fa-boxes"></i>
+                <span class="nav-text">Stock</span>
+            </x-nav-link>
+            @endcan
+            @can('acesso movimentos')
+            <x-nav-link :href="route('movimentos.index')"
+                        :active="request()->routeIs('movimentos.*')"
+                        class="nav-item rounded">
+                <i class="fas fa-arrow-left-right"></i>
+                <span class="nav-text">Movimentos</span>
+            </x-nav-link>
+            @endcan
+        </div>
+
+        <div class="nav-flyout">
+            <div class="nav-flyout-label">Stock / Armazém</div>
+            @can('acesso stock')
+            <a href="{{ route('stock-items.index') }}"><i class="fas fa-boxes"></i> Stock</a>
+            @endcan
+            @can('acesso movimentos')
+            <a href="{{ route('movimentos.index') }}"><i class="fas fa-arrow-left-right"></i> Movimentos</a>
+            @endcan
+        </div>
+    </div>
+    @endcanany
+
+    {{-- Pedidos / Requisições --}}
+    @can('acesso pedidos')
+    <div class="nav-dropdown-wrap"
+         x-data="{ open: {{ request()->routeIs('suppliers.*', 'compras.*', 'requisicao.*', 'requisicoes.*') ? 'true' : 'false' }} }">
+
+        <div @click="open = !open" class="nav-dropdown-trigger">
+            <i class="fas fa-shopping-cart icon-main"></i>
+            <span class="nav-text">Pedidos/Requisições</span>
+            <i class="fas fa-chevron-right chevron" :style="open ? 'transform:rotate(90deg)' : ''"></i>
+        </div>
+
+        <div x-show="open" x-cloak x-collapse
+             x-transition:enter="transition ease-out duration-200"
+             class="nav-dropdown-items">
+            <x-nav-link :href="route('compras.index')"      :active="request()->routeIs('compras.index')"  class="nav-item rounded">
+                <i class="fas fa-list-ul"></i><span class="nav-text">Pedidos internos</span>
+            </x-nav-link>
+            <x-nav-link :href="route('suppliers.index')"    :active="request()->routeIs('suppliers.*')"    class="nav-item rounded">
+                <i class="fas fa-truck"></i><span class="nav-text">Fornecedores</span>
+            </x-nav-link>
+            <x-nav-link :href="route('requisicoes.create')" :active="request()->routeIs('requisicoes.create')" class="nav-item rounded">
+                <i class="fas fa-plus-circle"></i><span class="nav-text">Nova Requisição</span>
+            </x-nav-link>
+            <x-nav-link :href="route('requisicoes.index')"  :active="request()->routeIs('requisicoes.index')"  class="nav-item rounded">
+                <i class="fas fa-list"></i><span class="nav-text">Lista de Requisições</span>
+            </x-nav-link>
+        </div>
+
+        <div class="nav-flyout">
+            <div class="nav-flyout-label">Pedidos / Requisições</div>
+            <a href="{{ route('compras.index') }}"><i class="fas fa-list-ul"></i> Pedidos Internos</a>
+            <a href="{{ route('suppliers.index') }}"><i class="fas fa-truck"></i> Fornecedores</a>
+            <a href="{{ route('requisicoes.create') }}"><i class="fas fa-plus-circle"></i> Nova Requisição</a>
+            <a href="{{ route('requisicoes.index') }}"><i class="fas fa-list"></i> Lista de Requisições</a>
+        </div>
+    </div>
+    @endcan
+
+    {{-- Combustível --}}
+    @can('acesso combustivel')
+    <x-nav-link :href="route('fuel.index')" :active="request()->routeIs('fuel.*')" class="nav-item rounded">
+        <i class="fas fa-gas-pump"></i>
+        <span class="nav-text">Gestão de Combustível</span>
+    </x-nav-link>
+    @endcan
+
+    {{-- Discharges --}}
+    @can('acesso discharges')
+    <x-nav-link :href="route('discharges.index')" :active="request()->routeIs('discharges.*')" class="nav-item rounded">
+        <i class="fas fa-sign-out-alt"></i>
+        <span class="nav-text">Discharges</span>
+    </x-nav-link>
+    @endcan
+
+    <hr class="border-gray-700 my-4">
+
+    {{-- Perfil (sempre visível) --}}
+    <x-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.edit')" class="nav-item rounded">
+        <i class="fas fa-user-circle"></i>
+        <span class="nav-text">Perfil</span>
+    </x-nav-link>
+
+    {{-- Administração --}}
+    @hasrole('super-admin')
+        <div class="admin-label pt-4 pb-2 px-4">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Administração</span>
+        </div>
+        <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" class="nav-item rounded">
+            <i class="fas fa-users-cog"></i>
+            <span class="nav-text">Utilizadores</span>
         </x-nav-link>
-        <x-nav-link :href="route('movimentos.index')"
-                    :active="request()->routeIs('movimentos.*')"
-                    class="nav-item rounded">
-            <i class="fas fa-arrow-left-right"></i>
-            <span class="nav-text">Movimentos</span>
-        </x-nav-link>
-    </div>
+    @endhasrole
 
-    {{-- flyout quando sidebar comprimida --}}
-    <div class="nav-flyout">
-        <div class="nav-flyout-label">Stock / Armazém</div>
-        <a href="{{ route('stock-items.index') }}">
-            <i class="fas fa-boxes"></i> Stock
-        </a>
-        <a href="{{ route('movimentos.index') }}">
-            <i class="fas fa-arrow-left-right"></i> Movimentos
-        </a>
-    </div>
-</div>
-
-                    {{-- ── DROPDOWN PEDIDOS/REQUISIÇÕES ── --}}
-                    <div class="nav-dropdown-wrap"
-                         x-data="{ open: {{ request()->routeIs('suppliers.*', 'compras.*', 'requisicao.*', 'requisicoes.*') ? 'true' : 'false' }} }">
-
-                        <div @click="open = !open" class="nav-dropdown-trigger">
-                            <i class="fas fa-shopping-cart icon-main"></i>
-                            <span class="nav-text">Pedidos/Requisições</span>
-                            <i class="fas fa-chevron-right chevron" :style="open ? 'transform:rotate(90deg)' : ''"></i>
-                        </div>
-
-                        <div x-show="open" x-cloak x-collapse
-                             x-transition:enter="transition ease-out duration-200"
-                             class="nav-dropdown-items">
-                            <x-nav-link :href="route('compras.index')"
-                                        :active="request()->routeIs('compras.index')"
-                                        class="nav-item rounded">
-                                <i class="fas fa-list-ul"></i>
-                                <span class="nav-text">Pedidos internos</span>
-                            </x-nav-link>
-                            <x-nav-link :href="route('suppliers.index')"
-                                        :active="request()->routeIs('suppliers.*')"
-                                        class="nav-item rounded">
-                                <i class="fas fa-truck"></i>
-                                <span class="nav-text">Fornecedores</span>
-                            </x-nav-link>
-                            <x-nav-link :href="route('requisicoes.create')"
-                                        :active="request()->routeIs('requisicoes.create')"
-                                        class="nav-item rounded">
-                                <i class="fas fa-plus-circle"></i>
-                                <span class="nav-text">Nova Requisição</span>
-                            </x-nav-link>
-                            <x-nav-link :href="route('requisicoes.index')"
-                                        :active="request()->routeIs('requisicoes.index')"
-                                        class="nav-item rounded">
-                                <i class="fas fa-list"></i>
-                                <span class="nav-text">Lista de Requisições</span>
-                            </x-nav-link>
-                        </div>
-
-                        {{-- flyout quando sidebar comprimida --}}
-                        <div class="nav-flyout">
-                            <div class="nav-flyout-label">Pedidos / Requisições</div>
-                            <a href="{{ route('compras.index') }}">
-                                <i class="fas fa-list-ul"></i> Pedidos Internos
-                            </a>
-                            <a href="{{ route('suppliers.index') }}">
-                                <i class="fas fa-truck"></i> Fornecedores
-                            </a>
-                            <a href="{{ route('requisicoes.create') }}">
-                                <i class="fas fa-plus-circle"></i> Nova Requisição
-                            </a>
-                            <a href="{{ route('requisicoes.index') }}">
-                                <i class="fas fa-list"></i> Lista de Requisições
-                            </a>
-                        </div>
-                    </div>
-
-                    {{-- Combustível --}}
-                    <x-nav-link :href="route('fuel.index')" :active="request()->routeIs('fuel.*')" class="nav-item rounded">
-                        <i class="fas fa-gas-pump"></i>
-                        <span class="nav-text">Gestão de Combustível</span>
-                    </x-nav-link>
-
-                    {{-- Discharges --}}
-                    <x-nav-link :href="route('discharges.index')" :active="request()->routeIs('discharges.*')" class="nav-item rounded">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span class="nav-text">Discharges</span>
-                    </x-nav-link>
-
-                    <hr class="border-gray-700 my-4">
-
-                    {{-- Perfil --}}
-                    <x-nav-link :href="route('profile.edit')" :active="request()->routeIs('profile.edit')" class="nav-item rounded">
-                        <i class="fas fa-user-circle"></i>
-                        <span class="nav-text">Perfil</span>
-                    </x-nav-link>
-
-                    @hasrole('super-admin')
-                        <div class="admin-label pt-4 pb-2 px-4">
-                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Administração</span>
-                        </div>
-                        <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" class="nav-item rounded">
-                            <i class="fas fa-users-cog"></i>
-                            <span class="nav-text">Utilizadores</span>
-                        </x-nav-link>
-                    @endhasrole
-
-                </nav>
+</nav>
             </aside>
 
             {{-- CONTEÚDO PRINCIPAL --}}
