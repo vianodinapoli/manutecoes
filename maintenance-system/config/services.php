@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    'twilio' => [
+        'sid'           => env('TWILIO_SID'),
+        'token'         => env('TWILIO_TOKEN'),
+        'whatsapp_from' => env('TWILIO_WHATSAPP_FROM'),
+        'destinatarios' => [
+            'stock'       => explode(',', env('TWILIO_DEST_STOCK', '')),
+            'manutencao'  => explode(',', env('TWILIO_DEST_MANUTENCAO', '')),
+            'requisicoes' => explode(',', env('TWILIO_DEST_REQUISICOES', '')),
+        ],
+    ],
+
 ];
