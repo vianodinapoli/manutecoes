@@ -255,11 +255,44 @@
                         </div>
                     </div>
 
-                    {{-- Stock --}}
-                    <x-nav-link :href="route('stock-items.index')" :active="request()->routeIs('stock-items.*')" class="nav-item rounded">
-                        <i class="fas fa-boxes"></i>
-                        <span class="nav-text">Stock</span>
-                    </x-nav-link>
+                    {{-- ── DROPDOWN STOCK / ARMAZÉM ── --}}
+<div class="nav-dropdown-wrap"
+     x-data="{ open: {{ request()->routeIs('stock-items.*', 'movimentos.*') ? 'true' : 'false' }} }">
+
+    <div @click="open = !open" class="nav-dropdown-trigger">
+        <i class="fas fa-boxes icon-main"></i>
+        <span class="nav-text">Stock / Armazém</span>
+        <i class="fas fa-chevron-right chevron" :style="open ? 'transform:rotate(90deg)' : ''"></i>
+    </div>
+
+    <div x-show="open" x-cloak x-collapse
+         x-transition:enter="transition ease-out duration-200"
+         class="nav-dropdown-items">
+        <x-nav-link :href="route('stock-items.index')"
+                    :active="request()->routeIs('stock-items.*')"
+                    class="nav-item rounded">
+            <i class="fas fa-boxes"></i>
+            <span class="nav-text">Stock</span>
+        </x-nav-link>
+        <x-nav-link :href="route('movimentos.index')"
+                    :active="request()->routeIs('movimentos.*')"
+                    class="nav-item rounded">
+            <i class="fas fa-arrow-left-right"></i>
+            <span class="nav-text">Movimentos</span>
+        </x-nav-link>
+    </div>
+
+    {{-- flyout quando sidebar comprimida --}}
+    <div class="nav-flyout">
+        <div class="nav-flyout-label">Stock / Armazém</div>
+        <a href="{{ route('stock-items.index') }}">
+            <i class="fas fa-boxes"></i> Stock
+        </a>
+        <a href="{{ route('movimentos.index') }}">
+            <i class="fas fa-arrow-left-right"></i> Movimentos
+        </a>
+    </div>
+</div>
 
                     {{-- ── DROPDOWN PEDIDOS/REQUISIÇÕES ── --}}
                     <div class="nav-dropdown-wrap"

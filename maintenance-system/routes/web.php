@@ -14,7 +14,7 @@ use App\Http\Controllers\FuelController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\RequisitionController;
 use App\Http\Controllers\DischargeController;
-
+use App\Http\Controllers\MovimentoArmazemController;
 
 
 // -------------------------------------------------------------
@@ -138,6 +138,18 @@ Route::get('/requisicoes/{id}/pdf', [RequisitionController::class, 'gerarPdf'])-
 Route::delete('/requisicoes/{requisicao}', [RequisitionController::class, 'destroy'])->name('requisicoes.destroy'); // ← ADICIONAR
 Route::resource('suppliers', SupplierController::class);
 // No seu arquivo routes/web.php
+
+ // CRUD de movimentos
+    Route::get   ('/movimentos',                [MovimentoArmazemController::class, 'index'])      ->name('movimentos.index');
+    Route::post  ('/movimentos',                [MovimentoArmazemController::class, 'store'])      ->name('movimentos.store');
+    Route::put   ('/movimentos/{movimento}',    [MovimentoArmazemController::class, 'update'])     ->name('movimentos.update');
+    Route::delete('/movimentos/{movimento}',    [MovimentoArmazemController::class, 'destroy'])    ->name('movimentos.destroy');
+ 
+    // AJAX — consultar stock actual de um produto
+    Route::get   ('/api/produtos/{produto}/stock', [MovimentoArmazemController::class, 'stockAtual'])->name('api.produto.stock');
+ 
+
+
 
 
 Route::resource('discharges', DischargeController::class);
