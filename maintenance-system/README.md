@@ -50,6 +50,9 @@ php artisan db:seed --class=RoleAndPermissionSeeder
 #
 $ php artisan db:seed --class=PermissoesModulosSeeder
 
+php artisan db:seed --class=RoleAndPermissionSeeder
+php artisan permission:cache-reset
+
 
 1. A Solução Rápida (Criar os tanques no PC B)
 Sempre que mudares de computador, como a base de dados começa vazia, precisas de correr as migrações e criar os tanques novamente:

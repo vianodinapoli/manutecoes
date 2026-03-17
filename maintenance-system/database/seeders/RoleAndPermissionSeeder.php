@@ -11,34 +11,71 @@ class RoleAndPermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Limpar cache de permissões (Sempre boa prática)
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // 1. Criar as Permissões específicas
-        Permission::create(['name' => 'adicionar registros']);
-        Permission::create(['name' => 'editar status']);
-        Permission::create(['name' => 'gerir utilizadores']);
+        // ── 1. Todas as permissões ──
+        $permissoes = [
+            // Acesso a módulos
+            'acesso dashboard',
+            'acesso equipamentos',
+            'acesso manutencoes',
+            'acesso stock',
+            'acesso movimentos',
+            'acesso pedidos',
+            'acesso combustivel',
+            'acesso discharges',
+            // Acções
+            'adicionar registros',
+            'editar status',
+            'gerir utilizadores',
+        ];
 
-        // 2. Criar os Papéis (Roles) e atribuir permissões
-        
-        // Super Admin: Pode tudo
-        $roleSuperAdmin = Role::create(['name' => 'super-admin']);
-        $roleSuperAdmin->givePermissionTo(Permission::all());
+        foreach ($permissoes as $perm) {
+            Permission::firstOrCreate(['name' => $perm]);
+        }
 
-        // Utilizador Comum: Só pode adicionar
-        $roleUser = Role::create(['name' => 'utilizador']);
-        $roleUser->givePermissionTo('adicionar registros');
+        // ── 2. Roles ──
 
-        // 3. Criar o teu utilizador Super Admin para teste
+        // Super Admin — acesso total
+        $superAdmin = Role::firstOrCreate(['name' => 'super-admin']);
+        $superAdmin->syncPermissions(Permission::all());
+
+        // Gestor — acesso a tudo excepto gerir utilizadores
+        $gestor = Role::firstOrCreate(['name' => 'gestor']);
+        $gestor->syncPermissions([
+            'acesso dashboard',
+            'acesso equipamentos',
+            'acesso manutencoes',
+            'acesso stock',
+            'acesso movimentos',
+            'acesso pedidos',
+            'acesso combustivel',
+            'acesso discharges',
+            'adicionar registros',
+            'editar status',
+        ]);
+
+        // Utilizador comum — acesso básico
+        $utilizador = Role::firstOrCreate(['name' => 'utilizador']);
+        $utilizador->syncPermissions([
+            'acesso dashboard',
+            'acesso equipamentos',
+            'acesso manutencoes',
+            'acesso stock',
+            'acesso pedidos',
+            'adicionar registros',
+        ]);
+
+        // ── 3. Super Admin padrão ──
         $admin = User::updateOrCreate(
             ['email' => 'admin@sistema.com'],
             [
-                'name' => 'Viano Admin',
-                'password' => bcrypt('password'), // Altera isto depois!
+                'name'     => 'Viano Admin',
+                'password' => bcrypt('password'),
             ]
         );
-        $admin->assignRole($roleSuperAdmin);
+        $admin->syncRoles(['super-admin']);
 
-        $this->command->info('Sucesso: Papéis e Super-Admin criados!');
+        $this->command->info('Roles e permissões criados com sucesso!');
     }
 }

@@ -25,10 +25,47 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = Auth::user();
+
+        // Redireciona para a primeira rota a que o utilizador tem acesso
+        $destino = $this->resolverDestino($user);
+
+        return redirect()->intended($destino);
+    }
+
+    /**
+     * Determina para onde redirecionar o utilizador após login
+     * com base nas suas permissões.
+     */
+    private function resolverDestino($user): string
+    {
+        // Super admin vai sempre para o dashboard
+        if ($user->hasRole('super-admin')) {
+            return route('dashboard');
+        }
+
+        // Ordem de prioridade — vai para a primeira que tiver acesso
+        $mapa = [
+            'acesso dashboard'    => 'dashboard',
+            'acesso equipamentos' => 'machines.index',
+            'acesso manutencoes'  => 'maintenances.index',
+            'acesso stock'        => 'stock-items.index',
+            'acesso movimentos'   => 'movimentos.index',
+            'acesso pedidos'      => 'requisicoes.index',
+            'acesso combustivel'  => 'fuel.index',
+            'acesso discharges'   => 'discharges.index',
+        ];
+
+        foreach ($mapa as $permissao => $rota) {
+            if ($user->can($permissao)) {
+                return route($rota);
+            }
+        }
+
+        // Fallback — perfil do utilizador (sempre acessível)
+        return route('profile.edit');
     }
 
     /**
@@ -39,7 +76,6 @@ class AuthenticatedSessionController extends Controller
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
         return redirect('/');
