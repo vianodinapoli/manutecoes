@@ -334,9 +334,9 @@
                     </div>
                     <div class="row mt-5 pt-4">
                         <div class="col-6 offset-6 text-center">
-                            <div class="mb-0">
+                            {{-- <div class="mb-0">
                                 <span id="modal-assinatura-digital" class="signature-font"></span>
-                            </div>
+                            </div> --}}
                             <div class="border-top pt-1">
                                 <span class="small fw-bold text-uppercase text-muted" style="font-size: 0.65rem;">Assinatura Digital do Solicitante</span>
                             </div>
