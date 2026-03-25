@@ -77,6 +77,8 @@ Route::middleware('auth')->group(function () {
         Route::get   ('/requisicoes/{id}/json',    [RequisitionController::class, 'showJson'])->name('requisicoes.json');
         Route::get   ('/requisicoes/{id}/pdf',     [RequisitionController::class, 'gerarPdf'])->name('requisicoes.pdf');
         Route::delete('/requisicoes/{requisicao}', [RequisitionController::class, 'destroy'])->name('requisicoes.destroy');
+        Route::get('/requisicoes/{id}/edit',   [RequisitionController::class, 'edit'])  ->name('requisicoes.edit');
+        Route::put('/requisicoes/{id}',        [RequisitionController::class, 'update'])->name('requisicoes.update');
     });
 
     // ── Combustível ─────────────────────────────────────────
