@@ -8,57 +8,77 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #222; padding: 30px; }
 
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; border-bottom: 2px solid #1a56db; padding-bottom: 16px; }
-        .company-name { font-size: 20px; font-weight: bold; color: #4cb343; }
-        .company-sub { font-size: 10px; color: #666; margin-top: 2px; }
+        /* ── Cabeçalho ── */
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; border-bottom: 3px solid #c60a1a; padding-bottom: 16px; }
+
+        .company-block { display: flex; align-items: flex-start; gap: 14px; }
+        .company-logo { width: 72px; height: auto; }
+        .company-info { display: flex; flex-direction: column; justify-content: center; }
+        .company-name { font-size: 13px; font-weight: bold; color: #c60a1a; line-height: 1.3; }
+        .company-detail { font-size: 9px; color: #555; margin-top: 3px; line-height: 1.6; }
 
         .doc-title { text-align: right; }
-        .doc-title h1 { font-size: 18px; font-weight: bold; color: #4cb343; }
+        .doc-title h1 { font-size: 18px; font-weight: bold; color: #c60a1a; }
         .doc-title .doc-num { font-size: 13px; color: #444; margin-top: 4px; }
         .doc-title .doc-date { font-size: 11px; color: #888; margin-top: 2px; }
 
+        /* ── Info cards ── */
         .info-box { display: flex; gap: 20px; margin-bottom: 20px; }
-        .info-card { flex: 1; background: #f4f7fb; border-left: 3px solid #4cb343; padding: 10px 14px; border-radius: 3px; }
+        .info-card { flex: 1; background: #fdf2f2; border-left: 3px solid #c60a1a; padding: 10px 14px; border-radius: 3px; }
         .info-card .label { font-size: 9px; text-transform: uppercase; color: #888; font-weight: bold; margin-bottom: 4px; }
         .info-card .value { font-size: 12px; font-weight: bold; color: #222; }
         .info-card .sub { font-size: 10px; color: #555; margin-top: 2px; }
 
+        /* ── Tabela ── */
         table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-        thead tr { background: #4cb343; color: white; }
+        thead tr { background: #c60a1a; color: white; }
         thead th { padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; }
         thead th.right { text-align: right; }
         tbody tr { border-bottom: 1px solid #e8edf2; }
-        tbody tr:nth-child(even) { background: #f9fbfd; }
+        tbody tr:nth-child(even) { background: #fdf5f5; }
         tbody td { padding: 8px 10px; font-size: 11px; }
         tbody td.right { text-align: right; }
         tbody td.center { text-align: center; }
 
+        /* ── Totais ── */
         .totals { width: 260px; margin-left: auto; margin-bottom: 24px; }
         .totals table { margin-bottom: 0; }
         .totals td { padding: 5px 10px; font-size: 11px; }
         .totals td.label { color: #666; }
         .totals td.value { text-align: right; font-weight: bold; }
-        .totals tr.total-final { background: #4cb343; color: white; border-radius: 3px; }
+        .totals tr.total-final { background: #c60a1a; color: white; border-radius: 3px; }
         .totals tr.total-final td { padding: 8px 10px; font-size: 13px; }
 
+        /* ── Rodapé ── */
         .footer { margin-top: 40px; border-top: 1px solid #ddd; padding-top: 16px; display: flex; justify-content: space-between; }
         .assinatura { text-align: center; width: 200px; }
         .assinatura .linha { border-top: 1px solid #333; margin-bottom: 6px; }
         .assinatura .nome { font-size: 10px; color: #555; }
 
+        /* ── Status badge ── */
         .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; }
-        .status-PENDENTE { background: #fff3cd; color: #856404; }
-        .status-APROVADO { background: #d1e7dd; color: #0f5132; }
-        .status-CANCELADO { background: #f8d7da; color: #842029; }
+        .status-PENDENTE  { background: #fff3cd; color: #856404; }
+        .status-APROVADO  { background: #d1e7dd; color: #0f5132; }
+        .status-CANCELADO { background: #f8d7da; color: #c60a1a; }
+
+        /* ── Linha vermelha decorativa ── */
+        .red-stripe { height: 4px; background: #c60a1a; margin-bottom: 20px; border-radius: 2px; }
     </style>
 </head>
 <body>
 
     {{-- CABEÇALHO --}}
     <div class="header">
-        <div>
-            <div class="company-name">{{ config('SG', 'BYMOZE') }}</div>
-            <div class="company-sub">BYMOZE | SG</div>
+        <div class="company-block">
+            <img src="{{ public_path('images/bymozelogo.png') }}" class="company-logo" alt="Logo">
+            <div class="company-info">
+                <div class="company-name">Fábrica de Explosivos de Moçambique</div>
+                <div class="company-detail">
+                    Contribuinte Nº 400019029<br>
+                    Av. Samora Machel Nº — Parcela 10<br>
+                    Telef. +258 21 745 86/03 &nbsp;|&nbsp; FAX. +258 21 745 802
+                </div>
+            </div>
         </div>
         <div class="doc-title">
             <h1>REQUISIÇÃO DE COMPRA</h1>
@@ -128,26 +148,18 @@
             </tr>
             @endif
             <tr class="total-final">
-                <td class="label" style="color: white;">TOTAL GERAL</td>
+                <td class="label" style="color:white;">TOTAL GERAL</td>
                 <td class="value">{{ number_format($requisicao->total_final, 2, ',', '.') }} MT</td>
             </tr>
         </table>
     </div>
 
-    {{-- RODAPÉ COM ASSINATURAS --}}
+    {{-- RODAPÉ --}}
     <div class="footer">
         <div class="assinatura">
             <div class="linha"></div>
             <div class="nome">Solicitante</div>
         </div>
-        {{-- <div class="assinatura">
-            <div class="linha"></div>
-            <div class="nome">Aprovado por</div>
-        </div>
-        <div class="assinatura">
-            <div class="linha"></div>
-            <div class="nome">Responsável Financeiro</div>
-        </div> --}}
     </div>
 
 </body>

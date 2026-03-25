@@ -313,7 +313,7 @@ function finalizarRequisicao() {
                 $('#print_valor_iva').text($('#valor_iva').text());
                 $('#print_total_geral').text($('#total_final').text());
                 $('#print_linha_iva').toggleClass('d-none', dados.has_tax !== 'true');
-                window.print();
+                // window.print();
                 setTimeout(() => { window.location.href = '/requisicoes'; }, 1000);
             } else {
                 alert(res.message || 'Erro ao gravar.');
