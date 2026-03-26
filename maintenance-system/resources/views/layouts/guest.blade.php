@@ -351,7 +351,7 @@
 
         <footer class="panel-footer">
             <div class="footer-meta">
-                <span class="footer-copy">&copy; {{ date('Y') }} Bymoze · v2.0</span>
+                <span class="footer-copy">&copy; {{ date('Y') }} FEM · v2.0</span>
                 <span class="status-dot">Sistema operacional</span>
             </div>
         </footer>
@@ -375,7 +375,7 @@
         <div class="panel-photo-content">
             <span class="photo-tag">
                 <span class="photo-tag-line"></span>
-                Bymoze · Transporte e serviços
+                FEM · Transporte, Manutenção e serviços
             </span>
 
             <h2 class="photo-headline">
