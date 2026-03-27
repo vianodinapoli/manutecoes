@@ -13,6 +13,8 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\RequisitionController;
 use App\Http\Controllers\DischargeController;
 use App\Http\Controllers\MovimentoArmazemController;
+    use App\Http\Controllers\ViaturaController;
+
 
 // ── Página inicial ──────────────────────────────────────────
 Route::get('/', function () {
@@ -65,6 +67,19 @@ Route::middleware('auth')->group(function () {
         Route::delete('/movimentos/{movimento}', [MovimentoArmazemController::class, 'destroy'])->name('movimentos.destroy');
         Route::get   ('/api/produtos/{produto}/stock', [MovimentoArmazemController::class, 'stockAtual'])->name('api.produto.stock');
     });
+
+
+// Exportar ANTES do resource (para não conflituar com {viatura})
+Route::get('/viaturas/export', [ViaturaController::class, 'export'])
+     ->name('viaturas.export');
+
+// Eliminar documento individual
+Route::delete('/viaturas/documento/{documento}', [ViaturaController::class, 'destroyDocumento'])
+     ->name('viaturas.documento.destroy');
+
+// CRUD completo
+Route::resource('viaturas', ViaturaController::class)
+     ->only(['index', 'store', 'update', 'destroy']);
 
     // ── Pedidos / Requisições ───────────────────────────────
     Route::middleware('permission:acesso pedidos')->group(function () {
