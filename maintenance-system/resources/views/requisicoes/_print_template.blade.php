@@ -63,6 +63,23 @@
 
         /* ── Linha vermelha decorativa ── */
         .red-stripe { height: 4px; background: #c60a1a; margin-bottom: 20px; border-radius: 2px; }
+
+  .page-footer {
+            margin-top: 32px;
+            border-top: 2px solid #c60a1a;
+            padding-top: 14px;
+            display: table;
+            width: 100%;
+        }
+
+          .footer-user-label {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-bottom: 2px;
+        }
+        
     </style>
 </head>
 <body>
@@ -100,12 +117,12 @@
             @endif
         </div>
         <div class="info-card">
-            <div class="label">Estado</div>
+            <!-- <div class="label">Estado</div>
             <div class="value">
                 <span class="status-badge status-{{ $requisicao->status }}">
                     {{ $requisicao->status }}
                 </span>
-            </div>
+            </div> -->
             <div class="sub">Criado em {{ $requisicao->created_at->format('d/m/Y H:i') }}</div>
         </div>
     </div>
@@ -155,11 +172,29 @@
     </div>
 
     {{-- RODAPÉ --}}
-    <div class="footer">
-        <div class="assinatura">
-            <div class="linha"></div>
-            <div class="nome">Solicitante</div>
+    <div class="page-footer">
+        <div class="footer-left">
+            <div class="footer-user-label">Emitido por por</div>
+            <div class="footer-user-name">{{ auth()->user()->name }}</div>
+            <div class="footer-user-email">{{ auth()->user()->email }}</div>
+<!-- 
+            <div class="signature-block">
+                <div class="signature-line"></div>
+                <div class="signature-caption">Assinatura do Responsável</div>
+            </div> -->
         </div>
+        <!-- <div class="footer-right">
+            <div class="footer-doc-info">
+                <div class="doc-ref">Ref. Documento</div>
+                INV-{{ date('Ymd') }}-{{ str_pad(auth()->id(), 4, '0', STR_PAD_LEFT) }}<br>
+                <br>
+                Data de emissão<br>
+                <strong>{{ date('d/m/Y \à\s H:i') }}</strong><br>
+                <br>
+                Este documento é gerado automaticamente<br>
+                pelo sistema de gestão de inventário.
+            </div>
+        </div> -->
     </div>
 
 </body>
