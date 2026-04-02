@@ -31,7 +31,16 @@
     .filter-item select:focus,.filter-item input:focus{border-color:#0d6efd;box-shadow:0 0 0 3px rgba(13,110,253,.1);background:#fff}
     .btn-filter{padding:8px 18px;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:all .2s}
     .btn-filter-apply{background:#0d6efd;color:#fff}.btn-filter-apply:hover{background:#0b5ed7}
-    .btn-filter-clear{background:#f1f3f5;color:#495057;border:1px solid #dee2e6}.btn-filter-clear:hover{background:#e9ecef}
+    .btn-filter-clear{background:#f1f5f9;color:#495057;border:1px solid #dee2e6}.btn-filter-clear:hover{background:#e9ecef}
+
+    /* ── Botão extrato PDF ── */
+    .btn-filter-pdf{background:#1a7a4a;color:#fff;border:none}.btn-filter-pdf:hover{background:#155f3a}
+    .btn-filter-pdf:disabled{background:#adb5bd;cursor:not-allowed}
+    #extractBar{display:none;margin-top:14px;padding:12px 16px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:10px;align-items:center;gap:12px;flex-wrap:wrap}
+    #extractBar.visible{display:flex}
+    #extractBar .ext-info{font-size:.78rem;color:#166534;font-weight:600;flex:1}
+    #extractBar .ext-info span{font-weight:800}
+
     .active-filters{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
     .filter-tag{display:inline-flex;align-items:center;gap:5px;background:#e7f1ff;color:#0d6efd;border:1px solid #b6d0ff;border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:500}
     .filter-tag .remove-tag{cursor:pointer;opacity:.6;font-size:.8rem}.filter-tag .remove-tag:hover{opacity:1}
@@ -137,6 +146,19 @@
                 <button class="btn-filter btn-filter-clear" onclick="clearFilters()"><i class="bi bi-x-lg"></i> Limpar</button>
             </div>
         </div>
+
+        {{-- BARRA DE EXTRATO — aparece após filtrar --}}
+        <div id="extractBar">
+            <div class="ext-info">
+                <i class="bi bi-check-circle-fill me-1" style="color:#16a34a;"></i>
+                Filtro activo: <span id="extractCount">0</span> requisição(ões) encontrada(s)
+                <span id="extractFornecedorLabel" style="color:#15803d;"></span>
+            </div>
+            <button class="btn-filter btn-filter-pdf" id="btnExtratoPDF" onclick="gerarExtratoPDF()">
+                <i class="bi bi-file-earmark-arrow-down"></i> Exportar Extrato PDF
+            </button>
+        </div>
+
         <div class="active-filters" id="activeTags"></div>
     </div>
 
@@ -159,7 +181,13 @@
                 <tbody>
                 @foreach($requisicoes as $req)
                 <tr data-data="{{ $req->date->format('Y-m-d') }}"
-                    data-fornecedor="{{ strtolower($req->supplier->name) }}">
+                    data-fornecedor="{{ strtolower($req->supplier->name) }}"
+                    data-fornecedor-nome="{{ $req->supplier->name }}"
+                    data-req-id="{{ $req->id }}"
+                    data-data-fmt="{{ $req->date->format('d/m/Y') }}"
+                    data-liquid="{{ number_format($req->total_liquid, 2, ',', '.') }}"
+                    data-iva="{{ number_format($req->tax_amount, 2, ',', '.') }}"
+                    data-total="{{ number_format($req->total_final, 2, ',', '.') }}">
                     <td>
                         <span class="fw-bold text-dark" style="font-size:.8rem;">#{{ $req->id }}</span><br>
                         <span class="text-muted" style="font-size:.72rem;">{{ $req->date->format('d/m/Y') }}</span>
@@ -189,10 +217,10 @@
                     </td>
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-1">
-                            <button class="action-btn text-dark border-dark border-opacity-25"
+                            <!-- <button class="action-btn text-dark border-dark border-opacity-25"
                                     onclick="visualizarReq({{ $req->id }})" title="Visualizar / Imprimir">
                                 <i class="bi bi-printer"></i>
-                            </button>
+                            </button> -->
                             <button class="action-btn text-danger border-danger border-opacity-25 btn-cancelar"
                                     data-id="{{ $req->id }}"
                                     data-label="#{{ $req->id }} — {{ $req->supplier->name }}"
@@ -291,31 +319,31 @@ $('#confirmOkBtn').on('click', function() {
     btn.innerHTML = '<i class="bi bi-hourglass-split"></i> A cancelar...';
 
     fetch(`/requisicoes/${_deleteId}`, {
-    method: 'DELETE',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-        'Accept': 'application/json',
-    }
-})
-.then(res => {
-    if (!res.ok) throw new Error('Erro HTTP: ' + res.status);
-    return res.json();
-})
-.then(data => {
-    closeConfirm();
-    if (data.success) {
-        showToast();
-        setTimeout(() => window.location.reload(), 1800);
-    } else {
-        alert('Erro ao cancelar. Tenta novamente.');
-    }
-})
-.catch(err => {
-    closeConfirm();
-    console.error(err);
-    alert('Erro de ligação. Tenta novamente.');
-});
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+        }
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('Erro HTTP: ' + res.status);
+        return res.json();
+    })
+    .then(data => {
+        closeConfirm();
+        if (data.success) {
+            showToast();
+            setTimeout(() => window.location.reload(), 1800);
+        } else {
+            alert('Erro ao cancelar. Tenta novamente.');
+        }
+    })
+    .catch(err => {
+        closeConfirm();
+        console.error(err);
+        alert('Erro de ligação. Tenta novamente.');
+    });
 });
 
 $('#confirmOverlay').on('click', function(e) {
@@ -336,6 +364,8 @@ function applyFilters() {
     const dt = $('#filterDateTo').val();
     const fr = $('#filterFornecedor').val().toLowerCase();
 
+    let visibleCount = 0;
+
     $('#reqTable tbody tr').each(function() {
         const r = $(this);
         let show = true;
@@ -343,9 +373,12 @@ function applyFilters() {
         if (dt && r.data('data') > dt) show = false;
         if (fr && !r.data('fornecedor').includes(fr)) show = false;
         r.toggle(show);
+        if (show) visibleCount++;
     });
+
     dtTable.draw();
     renderTags(df, dt, fr);
+    updateExtractBar(visibleCount, df, dt, fr);
 }
 
 function clearFilters() {
@@ -354,6 +387,7 @@ function clearFilters() {
     $('#reqTable tbody tr').show();
     $('#activeTags').html('');
     dtTable.draw();
+    $('#extractBar').removeClass('visible');
 }
 
 function renderTags(df, dt, fr) {
@@ -370,6 +404,235 @@ function removeTag(key) {
     const map = { df: 'filterDateFrom', dt: 'filterDateTo', fr: 'filterFornecedor' };
     $(`#${map[key]}`).val('');
     applyFilters();
+}
+
+function updateExtractBar(count, df, dt, fr) {
+    const bar = $('#extractBar');
+    $('#extractCount').text(count);
+
+    // Texto descritivo do filtro activo
+    let label = '';
+    if (fr) {
+        const nome = $('#filterFornecedor option:selected').text();
+        label = ` — ${nome}`;
+    }
+    if (df || dt) {
+        const range = [df ? df.split('-').reverse().join('/') : '...', dt ? dt.split('-').reverse().join('/') : '...'].join(' a ');
+        label += ` [${range}]`;
+    }
+    $('#extractFornecedorLabel').text(label);
+
+    if (count > 0) {
+        bar.addClass('visible');
+    } else {
+        bar.removeClass('visible');
+    }
+}
+
+// ── Geração do Extrato PDF (janela de impressão) ──
+function gerarExtratoPDF() {
+    // Recolhe apenas as linhas visíveis
+    const rows = [];
+    $('#reqTable tbody tr:visible').each(function() {
+        const r = $(this);
+        rows.push({
+            id:           r.data('req-id'),
+            data:         r.data('data-fmt'),
+            fornecedor:   r.data('fornecedor-nome'),
+            liquid:       r.data('liquid'),
+            iva:          r.data('iva'),
+            total:        r.data('total'),
+        });
+    });
+
+    if (!rows.length) return;
+
+    // Cabeçalho do filtro para o PDF
+    const df  = $('#filterDateFrom').val();
+    const dt  = $('#filterDateTo').val();
+    const frNome = $('#filterFornecedor option:selected').text() !== 'Todos'
+                    ? $('#filterFornecedor option:selected').text()
+                    : 'Todos os Fornecedores';
+
+    const periodoStr = df || dt
+        ? `${df ? df.split('-').reverse().join('/') : '—'} a ${dt ? dt.split('-').reverse().join('/') : '—'}`
+        : 'Todo o período';
+
+    // Totais do extrato
+    const sumLiquid = rows.reduce((a, r) => a + parseFloat(r.liquid.replace(/\./g,'').replace(',','.')), 0);
+    const sumIva    = rows.reduce((a, r) => a + parseFloat(r.iva.replace(/\./g,'').replace(',','.')), 0);
+    const sumTotal  = rows.reduce((a, r) => a + parseFloat(r.total.replace(/\./g,'').replace(',','.')), 0);
+
+    const fmt = n => n.toLocaleString('pt-PT', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' MT';
+
+    const dataHoje = new Date().toLocaleDateString('pt-PT', {day:'2-digit',month:'2-digit',year:'numeric'});
+    const horaAgora = new Date().toLocaleTimeString('pt-PT', {hour:'2-digit',minute:'2-digit'});
+
+    // Linhas da tabela
+    const linhas = rows.map((r, i) => `
+        <tr>
+            <td>${i + 1}</td>
+            <td><strong>#${r.id}</strong></td>
+            <td>${r.data}</td>
+            <td>${r.fornecedor}</td>
+            <td class="num">${r.liquid} MT</td>
+            <td class="num">${r.iva} MT</td>
+            <td class="num total-col">${r.total} MT</td>
+        </tr>
+    `).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Extrato de Requisições</title>
+<style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:DejaVu Sans,Arial,sans-serif;font-size:12px;color:#222;background:#fff;padding:30px}
+
+    /* ── Cabeçalho ── */
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;border-bottom:3px solid #c60a1a;padding-bottom:16px}
+    .company-block{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+    .company-logo{width:90px;height:auto}
+    .company-info{display:flex;flex-direction:column}
+    .company-name{font-size:13px;font-weight:bold;color:#c60a1a;line-height:1.3}
+    .company-detail{font-size:9px;color:#555;margin-top:3px;line-height:1.6}
+    .doc-block{text-align:right}
+    .doc-block h1{font-size:18px;font-weight:bold;color:#c60a1a}
+    .doc-block .doc-sub{font-size:11px;color:#888;margin-top:4px}
+
+    /* ── Resumo filtro ── */
+    .filter-summary{display:flex;gap:0;margin-bottom:20px;border:1px solid #e8edf2;border-radius:4px;overflow:hidden}
+    .fs-item{flex:1;padding:10px 14px;background:#fdf2f2;border-right:1px solid #e8edf2}
+    .fs-item:last-child{border-right:none}
+    .fs-label{font-size:8px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:3px}
+    .fs-value{font-size:11px;font-weight:bold;color:#222}
+
+    /* ── Tabela ── */
+    table{width:100%;border-collapse:collapse;margin-bottom:16px}
+    thead tr{background:#c60a1a}
+    thead th{padding:8px 10px;font-size:9.5px;font-weight:bold;letter-spacing:.8px;text-transform:uppercase;color:#fff;text-align:left;white-space:nowrap}
+    thead th.num{text-align:right}
+    tbody tr{border-bottom:1px solid #e8edf2}
+    tbody tr:nth-child(even){background:#fdf5f5}
+    tbody td{padding:8px 10px;font-size:11px;color:#334155}
+    tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
+    tbody td.total-col{font-weight:bold;color:#1e293b}
+
+    /* ── Totais ── */
+    .totals-wrap{width:280px;margin-left:auto;margin-bottom:24px}
+    .totals-wrap table{margin-bottom:0}
+    .totals-wrap td{padding:5px 10px;font-size:11px}
+    .totals-wrap td.lbl{color:#666}
+    .totals-wrap td.val{text-align:right;font-weight:bold}
+    .totals-wrap tr.grand{background:#c60a1a;color:#fff}
+    .totals-wrap tr.grand td{padding:8px 10px;font-size:13px}
+    .totals-wrap tr.grand td.lbl{color:#fff}
+
+    /* ── Rodapé ── */
+    .page-footer{margin-top:32px;border-top:2px solid #c60a1a;padding-top:14px;display:flex;justify-content:space-between;align-items:flex-start}
+    .footer-left .footer-label{font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:2px}
+    .footer-left .footer-val{font-size:10px;color:#334155}
+    .footer-right{font-size:9px;color:#94a3b8;text-align:right}
+
+    @media print{
+        body{padding:20px}
+        @page{margin:12mm;size:A4 landscape}
+    }
+</style>
+</head>
+<body>
+
+<!-- CABEÇALHO -->
+<div class="header">
+    <div class="company-block">
+        <img src="/images/bymozelogo.png" class="company-logo" alt="Logo">
+        <div class="company-info">
+            <div class="company-name">Fábrica de Explosivos de Moçambique</div>
+            <div class="company-detail">
+                Contribuinte Nº 400019029<br>
+                Av. Samora Machel Nº — Parcela 10<br>
+                Telef. +258 21 745 86/03 &nbsp;|&nbsp; FAX. +258 21 745 802
+            </div>
+        </div>
+    </div>
+    <div class="doc-block">
+        <h1>EXTRATO DE REQUISIÇÕES</h1>
+        <div class="doc-sub">Emitido em ${dataHoje} às ${horaAgora}</div>
+    </div>
+</div>
+
+<!-- RESUMO DO FILTRO -->
+<div class="filter-summary">
+    <div class="fs-item">
+        <div class="fs-label">Fornecedor</div>
+        <div class="fs-value">${frNome}</div>
+    </div>
+    <div class="fs-item">
+        <div class="fs-label">Período</div>
+        <div class="fs-value">${periodoStr}</div>
+    </div>
+    <div class="fs-item">
+        <div class="fs-label">Nº de Requisições</div>
+        <div class="fs-value">${rows.length}</div>
+    </div>
+</div>
+
+<!-- TABELA -->
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Nº Req.</th>
+            <th>Data</th>
+            <th>Fornecedor</th>
+            <th class="num">Total Líquido</th>
+            <th class="num">IVA (16%)</th>
+            <th class="num">Total Geral</th>
+        </tr>
+    </thead>
+    <tbody>${linhas}</tbody>
+</table>
+
+<!-- TOTAIS -->
+<div class="totals-wrap">
+    <table>
+        <tr>
+            <td class="lbl">Total Líquido</td>
+            <td class="val">${fmt(sumLiquid)}</td>
+        </tr>
+        <tr>
+            <td class="lbl">IVA (16%)</td>
+            <td class="val">${fmt(sumIva)}</td>
+        </tr>
+        <tr class="grand">
+            <td class="lbl">TOTAL GERAL</td>
+            <td class="val">${fmt(sumTotal)}</td>
+        </tr>
+    </table>
+</div>
+
+<!-- RODAPÉ -->
+<div class="page-footer">
+    <div class="footer-left">
+        <div class="footer-label">Documento gerado por</div>
+        <div class="footer-val">{{ auth()->user()->name }} &nbsp;|&nbsp; {{ auth()->user()->email }}</div>
+    </div>
+    <div class="footer-right">
+        Documento gerado automaticamente pelo sistema de gestão.<br>
+        Não requer assinatura.
+    </div>
+</div>
+
+<script>
+    window.onload = function() { window.print(); }
+<\/script>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank', 'width=1100,height=750');
+    win.document.write(html);
+    win.document.close();
 }
 
 function visualizarReq(id) {
