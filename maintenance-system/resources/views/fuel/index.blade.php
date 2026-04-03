@@ -1,3 +1,12 @@
+@php
+    // Dados pré-processados para o JS — evita expressões PHP complexas dentro de scripts
+    $tanquesParaPDF = $tanques->map(fn($t) => [
+        'nome'  => $t->nome,
+        'stock' => number_format($t->stock_atual, 0, ',', '.'),
+        'pct'   => number_format($t->percentagem, 1),
+    ])->values()->toArray();
+@endphp
+
 <x-app-layout>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css">
@@ -31,6 +40,7 @@
     .btn-filter{padding:8px 18px;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:all .2s}
     .btn-filter-apply{background:#0d6efd;color:#fff}.btn-filter-apply:hover{background:#0b5ed7}
     .btn-filter-clear{background:#f1f3f5;color:#495057;border:1px solid #dee2e6}.btn-filter-clear:hover{background:#e9ecef}
+    .btn-filter-pdf{background:#1a7a4a;color:#fff;border:none}.btn-filter-pdf:hover{background:#155f3a}
     .table-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)}
     #fuelTable thead tr{background:#f8f9fa}
     #fuelTable thead th{font-size:.67rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#868e96;border-bottom:1px solid #e9ecef;padding:8px 12px;white-space:nowrap}
@@ -81,8 +91,6 @@
     .fuel-toast.show{transform:translateY(0);opacity:1}
     .fuel-toast.success{background:#fff;border-left:4px solid #198754;color:#1a1a2e}
     .fuel-toast.error{background:#fff;border-left:4px solid #dc3545;color:#1a1a2e}
-
-    /* ── Modal confirmação ── */
     .confirm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
     .confirm-overlay.open{opacity:1;pointer-events:all}
     .confirm-box{background:#fff;border-radius:20px;max-width:400px;width:calc(100% - 32px);box-shadow:0 24px 64px rgba(0,0,0,.18);transform:scale(.93) translateY(10px);transition:transform .25s cubic-bezier(.34,1.56,.64,1);overflow:hidden}
@@ -98,7 +106,6 @@
     .btn-cancel-confirm{background:#f1f5f9;color:#475569}.btn-cancel-confirm:hover{background:#e2e8f0}
     .btn-delete-confirm{background:#dc2626;color:#fff;box-shadow:0 2px 8px rgba(220,38,38,.3)}.btn-delete-confirm:hover{background:#b91c1c}
     .btn-delete-confirm:disabled{background:#f87171;cursor:not-allowed;box-shadow:none}
-
     @media print{.no-print{display:none!important}}
 </style>
 
@@ -302,15 +309,15 @@
             <div class="filter-group">
                 <div class="filter-item">
                     <label>Data Início</label>
-                    <input type="date" name="from_date" value="{{ request('from_date') }}">
+                    <input type="date" name="from_date" id="js_from" value="{{ request('from_date') }}">
                 </div>
                 <div class="filter-item">
                     <label>Data Fim</label>
-                    <input type="date" name="to_date" value="{{ request('to_date') }}">
+                    <input type="date" name="to_date" id="js_to" value="{{ request('to_date') }}">
                 </div>
                 <div class="filter-item">
                     <label>Tanque</label>
-                    <select name="filter_tank_id">
+                    <select name="filter_tank_id" id="js_tank">
                         <option value="">Todos</option>
                         @foreach($tanques as $t)
                         <option value="{{ $t->id }}" {{ request('filter_tank_id')==$t->id?'selected':'' }}>{{ $t->nome }}</option>
@@ -320,9 +327,13 @@
                 <div class="d-flex gap-2 align-items-end">
                     <button type="submit" class="btn-filter btn-filter-apply"><i class="bi bi-search"></i> Filtrar</button>
                     <a href="{{ route('fuel.index') }}" class="btn-filter btn-filter-clear"><i class="bi bi-x-lg"></i> Limpar</a>
+                    <button type="button" class="btn-filter btn-filter-pdf" onclick="gerarRelatorioPDF()">
+                        <i class="bi bi-file-earmark-arrow-down"></i> Exportar PDF
+                    </button>
                 </div>
             </div>
         </form>
+
         @if(request('from_date') || request('company') || request('filter_tank_id'))
         <div class="d-flex align-items-center gap-3 mt-3 pt-3 border-top">
             <span style="font-size:.72rem;color:#6c757d;font-weight:600;">RESUMO:</span>
@@ -339,19 +350,23 @@
             <table id="fuelTable" class="table table-hover align-middle mb-0 w-100">
                 <thead>
                     <tr>
-                        <th>DATA</th>
-                        <th>TIPO</th>
-                        <th>TANQUE</th>
-                        <th>IDENTIFICAÇÃO</th>
-                        <th class="text-center">CONTADORES</th>
-                        <th class="text-end">QUANTIDADE</th>
-                        <th>OPERADOR / MOTORISTA</th>
-                        <th class="text-center">AÇÕES</th>
+                        <th>DATA</th><th>TIPO</th><th>TANQUE</th><th>IDENTIFICAÇÃO</th>
+                        <th class="text-center">CONTADORES</th><th class="text-end">QUANTIDADE</th>
+                        <th>OPERADOR / MOTORISTA</th><th class="text-center no-print">AÇÕES</th>
                     </tr>
                 </thead>
                 <tbody>
                 @foreach($historico as $item)
-                <tr>
+                <tr data-date="{{ date('d/m/Y', strtotime($item->date)) }}"
+                    data-tipo="{{ $item->tipo }}"
+                    data-tanque="{{ $item->tanque_nome }}"
+                    data-ident="{{ $item->ident }}"
+                    data-company="{{ $item->company }}"
+                    data-contadores="{{ $item->start_counter !== null ? number_format($item->start_counter,0).' → '.number_format($item->end_counter,0) : '—' }}"
+                    data-qty="{{ $item->tipo == 'ENTRADA' ? '+'.number_format($item->quantity,0) : '-'.number_format($item->quantity,0) }}"
+                    data-qty-raw="{{ $item->quantity }}"
+                    data-tipo-raw="{{ $item->tipo }}"
+                    data-operador="{{ trim(($item->operator ?? '').' '.($item->driver ?? '')) }}">
                     <td><span class="fw-bold text-dark" style="font-size:.8rem;">{{ date('d/m/Y', strtotime($item->date)) }}</span></td>
                     <td>
                         <span class="tipo-badge {{ $item->tipo == 'ENTRADA' ? 'entrada' : 'saida' }}">
@@ -367,7 +382,7 @@
                     <td class="text-center" style="font-size:.78rem;">
                         @if($item->start_counter !== null)
                             <span class="badge bg-light text-dark border" style="font-size:.68rem;font-weight:600;">
-                                {{ number_format($item->start_counter, 0) }} → {{ number_format($item->end_counter, 0) }}
+                                {{ number_format($item->start_counter,0) }} → {{ number_format($item->end_counter,0) }}
                             </span>
                         @else
                             <span class="text-muted">—</span>
@@ -375,7 +390,7 @@
                     </td>
                     <td class="text-end">
                         <span class="fw-bold" style="font-size:.85rem;color:{{ $item->tipo == 'ENTRADA' ? '#198754' : '#dc3545' }};">
-                            {{ $item->tipo == 'ENTRADA' ? '+' : '-' }}{{ number_format($item->quantity, 0) }}L
+                            {{ $item->tipo == 'ENTRADA' ? '+' : '-' }}{{ number_format($item->quantity,0) }}L
                         </span>
                     </td>
                     <td>
@@ -386,15 +401,11 @@
                     </td>
                     <td class="text-center no-print">
                         <div class="d-flex justify-content-center gap-1">
-                            <button type="button"
-                                class="action-btn text-primary border-primary border-opacity-25 btn-edit"
-                                data-id="{{ $item->id }}"
-                                data-tipo="{{ $item->tipo }}"
-                                title="Editar">
+                            <button type="button" class="action-btn text-primary border-primary border-opacity-25 btn-edit"
+                                data-id="{{ $item->id }}" data-tipo="{{ $item->tipo }}" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button type="button"
-                                class="action-btn text-danger border-danger border-opacity-25 btn-delete"
+                            <button type="button" class="action-btn text-danger border-danger border-opacity-25 btn-delete"
                                 data-id="{{ $item->id }}"
                                 data-tipo="{{ $item->tipo }}"
                                 data-label="{{ $item->tipo }} — {{ $item->ident }} ({{ date('d/m/Y', strtotime($item->date)) }})"
@@ -412,7 +423,7 @@
     </div>
 </div>
 
-{{-- MODAL CONFIRMAÇÃO ELIMINAR --}}
+{{-- MODAL: Confirmar eliminação --}}
 <div class="confirm-overlay" id="confirmOverlay">
     <div class="confirm-box">
         <div class="confirm-header">
@@ -421,17 +432,10 @@
             <div class="confirm-sub">Tens a certeza que queres eliminar<br><strong id="confirmLabel"></strong>?</div>
         </div>
         <div class="confirm-body">
-            <div class="confirm-warning">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                Esta acção afecta o stock do tanque e não pode ser desfeita.
-            </div>
+            <div class="confirm-warning"><i class="bi bi-exclamation-triangle-fill"></i> Esta acção afecta o stock do tanque e não pode ser desfeita.</div>
             <div class="confirm-actions">
-                <button class="btn-cancel-confirm" onclick="closeConfirm()">
-                    <i class="bi bi-x-lg"></i> Cancelar
-                </button>
-                <button class="btn-delete-confirm" id="confirmOkBtn">
-                    <i class="bi bi-trash3"></i> Eliminar
-                </button>
+                <button class="btn-cancel-confirm" onclick="closeConfirm()"><i class="bi bi-x-lg"></i> Cancelar</button>
+                <button class="btn-delete-confirm" id="confirmOkBtn"><i class="bi bi-trash3"></i> Eliminar</button>
             </div>
         </div>
     </div>
@@ -588,7 +592,6 @@
     </div>
 </div>
 
-{{-- Toast --}}
 <div id="fuelToast" class="fuel-toast">
     <i id="fuelToastIcon" class="bi bi-check-circle-fill" style="font-size:1.1rem;"></i>
     <span id="fuelToastMsg"></span>
@@ -605,15 +608,17 @@
 <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
 
 <script>
-let _deleteUrl = null;
-let _deleteRow = null;
+var _deleteUrl = null;
+var _deleteRow = null;
+
+// Dados dos tanques injectados pelo PHP — sem lógica PHP dentro do script
+var TANQUES_PDF = {!! json_encode($tanquesParaPDF) !!};
 
 $(document).ready(function(){
     $('#fuelTable').DataTable({
         dom: '<"d-flex justify-content-between align-items-center mb-3"Bf>rtip',
         buttons: [
-            { extend:'excel', text:'<i class="bi bi-file-earmark-excel me-1"></i> Excel', className:'btn btn-sm', title:'Relatorio_Combustivel_{{ date("Ymd") }}' },
-            { extend:'pdf',   text:'<i class="bi bi-file-earmark-pdf me-1"></i> PDF',     className:'btn btn-sm', orientation:'landscape', pageSize:'A4' }
+            { extend:'excel', text:'<i class="bi bi-file-earmark-excel me-1"></i> Excel', className:'btn btn-sm', title:'Relatorio_Combustivel_{{ date("Ymd") }}' }
         ],
         order: [[0,'desc']],
         language: { url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/pt-PT.json' },
@@ -621,22 +626,21 @@ $(document).ready(function(){
         columnDefs: [{ orderable: false, targets: 7 }]
     });
 
-    // ── Editar ──
     $(document).on('click', '.btn-edit', function(){
-        const id   = $(this).data('id');
-        const tipo = $(this).data('tipo');
+        var id   = $(this).data('id');
+        var tipo = $(this).data('tipo');
         if (tipo === 'SAÍDA') {
-            $.get(`/fuel-log/${id}/json`, function(data){
+            $.get('/fuel-log/' + id + '/json', function(data){
                 $('#edit_log_id').val(data.id);
                 $('#edit_plate').val(data.plate);
                 $('#edit_start').val(data.start_counter);
                 $('#edit_end').val(data.end_counter);
                 $('#edit_company').val(data.company);
                 new bootstrap.Modal(document.getElementById('editLogModal')).show();
-            }).fail(() => showToast('Erro ao buscar dados.', 'error'));
+            }).fail(function(){ showToast('Erro ao buscar dados.', 'error'); });
         } else {
-            $.get(`/fuel-entry/${id}/json`, function(data){
-                $('#modalEntrada form').attr('action', `/fuel-entry/${id}`);
+            $.get('/fuel-entry/' + id + '/json', function(data){
+                $('#modalEntrada form').attr('action', '/fuel-entry/' + id);
                 if (!$('#modalEntrada input[name="_method"]').length)
                     $('#modalEntrada form').append('<input type="hidden" name="_method" value="PUT">');
                 $('#modalEntrada select[name="tank_id"]').val(data.tank_id);
@@ -644,30 +648,25 @@ $(document).ready(function(){
                 $('#modalEntrada input[name="quantity"]').val(data.quantity);
                 $('#modalEntrada input[name="supplier"]').val(data.supplier || data.ident);
                 new bootstrap.Modal(document.getElementById('modalEntrada')).show();
-            }).fail(() => showToast('Erro ao buscar dados.', 'error'));
+            }).fail(function(){ showToast('Erro ao buscar dados.', 'error'); });
         }
     });
 
-    // ── Abrir modal de confirmação ──
     $(document).on('click', '.btn-delete', function(){
         _deleteUrl = $(this).data('url');
         _deleteRow = $(this).closest('tr');
         $('#confirmLabel').text($(this).data('label'));
-        $('#confirmOkBtn').prop('disabled', false)
-            .html('<i class="bi bi-trash3"></i> Eliminar');
+        $('#confirmOkBtn').prop('disabled', false).html('<i class="bi bi-trash3"></i> Eliminar');
         $('#confirmOverlay').addClass('open');
     });
 });
 
-// ── Confirmar eliminação ──
 $('#confirmOkBtn').on('click', function(){
-    const btn = this;
+    var btn = this;
     btn.disabled = true;
     btn.innerHTML = '<i class="bi bi-hourglass-split"></i> A eliminar...';
-
     $.ajax({
-        url: _deleteUrl,
-        type: 'POST',
+        url: _deleteUrl, type: 'POST',
         data: { _method: 'DELETE', _token: '{{ csrf_token() }}' },
         success: function(){
             closeConfirm();
@@ -676,44 +675,32 @@ $('#confirmOkBtn').on('click', function(){
         },
         error: function(xhr){
             closeConfirm();
-            if (xhr.status === 200) {
-                _deleteRow.fadeOut(300, function(){ $(this).remove(); });
-                showToast('Registo eliminado.', 'success');
-            } else {
-                showToast('Erro ao eliminar. Tenta novamente.', 'error');
-            }
+            if (xhr.status === 200) { _deleteRow.fadeOut(300, function(){ $(this).remove(); }); showToast('Registo eliminado.', 'success'); }
+            else showToast('Erro ao eliminar. Tenta novamente.', 'error');
         }
     });
 });
 
-$('#confirmOverlay').on('click', function(e){
-    if (e.target === this) closeConfirm();
-});
-
-$(document).on('keydown', function(e){
-    if (e.key === 'Escape') closeConfirm();
-});
-
-function closeConfirm(){
-    $('#confirmOverlay').removeClass('open');
-}
+$('#confirmOverlay').on('click', function(e){ if (e.target === this) closeConfirm(); });
+$(document).on('keydown', function(e){ if (e.key === 'Escape') closeConfirm(); });
+function closeConfirm(){ $('#confirmOverlay').removeClass('open'); }
 
 function calc(){
-    const i = parseFloat(document.getElementById('ci').value) || 0;
-    const f = parseFloat(document.getElementById('cf').value) || 0;
+    var i = parseFloat(document.getElementById('ci').value) || 0;
+    var f = parseFloat(document.getElementById('cf').value) || 0;
     document.getElementById('qty').value = f - i > 0 ? f - i : 0;
 }
 
-function showToast(msg, type = 'success'){
-    const t = document.getElementById('fuelToast');
+function showToast(msg, type){
+    type = type || 'success';
+    var t = document.getElementById('fuelToast');
     document.getElementById('fuelToastMsg').textContent = msg;
     document.getElementById('fuelToastIcon').className = 'bi bi-' + (type === 'success' ? 'check-circle-fill text-success' : 'exclamation-circle-fill text-danger');
     t.className = 'fuel-toast ' + type + ' show';
-    setTimeout(() => t.classList.remove('show'), 4000);
+    setTimeout(function(){ t.classList.remove('show'); }, 4000);
 }
 
-let _acertoDivida = 0;
-
+var _acertoDivida = 0;
 function abrirModalAcerto(empresa, divida, tanques){
     _acertoDivida = divida;
     document.getElementById('acerto-empresa-sub').textContent = empresa;
@@ -725,62 +712,55 @@ function abrirModalAcerto(empresa, divida, tanques){
     document.getElementById('acerto-qty-slider').value = 0;
     document.getElementById('acerto-preview').style.display = 'none';
     document.getElementById('acerto-notes').value = '';
-    const sel = document.getElementById('acerto-tank-select');
+    var sel = document.getElementById('acerto-tank-select');
     sel.innerHTML = '';
-    tanques.forEach(t => {
-        const opt = document.createElement('option');
+    tanques.forEach(function(t){
+        var opt = document.createElement('option');
         opt.value = t.id;
         opt.textContent = t.nome + ' (' + Number(t.stock_atual).toLocaleString('pt-PT') + 'L)';
         sel.appendChild(opt);
     });
     new bootstrap.Modal(document.getElementById('modalAcerto')).show();
 }
-
-function syncSlider(){ const v = parseFloat(document.getElementById('acerto-qty-input').value) || 0; document.getElementById('acerto-qty-slider').value = Math.min(v, _acertoDivida); updatePreview(v); }
-function syncInput(){  const v = parseFloat(document.getElementById('acerto-qty-slider').value) || 0; document.getElementById('acerto-qty-input').value = v; updatePreview(v); }
-function setAcertoPct(pct){ const v = Math.round(_acertoDivida * pct / 100); document.getElementById('acerto-qty-input').value = v; document.getElementById('acerto-qty-slider').value = v; updatePreview(v); }
-
+function syncSlider(){ var v = parseFloat(document.getElementById('acerto-qty-input').value) || 0; document.getElementById('acerto-qty-slider').value = Math.min(v, _acertoDivida); updatePreview(v); }
+function syncInput(){ var v = parseFloat(document.getElementById('acerto-qty-slider').value) || 0; document.getElementById('acerto-qty-input').value = v; updatePreview(v); }
+function setAcertoPct(pct){ var v = Math.round(_acertoDivida * pct / 100); document.getElementById('acerto-qty-input').value = v; document.getElementById('acerto-qty-slider').value = v; updatePreview(v); }
 function updatePreview(v){
-    const preview = document.getElementById('acerto-preview');
+    var preview = document.getElementById('acerto-preview');
     if (v > 0) {
-        const restante = Math.max(0, _acertoDivida - v);
-        document.getElementById('preview-restante').textContent = Number(restante).toLocaleString('pt-PT') + 'L';
-        document.getElementById('preview-quite-badge').style.display = restante === 0 ? 'block' : 'none';
+        var r = Math.max(0, _acertoDivida - v);
+        document.getElementById('preview-restante').textContent = Number(r).toLocaleString('pt-PT') + 'L';
+        document.getElementById('preview-quite-badge').style.display = r === 0 ? 'block' : 'none';
         preview.style.display = 'block';
     } else {
         preview.style.display = 'none';
     }
 }
-
 function submeterAcerto(){
-    const empresa = document.getElementById('acerto-company-input').value;
-    const tankId  = document.getElementById('acerto-tank-select').value;
-    const date    = document.getElementById('acerto-date').value;
-    const qty     = parseFloat(document.getElementById('acerto-qty-input').value);
-    const notes   = document.getElementById('acerto-notes').value;
-    if (!qty || qty < 1)         { showToast('Indique a quantidade a devolver.', 'error'); return; }
-    if (qty > _acertoDivida)     { showToast('Não pode devolver mais do que a dívida actual.', 'error'); return; }
+    var empresa = document.getElementById('acerto-company-input').value;
+    var tankId  = document.getElementById('acerto-tank-select').value;
+    var date    = document.getElementById('acerto-date').value;
+    var qty     = parseFloat(document.getElementById('acerto-qty-input').value);
+    var notes   = document.getElementById('acerto-notes').value;
+    if (!qty || qty < 1) { showToast('Indique a quantidade a devolver.', 'error'); return; }
+    if (qty > _acertoDivida) { showToast('Não pode devolver mais do que a dívida actual.', 'error'); return; }
     $.ajax({
-        url: '{{ route("fuel.settlement.store") }}',
-        type: 'POST',
+        url: '{{ route("fuel.settlement.store") }}', type: 'POST',
         data: { _token: '{{ csrf_token() }}', company: empresa, tank_id: tankId, date: date, quantity: qty, notes: notes },
         success: function(res){
             bootstrap.Modal.getInstance(document.getElementById('modalAcerto')).hide();
             showToast(res.message, 'success');
-            setTimeout(() => window.location.reload(), 1500);
+            setTimeout(function(){ window.location.reload(); }, 1500);
         },
-        error: function(xhr){ showToast(xhr.responseJSON?.message || 'Erro ao registar devolução.', 'error'); }
+        error: function(xhr){ showToast((xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Erro ao registar devolução.', 'error'); }
     });
 }
 
 document.addEventListener('DOMContentLoaded', function(){
-    const ctx = document.getElementById('consumptionChart').getContext('2d');
+    var ctx = document.getElementById('consumptionChart').getContext('2d');
     new Chart(ctx, {
         type: 'bar',
-        data: {
-            labels:   {!! json_encode($labelsCompostas ?? []) !!},
-            datasets: {!! json_encode($datasets ?? []) !!}
-        },
+        data: { labels: {!! json_encode($labelsCompostas ?? []) !!}, datasets: {!! json_encode($datasets ?? []) !!} },
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { labels: { font: { size: 10 }, boxWidth: 10 } }, tooltip: { mode: 'index', intersect: false } },
@@ -788,6 +768,169 @@ document.addEventListener('DOMContentLoaded', function(){
         }
     });
 });
+
+// ════════════════════════════════════════════
+//  EXPORTAR PDF — design system FEM
+// ════════════════════════════════════════════
+function gerarRelatorioPDF() {
+    var rows = [];
+    var totalEntradas = 0, totalSaidas = 0;
+
+    $('#fuelTable tbody tr:visible').each(function(){
+        var r    = $(this);
+        var tipo = r.data('tipo-raw');
+        var qty  = parseFloat(r.data('qty-raw')) || 0;
+        if (tipo === 'ENTRADA') totalEntradas += qty;
+        else totalSaidas += qty;
+        rows.push({
+            date:       r.data('date'),
+            tipo:       tipo,
+            tanque:     r.data('tanque'),
+            ident:      r.data('ident'),
+            company:    r.data('company') || '—',
+            contadores: r.data('contadores'),
+            qty:        r.data('qty') + 'L',
+            operador:   r.data('operador') || '—'
+        });
+    });
+
+    if (!rows.length) { showToast('Sem registos para exportar.', 'error'); return; }
+
+    var dfEl    = document.getElementById('js_from');
+    var dtEl    = document.getElementById('js_to');
+    var tankSel = document.getElementById('js_tank');
+    var df      = dfEl  ? dfEl.value  : '';
+    var dt      = dtEl  ? dtEl.value  : '';
+    var tankTxt = tankSel ? tankSel.options[tankSel.selectedIndex].text : 'Todos';
+    var periodoStr = (df || dt)
+        ? ((df ? df.split('-').reverse().join('/') : '—') + ' a ' + (dt ? dt.split('-').reverse().join('/') : '—'))
+        : 'Todo o período';
+
+    var dataHoje  = new Date().toLocaleDateString('pt-PT', {day:'2-digit',month:'2-digit',year:'numeric'});
+    var horaAgora = new Date().toLocaleTimeString('pt-PT', {hour:'2-digit',minute:'2-digit'});
+
+    function fmtL(n){ return Number(n).toLocaleString('pt-PT', {minimumFractionDigits:0}) + 'L'; }
+
+    var linhas = rows.map(function(r, i){
+        var isE = r.tipo === 'ENTRADA';
+        var cor = isE ? '#198754' : '#c60a1a';
+        var bg  = isE ? '#e6f4ea' : '#fce8e6';
+        var bc  = isE ? '#a3d9b1' : '#f8b8b8';
+        return '<tr>' +
+            '<td>' + (i+1) + '</td>' +
+            '<td>' + r.date + '</td>' +
+            '<td><span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;background:' + bg + ';color:' + cor + ';border:1px solid ' + bc + ';">' + r.tipo + '</span></td>' +
+            '<td>' + r.tanque + '</td>' +
+            '<td>' + r.ident + '<br><span style="font-size:9px;color:#888;">' + r.company + '</span></td>' +
+            '<td style="text-align:center;font-size:9px;">' + r.contadores + '</td>' +
+            '<td style="text-align:right;font-weight:bold;color:' + cor + ';">' + r.qty + '</td>' +
+            '<td style="font-size:9px;">' + r.operador + '</td>' +
+            '</tr>';
+    }).join('');
+
+    var tanquesHtml = TANQUES_PDF.map(function(t){
+        var cor = parseFloat(t.pct) < 15 ? '#c60a1a' : '#198754';
+        return '<tr>' +
+            '<td style="padding:5px 10px;font-size:10px;">' + t.nome + '</td>' +
+            '<td style="padding:5px 10px;font-size:10px;text-align:right;font-weight:bold;">' + t.stock + 'L</td>' +
+            '<td style="padding:5px 10px;font-size:10px;text-align:right;color:' + cor + ';font-weight:bold;">' + t.pct + '%</td>' +
+            '</tr>';
+    }).join('');
+
+    var balancoSinal = totalEntradas >= totalSaidas ? '+' : '';
+    var userInfo = '{{ auth()->user()->name }} | {{ auth()->user()->email }}';
+
+    var css =
+        '*{margin:0;padding:0;box-sizing:border-box}' +
+        'body{font-family:Arial,sans-serif;font-size:11px;color:#222;padding:28px}' +
+        '.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;border-bottom:3px solid #c60a1a;padding-bottom:14px}' +
+        '.company-block{display:flex;flex-direction:column;gap:8px}' +
+        '.company-logo{width:86px;height:auto}' +
+        '.company-name{font-size:13px;font-weight:bold;color:#c60a1a;line-height:1.3}' +
+        '.company-detail{font-size:9px;color:#555;line-height:1.6}' +
+        '.doc-block{text-align:right}' +
+        '.doc-block h1{font-size:17px;font-weight:bold;color:#c60a1a}' +
+        '.doc-sub{font-size:10px;color:#888;margin-top:4px}' +
+        '.filter-summary{display:flex;margin-bottom:18px;border:1px solid #e8edf2;border-radius:4px;overflow:hidden}' +
+        '.fs-item{flex:1;padding:10px 13px;background:#fdf2f2;border-right:1px solid #e8edf2}' +
+        '.fs-item:last-child{border-right:none}' +
+        '.fs-label{font-size:8px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:3px}' +
+        '.fs-value{font-size:11px;font-weight:bold;color:#222}' +
+        '.two-col{display:flex;gap:16px;margin-bottom:16px}' +
+        '.col-main{flex:1;min-width:0}' +
+        '.col-side{width:200px;flex-shrink:0}' +
+        '.side-title{font-size:8.5px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#888;margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid #c60a1a}' +
+        'table.mt{width:100%;border-collapse:collapse}' +
+        'table.mt thead tr{background:#c60a1a}' +
+        'table.mt thead th{padding:7px 9px;font-size:8.5px;font-weight:bold;letter-spacing:.7px;text-transform:uppercase;color:#fff;text-align:left;white-space:nowrap}' +
+        'table.mt thead th.r{text-align:right}' +
+        'table.mt tbody tr{border-bottom:1px solid #eff1f5}' +
+        'table.mt tbody tr:nth-child(even){background:#fdf5f5}' +
+        'table.mt tbody td{padding:7px 9px;font-size:10px;color:#334155;vertical-align:middle}' +
+        'table.st{width:100%;border-collapse:collapse}' +
+        'table.st thead tr{background:#1a1a2e}' +
+        'table.st thead th{padding:6px 10px;font-size:8px;font-weight:bold;color:#fff;text-transform:uppercase;letter-spacing:.6px}' +
+        'table.st tbody tr{border-bottom:1px solid #f1f5f9}' +
+        'table.st tbody tr:nth-child(even){background:#f8fafc}' +
+        '.tw{width:260px;margin-left:auto;margin-bottom:20px}' +
+        '.tw table{border-collapse:collapse;width:100%}' +
+        '.tw td{padding:5px 10px;font-size:10px}' +
+        '.tw td.l{color:#666}' +
+        '.tw td.v{text-align:right;font-weight:bold}' +
+        '.tw tr.g{background:#c60a1a;color:#fff}' +
+        '.tw tr.g td{padding:7px 10px;font-size:12px;color:#fff}' +
+        '.pf{margin-top:24px;border-top:2px solid #c60a1a;padding-top:12px;display:flex;justify-content:space-between}' +
+        '.fl{font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:2px}' +
+        '.fv{font-size:9.5px;color:#334155}' +
+        '.fr{font-size:8.5px;color:#94a3b8;text-align:right}' +
+        '@media print{body{padding:16px} @page{margin:10mm;size:A4 landscape}}';
+
+    var html =
+        '<!DOCTYPE html><html lang="pt"><head><meta charset="UTF-8"><title>Relatório de Combustível</title>' +
+        '<style>' + css + '</style></head><body>' +
+        '<div class="header">' +
+            '<div class="company-block">' +
+                '<img src="/images/bymozelogo.png" class="company-logo" alt="FEM">' +
+                '<div>' +
+                    '<div class="company-name">Fábrica de Explosivos de Moçambique</div>' +
+                    '<div class="company-detail">Contribuinte Nº 400019029<br>Av. Samora Machel Nº — Parcela 10<br>Telef. +258 21 745 86/03 &nbsp;|&nbsp; FAX. +258 21 745 802</div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="doc-block"><h1>RELATÓRIO DE COMBUSTÍVEL</h1><div class="doc-sub">Emitido em ' + dataHoje + ' às ' + horaAgora + '</div></div>' +
+        '</div>' +
+        '<div class="filter-summary">' +
+            '<div class="fs-item"><div class="fs-label">Período</div><div class="fs-value">' + periodoStr + '</div></div>' +
+            '<div class="fs-item"><div class="fs-label">Tanque</div><div class="fs-value">' + tankTxt + '</div></div>' +
+            '<div class="fs-item"><div class="fs-label">Nº de Registos</div><div class="fs-value">' + rows.length + '</div></div>' +
+        '</div>' +
+        '<div class="two-col">' +
+            '<div class="col-main">' +
+                '<table class="mt"><thead><tr>' +
+                '<th>#</th><th>Data</th><th>Tipo</th><th>Tanque</th><th>Identificação</th><th style="text-align:center;">Contadores</th><th class="r">Qtd.</th><th>Operador / Motorista</th>' +
+                '</tr></thead><tbody>' + linhas + '</tbody></table>' +
+            '</div>' +
+            '<div class="col-side">' +
+                '<div class="side-title">Stock Actual dos Tanques</div>' +
+                '<table class="st"><thead><tr><th>Tanque</th><th style="text-align:right;">Stock</th><th style="text-align:right;">%</th></tr></thead>' +
+                '<tbody>' + tanquesHtml + '</tbody></table>' +
+            '</div>' +
+        '</div>' +
+        '<div class="tw"><table>' +
+            '<tr><td class="l">Total Entradas</td><td class="v" style="color:#198754;">+' + fmtL(totalEntradas) + '</td></tr>' +
+            '<tr><td class="l">Total Saídas</td><td class="v" style="color:#c60a1a;">-' + fmtL(totalSaidas) + '</td></tr>' +
+            '<tr class="g"><td class="l">Balanço Líquido</td><td class="v">' + balancoSinal + fmtL(totalEntradas - totalSaidas) + '</td></tr>' +
+        '</table></div>' +
+        '<div class="pf">' +
+            '<div><div class="fl">Documento emitido por</div><div class="fv">' + userInfo + '</div></div>' +
+            '<div class="fr">Documento gerado automaticamente pelo sistema de gestão.<br>Não requer assinatura.</div>' +
+        '</div>' +
+        '<script>window.onload=function(){window.print();}<\/script>' +
+        '</body></html>';
+
+    var win = window.open('', '_blank', 'width=1200,height=800');
+    win.document.write(html);
+    win.document.close();
+}
 </script>
 
 </x-app-layout>
