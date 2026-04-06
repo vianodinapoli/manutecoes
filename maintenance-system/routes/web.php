@@ -115,6 +115,8 @@ Route::resource('viaturas', ViaturaController::class)
         Route::get   ('/fuel-entry/{id}/json',     [FuelController::class, 'getEntryJson']) ->name('fuel.entry.json');
     });
 
+    Route::get('/caixa-bancos', fn() => view('caixa-bancos.index'))->name('caixa.index');
+
     // ── Discharges ──────────────────────────────────────────
     Route::middleware('permission:acesso discharges')->group(function () {
         Route::resource('discharges', DischargeController::class);
