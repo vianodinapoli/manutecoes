@@ -564,6 +564,8 @@
                 <span class="ni-text">Docs / Viaturas</span>
             </x-nav-link>
 
+            
+
             {{-- Discharges --}}
             @can('acesso discharges')
             <x-nav-link :href="route('discharges.index')" :active="request()->routeIs('discharges.*')" class="nav-item">
@@ -571,6 +573,16 @@
                 <span class="ni-text">Discharges</span>
             </x-nav-link>
             @endcan
+
+
+              {{-- Contabilidade --}}
+            <div class="sb-divider"></div>
+            <div class="sb-section">Contabilidade</div>
+
+            <x-nav-link :href="route('caixa.index')" :active="request()->routeIs('caixa.*')" class="nav-item">
+                <i class="fas fa-cash-register ni-icon"></i>
+                <span class="ni-text">Caixa e Bancos</span>
+            </x-nav-link>
 
             {{-- Conta --}}
             <div class="sb-divider"></div>
