@@ -174,7 +174,7 @@
     {{-- RODAPÉ --}}
     <div class="page-footer">
         <div class="footer-left">
-            <div class="footer-user-label">Emitido por por</div>
+            <div class="footer-user-label">Emitido por:</div>
             <div class="footer-user-name">{{ auth()->user()->name }}</div>
             <div class="footer-user-email">{{ auth()->user()->email }}</div>
 <!-- 
