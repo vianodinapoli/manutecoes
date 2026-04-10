@@ -237,64 +237,64 @@
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
         <div style="min-width:200px;">
             <table style="border-collapse:collapse;font-size:10px;">
-                <tr><td colspan="2" style="font-weight:800;font-size:11px;padding:2px 6px;background:#f1f1f1;border:1px solid #ccc;">RESUMO CAIXA E BANCO</td></tr>
+                <tr><td colspan="2" style="font-weight:400;font-size:11px;padding:2px 6px;background:#f1f1f1;border:1px solid #222121;">RESUMO CAIXA E BANCO</td></tr>
                 <tr>
-                    <td style="padding:2px 6px;border:1px solid #ccc;border-top:none;">Saldo Anterior</td>
-                    <td style="padding:2px 10px;border:1px solid #ccc;border-top:none;border-left:none;text-align:right;font-weight:700;" id="pdf_res_saldo_ant">0,00</td>
+                    <td style="padding:2px 6px;border:1px solid #222121;border-top:none;">Saldo Anterior</td>
+                    <td style="padding:2px 10px;border:1px solid #222121;border-top:none;border-left:none;text-align:right;font-weight:700;" id="pdf_res_saldo_ant">0,00</td>
                 </tr>
                 <tr>
-                    <td style="padding:2px 6px;border:1px solid #ccc;border-top:none;">Saldo Actual</td>
-                    <td style="padding:2px 10px;border:1px solid #ccc;border-top:none;border-left:none;text-align:right;font-weight:700;" id="pdf_res_saldo_act">0,00</td>
+                    <td style="padding:2px 6px;border:1px solid #222121;border-top:none;">Saldo Actual</td>
+                    <td style="padding:2px 10px;border:1px solid #222121;border-top:none;border-left:none;text-align:right;font-weight:700;" id="pdf_res_saldo_act">0,00</td>
                 </tr>
-                <tr><td colspan="2" style="font-weight:800;font-size:11px;padding:2px 6px;background:#f1f1f1;border:1px solid #ccc;border-top:none;" id="pdf_res_tipo_label">RESUMO CAIXA</td></tr>
+                <tr><td colspan="2" style="font-weight:800;font-size:11px;padding:2px 6px;background:#f1f1f1;border:1px solid #222121;border-top:none;" id="pdf_res_tipo_label">RESUMO CAIXA</td></tr>
                 <tr>
-                    <td style="padding:2px 6px;border:1px solid #ccc;border-top:none;">Saldo Anterior</td>
-                    <td style="padding:2px 10px;border:1px solid #ccc;border-top:none;border-left:none;text-align:right;font-weight:700;" id="pdf_res_saldo_ant2">0,00</td>
-                </tr>
-                <tr>
-                    <td style="padding:2px 6px;border:1px solid #ccc;border-top:none;">Entradas</td>
-                    <td style="padding:2px 10px;border:1px solid #ccc;border-top:none;border-left:none;text-align:right;font-weight:700;" id="pdf_res_entradas">0,00</td>
+                    <td style="padding:2px 6px;border:1px solid #222121;border-top:none;">Saldo Anterior</td>
+                    <td style="padding:2px 10px;border:1px solid #222121;border-top:none;border-left:none;text-align:right;font-weight:700;" id="pdf_res_saldo_ant2">0,00</td>
                 </tr>
                 <tr>
-                    <td style="padding:2px 6px;border:1px solid #ccc;border-top:none;">Saídas</td>
-                    <td style="padding:2px 10px;border:1px solid #ccc;border-top:none;border-left:none;text-align:right;font-weight:700;" id="pdf_res_saidas">0,00</td>
+                    <td style="padding:2px 6px;border:1px solid #222121;border-top:none;">Entradas</td>
+                    <td style="padding:2px 10px;border:1px solid #222121;border-top:none;border-left:none;text-align:right;font-weight:700;" id="pdf_res_entradas">0,00</td>
                 </tr>
                 <tr>
-                    <td style="padding:2px 6px;border:1px solid #ccc;border-top:none;">Saldo Actual</td>
-                    <td style="padding:2px 10px;border:1px solid #ccc;border-top:none;border-left:none;text-align:right;font-weight:800;" id="pdf_res_saldo_act2">0,00</td>
+                    <td style="padding:2px 6px;border:1px solid #222121;border-top:none;">Saídas</td>
+                    <td style="padding:2px 10px;border:1px solid #222121;border-top:none;border-left:none;text-align:right;font-weight:700;" id="pdf_res_saidas">0,00</td>
+                </tr>
+                <tr>
+                    <td style="padding:2px 6px;border:1px solid #222121;border-top:none;">Saldo Actual</td>
+                    <td style="padding:2px 10px;border:1px solid #222121;border-top:none;border-left:none;text-align:right;font-weight:800;" id="pdf_res_saldo_act2">0,00</td>
                 </tr>
             </table>
         </div>
         <div style="text-align:right;display:flex;align-items:center;gap:14px;">
-            <img src="{{ asset('images/bymozelogo.png') }}" style="height:64px;width:auto;" alt="FEM">
+            <img src="{{ asset('images/bymozelogo.png') }}" style="height:120px;width:auto;" alt="FEM">
         </div>
     </div>
 
     {{-- TÍTULO --}}
-    <div style="text-align:center;font-weight:800;font-size:11px;margin:10px 0 8px;text-transform:uppercase;" id="pdf_titulo_completo">
+    <div style="text-align:left;font-weight:600;font-size:11px;margin:10px 0 8px;text-transform:uppercase;" id="pdf_titulo_completo">
         FOLHA DE CAIXA N°— DE —
     </div>
 
     {{-- TABELA PRINCIPAL --}}
     <table style="width:100%;border-collapse:collapse;font-size:9.5px;">
         <thead>
-            <tr style="background:#333;color:#fff;">
-                <th style="padding:5px 6px;text-align:left;border:1px solid #555;width:75px;">Data</th>
-                <th style="padding:5px 6px;text-align:left;border:1px solid #555;width:140px;">Fornecedor</th>
-                <th style="padding:5px 6px;text-align:left;border:1px solid #555;">Descrição</th>
-                <th style="padding:5px 6px;text-align:left;border:1px solid #555;width:100px;">Nº Documento</th>
-                <th style="padding:5px 6px;text-align:right;border:1px solid #555;width:90px;">Entradas</th>
-                <th style="padding:5px 6px;text-align:right;border:1px solid #555;width:90px;">Saídas</th>
-                <th style="padding:5px 6px;text-align:right;border:1px solid #555;width:90px;">Saldo</th>
+            <tr style="background:#333;color:#222121;">
+                <th style="padding:5px 6px;text-align:left;border:1px solid #222121;width:75px;">Data</th>
+                <th style="padding:5px 6px;text-align:left;border:1px solid #222121;width:140px;">Fornecedor</th>
+                <th style="padding:5px 6px;text-align:left;border:1px solid #222121;">Descrição</th>
+                <th style="padding:5px 6px;text-align:left;border:1px solid #222121;width:100px;">Nº Documento</th>
+                <th style="padding:5px 6px;text-align:right;border:1px solid #222121;width:90px;">Entradas</th>
+                <th style="padding:5px 6px;text-align:right;border:1px solid #222121;width:90px;">Saídas</th>
+                <th style="padding:5px 6px;text-align:right;border:1px solid #222121;width:90px;">Saldo</th>
             </tr>
         </thead>
         <tbody id="pdf_tbody"></tbody>
         <tfoot>
             <tr style="font-weight:800;background:#f5f5f5;">
-                <td colspan="4" style="padding:5px 6px;text-align:right;border:1px solid #ccc;">Total</td>
-                <td style="padding:5px 8px;text-align:right;border:1px solid #ccc;" id="pdf_total_entradas">0,00</td>
-                <td style="padding:5px 8px;text-align:right;border:1px solid #ccc;" id="pdf_total_saidas">0,00</td>
-                <td style="padding:5px 8px;text-align:right;border:1px solid #ccc;"></td>
+                <td colspan="4" style="padding:5px 6px;text-align:right;border:1px solid #222121;">Total</td>
+                <td style="padding:5px 8px;text-align:right;border:1px solid #222121;" id="pdf_total_entradas">0,00</td>
+                <td style="padding:5px 8px;text-align:right;border:1px solid #222121;" id="pdf_total_saidas">0,00</td>
+                <td style="padding:5px 8px;text-align:right;border:1px solid #222121;"></td>
             </tr>
         </tfoot>
     </table>
@@ -318,7 +318,7 @@
 let caixaActual = 'caixa1';
 let dados = { caixa1: [], caixa2: [] };
 let nomesCaixas = { caixa1: 'Caixa 1', caixa2: 'Caixa 2' };
-const TOTAL_LINHAS = 42; // igual ao PDF original
+const TOTAL_LINHAS = 33; // igual ao PDF original
 
 $(document).ready(function() {
     const hoje = new Date();
@@ -460,7 +460,7 @@ function exportarPDF() {
     $('#pdf_res_saldo_act2').text(fmt(saldoAct));
 
     // Título
-    $('#pdf_titulo_completo').text(`FOLHA DE ${tipo} N°${nr} DE  ${del}`);
+    $('#pdf_titulo_completo').text(`FOLHA DE ${tipo} N°${nr}/2026 DE Delegação da Beira -  ${del}`);
 
     // Elaborado / Conferido
     $('#pdf_elaborado').text($('#elaborado_por').val() || '________________________________');
@@ -481,13 +481,13 @@ function exportarPDF() {
         const saldoTxt = (ent > 0 || sai > 0) ? fmt(saldo) : fmt(saldoAnt + totE - totS);
 
         pdfTbody.append(`<tr style="${bg}">
-            <td style="padding:3px 5px;border:1px solid #ddd;">${dataFmt}</td>
-            <td style="padding:3px 5px;border:1px solid #ddd;border-left:none;">${escHtml(l.fornecedor)}</td>
-            <td style="padding:3px 5px;border:1px solid #ddd;border-left:none;">${escHtml(l.descricao)}</td>
-            <td style="padding:3px 5px;border:1px solid #ddd;border-left:none;">${escHtml(l.nr_doc)}</td>
-            <td style="padding:3px 7px;border:1px solid #ddd;border-left:none;text-align:right;">${ent ? fmt(ent) : ''}</td>
-            <td style="padding:3px 7px;border:1px solid #ddd;border-left:none;text-align:right;">${sai ? fmt(sai) : ''}</td>
-            <td style="padding:3px 7px;border:1px solid #ddd;border-left:none;text-align:right;">${saldoTxt}</td>
+            <td style="padding:3px 5px;border:1px solid #353232;">${dataFmt}</td>
+            <td style="padding:3px 5px;border:1px solid #353232;border-left:none;">${escHtml(l.fornecedor)}</td>
+            <td style="padding:3px 5px;border:1px solid #353232;border-left:none;">${escHtml(l.descricao)}</td>
+            <td style="padding:3px 5px;border:1px solid #353232;border-left:none;">${escHtml(l.nr_doc)}</td>
+            <td style="padding:3px 7px;border:1px solid #353232;border-left:none;text-align:right;">${ent ? fmt(ent) : ''}</td>
+            <td style="padding:3px 7px;border:1px solid #353232;border-left:none;text-align:right;">${sai ? fmt(sai) : ''}</td>
+            <td style="padding:3px 7px;border:1px solid #353232;border-left:none;text-align:right;">${saldoTxt}</td>
         </tr>`);
     });
 
