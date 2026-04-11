@@ -5,7 +5,7 @@
 <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 9pt;
         color: #1e293b;
         background: #fff;
@@ -13,75 +13,110 @@
     }
 
     /* ── HEADER ── */
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
-    .logo-area { display: flex; align-items: center; gap: 10px; }
-    .logo-box {
-        width: 44px; height: 44px;
-        background: #c0392b;
-        border-radius: 8px;
-        display: flex; align-items: center; justify-content: center;
-        color: #fff; font-size: 14pt; font-weight: 900;
-        letter-spacing: -1px;
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
     }
-    .company-name { font-size: 11pt; font-weight: 800; color: #c0392b; line-height: 1.2; }
-    .company-meta { font-size: 7pt; color: #64748b; margin-top: 2px; line-height: 1.6; }
-    .doc-title-area { text-align: right; }
-    .doc-title { font-size: 16pt; font-weight: 900; color: #c0392b; letter-spacing: .5px; text-transform: uppercase; }
+    .logo-side { display: flex; align-items: center; gap: 12px; }
+    .logo-box {
+        width: 48px; height: 48px;
+        background: #c0392b;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 15pt; font-weight: 900;
+        letter-spacing: -1px;
+        font-family: Arial, sans-serif;
+    }
+    .company-name { font-size: 10.5pt; font-weight: 800; color: #c0392b; line-height: 1.25; }
+    .company-meta { font-size: 6.8pt; color: #64748b; margin-top: 2px; line-height: 1.65; }
+    .title-side { text-align: right; }
+    .doc-title { font-size: 15pt; font-weight: 900; color: #c0392b; text-transform: uppercase; letter-spacing: .3px; }
     .doc-emitido { font-size: 7pt; color: #94a3b8; margin-top: 3px; }
 
     /* ── DIVIDER ── */
-    .divider { border: none; border-top: 2px solid #c0392b; margin: 14px 0; }
-    .divider-light { border: none; border-top: 1px solid #e2e8f0; margin: 12px 0; }
+    .divider { border: none; border-top: 2px solid #c0392b; margin: 12px 0; }
 
     /* ── INFO BOX ── */
     .info-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 0;
+        display: table;
+        width: 100%;
         border: 1px solid #e2e8f0;
         border-radius: 6px;
-        overflow: hidden;
-        margin-bottom: 18px;
+        margin-bottom: 12px;
     }
+    .info-row { display: table-row; }
     .info-cell {
-        padding: 10px 14px;
+        display: table-cell;
+        padding: 8px 12px;
         border-right: 1px solid #e2e8f0;
+        width: 33.33%;
     }
     .info-cell:last-child { border-right: none; }
-    .info-cell-label { font-size: 6.5pt; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #94a3b8; margin-bottom: 3px; }
-    .info-cell-value { font-size: 9pt; font-weight: 700; color: #1e293b; }
+    .info-cell-label { font-size: 6pt; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
+    .info-cell-value { font-size: 8.5pt; font-weight: 700; color: #1e293b; }
+
+    /* ── KPI ROW — compact horizontal strip ── */
+    .kpi-strip {
+        display: table;
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        background: #f8fafc;
+    }
+    .kpi-strip-row { display: table-row; }
+    .kpi-cell {
+        display: table-cell;
+        padding: 7px 14px;
+        border-right: 1px solid #e2e8f0;
+        vertical-align: middle;
+        width: 25%;
+    }
+    .kpi-cell:last-child { border-right: none; }
+    .kpi-cell-label { font-size: 5.8pt; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: #94a3b8; margin-bottom: 1px; }
+    .kpi-cell-value { font-size: 13pt; font-weight: 900; line-height: 1; }
+    .kpi-green { color: #16a34a; }
+    .kpi-red   { color: #dc2626; }
+    .kpi-blue  { color: #1a56db; }
+    .kpi-gray  { color: #64748b; }
+    .kpi-accent-green { border-left: 3px solid #16a34a; }
+    .kpi-accent-red   { border-left: 3px solid #dc2626; }
+    .kpi-accent-blue  { border-left: 3px solid #1a56db; }
+    .kpi-accent-gray  { border-left: 3px solid #64748b; }
 
     /* ── TABLE ── */
-    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-    thead th {
-        font-size: 6.5pt;
+    table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+    table.data-table thead th {
+        font-size: 6.2pt;
         font-weight: 700;
         letter-spacing: .8px;
         text-transform: uppercase;
         color: #64748b;
         background: #f8fafc;
         border-bottom: 1.5px solid #e2e8f0;
-        padding: 8px 10px;
+        padding: 7px 9px;
         text-align: left;
     }
-    thead th.right { text-align: right; }
-    tbody td {
-        padding: 8px 10px;
+    table.data-table thead th.right { text-align: right; }
+    table.data-table tbody td {
+        padding: 7px 9px;
         border-bottom: 1px solid #f1f5f9;
-        font-size: 8.5pt;
+        font-size: 8pt;
         color: #334155;
         vertical-align: middle;
     }
-    tbody td.right { text-align: right; }
-    tbody tr:last-child td { border-bottom: none; }
-    tbody tr:nth-child(even) td { background: #fafafa; }
+    table.data-table tbody td.right { text-align: right; }
+    table.data-table tbody tr:last-child td { border-bottom: none; }
+    table.data-table tbody tr:nth-child(even) td { background: #fafafa; }
 
     /* ── BADGES ── */
     .badge {
         display: inline-block;
-        padding: 2px 8px;
+        padding: 2px 7px;
         border-radius: 20px;
-        font-size: 7pt;
+        font-size: 6.5pt;
         font-weight: 700;
         border: 1px solid;
     }
@@ -89,100 +124,75 @@
     .badge-saida   { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
 
     /* ── PRODUCT CELL ── */
-    .prod-nome { font-weight: 700; font-size: 8.5pt; }
-    .prod-ref  { font-size: 7pt; color: #94a3b8; margin-top: 1px; }
+    .prod-nome { font-weight: 700; font-size: 8pt; }
+    .prod-ref  { font-size: 6.5pt; color: #94a3b8; margin-top: 1px; }
 
     /* ── TOTALS ── */
-    .totals-wrap { display: flex; justify-content: flex-end; }
+    .totals-wrap { text-align: right; }
     .totals-box {
-        width: 260px;
+        display: inline-block;
+        width: 240px;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        border-radius: 7px;
         overflow: hidden;
     }
     .total-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 7px 14px;
+        display: table;
+        width: 100%;
+        padding: 6px 13px;
         border-bottom: 1px solid #f1f5f9;
         font-size: 8pt;
     }
     .total-row:last-child { border-bottom: none; }
-    .total-row-label { color: #64748b; }
-    .total-row-value { font-weight: 700; color: #1e293b; }
-    .total-row.geral {
-        background: #1e293b;
-    }
-    .total-row.geral .total-row-label { color: #94a3b8; font-size: 7.5pt; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+    .total-row-label { display: table-cell; color: #64748b; text-align: left; }
+    .total-row-value { display: table-cell; font-weight: 700; color: #1e293b; text-align: right; }
+    .total-row.geral { background: #1e293b; }
+    .total-row.geral .total-row-label { color: #94a3b8; font-size: 6.8pt; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
     .total-row.geral .total-row-value { color: #fff; font-size: 11pt; font-weight: 900; }
 
-    /* ── KPI ROW ── */
-    .kpi-row {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 10px;
-        margin-bottom: 18px;
-    }
-    .kpi-card {
+    /* ── FILTERS ── */
+    .filters-row {
+        font-size: 7pt;
+        color: #64748b;
+        margin-bottom: 10px;
+        padding: 5px 10px;
+        background: #f8fafc;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 10px 12px;
-        border-left: 3px solid;
+        border-radius: 5px;
     }
-    .kpi-card.green { border-left-color: #16a34a; }
-    .kpi-card.red   { border-left-color: #dc2626; }
-    .kpi-card.blue  { border-left-color: #1a56db; }
-    .kpi-card.gray  { border-left-color: #64748b; }
-    .kpi-label { font-size: 6pt; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: #94a3b8; margin-bottom: 3px; }
-    .kpi-value { font-size: 14pt; font-weight: 900; color: #1e293b; line-height: 1; }
-    .kpi-card.green .kpi-value { color: #16a34a; }
-    .kpi-card.red   .kpi-value { color: #dc2626; }
-    .kpi-card.blue  .kpi-value { color: #1a56db; }
+    .filters-row strong { color: #334155; }
 
     /* ── FOOTER ── */
     .footer {
-        margin-top: 24px;
-        padding-top: 10px;
+        margin-top: 20px;
+        padding-top: 8px;
         border-top: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        font-size: 7pt;
+        display: table;
+        width: 100%;
+        font-size: 6.8pt;
         color: #94a3b8;
     }
-    .footer-left { line-height: 1.6; }
-    .footer-right { text-align: right; line-height: 1.6; }
-
-    /* ── FILTERS APPLIED ── */
-    .filters-row {
-        font-size: 7.5pt;
-        color: #64748b;
-        margin-bottom: 14px;
-        padding: 7px 12px;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-    }
-    .filters-row strong { color: #334155; }
+    .footer-left  { display: table-cell; text-align: left;  line-height: 1.6; }
+    .footer-right { display: table-cell; text-align: right; line-height: 1.6; }
 </style>
 </head>
 <body>
 
     {{-- ── HEADER ── --}}
     <div class="header">
-        <div class="logo-area">
-            <div class="logo-box">FEM</div>
-            <div>
-                <div class="company-name">Fábrica de Explosivos de Moçambique</div>
-                <div class="company-meta">
-                    Contribuinte Nº 400019029<br>
-                    Av. Samora Machel Nº — Parcela 10<br>
-                    Telef. +258 21 745 86/03 | FAX. +258 21 745 802
-                </div>
+    <div class="company-block">
+        <img src="{{ public_path('images/bymozelogo.png') }}" class="company-logo" alt="Logo" style="width: 60px; height: auto;">
+        <div class="company-info">
+            <div class="company-name">Fábrica de Explosivos de Moçambique</div>
+            <div class="company-detail">
+                Contribuinte Nº 400019029<br>
+                Av. Samora Machel Nº — Parcela 10<br>
+                Telef. +258 21 745 86/03 &nbsp;|&nbsp; FAX. +258 21 745 802
             </div>
         </div>
-        <div class="doc-title-area">
+    </div>
+</div>
+        <div class="title-side">
             <div class="doc-title">Movimentos de Stock</div>
             <div class="doc-emitido">Emitido em {{ now()->format('d/m/Y') }} às {{ now()->format('H:i') }}</div>
         </div>
@@ -192,76 +202,78 @@
 
     {{-- ── INFO BOX ── --}}
     <div class="info-grid">
-        <div class="info-cell">
-            <div class="info-cell-label">Produto</div>
-            <div class="info-cell-value">
-                {{ $filtros['produto'] ?? 'Todos os Produtos' }}
+        <div class="info-row">
+            <div class="info-cell">
+                <div class="info-cell-label">Tipo</div>
+                <div class="info-cell-value">{{ $filtros['tipo'] ? ucfirst($filtros['tipo']) : 'Todos' }}</div>
             </div>
-        </div>
-        <div class="info-cell">
-            <div class="info-cell-label">Período</div>
-            <div class="info-cell-value">
-                @if($filtros['data_inicio'] ?? null)
-                    {{ $filtros['data_inicio'] }} → {{ $filtros['data_fim'] ?? 'hoje' }}
-                @else
-                    Todo o período
-                @endif
+            <div class="info-cell">
+                <div class="info-cell-label">Período</div>
+                <div class="info-cell-value">
+                    @if($filtros['data_inicio'] ?? null)
+                        {{ $filtros['data_inicio'] }} → {{ $filtros['data_fim'] ?? 'hoje' }}
+                    @else
+                        Todo o período
+                    @endif
+                </div>
             </div>
-        </div>
-        <div class="info-cell">
-            <div class="info-cell-label">Nº de Movimentos</div>
-            <div class="info-cell-value">{{ $movimentos->count() }}</div>
+            <div class="info-cell">
+                <div class="info-cell-label">Nº de Movimentos</div>
+                <div class="info-cell-value">{{ $movimentos->count() }}</div>
+            </div>
         </div>
     </div>
 
-    {{-- ── KPI CARDS ── --}}
-    <div class="kpi-row">
-        <div class="kpi-card green">
-            <div class="kpi-label">Total Entradas</div>
-            <div class="kpi-value">{{ $totalEntradas }}</div>
-        </div>
-        <div class="kpi-card red">
-            <div class="kpi-label">Total Saídas</div>
-            <div class="kpi-value">{{ $totalSaidas }}</div>
-        </div>
-        <div class="kpi-card blue">
-            <div class="kpi-label">Movimentos Hoje</div>
-            <div class="kpi-value">{{ $movimentosHoje }}</div>
-        </div>
-        <div class="kpi-card gray">
-            <div class="kpi-label">Registos (pág.)</div>
-            <div class="kpi-value" style="color:#64748b;">{{ $movimentos->count() }}</div>
+    {{-- ── KPI STRIP ── --}}
+    <div class="kpi-strip">
+        <div class="kpi-strip-row">
+            <div class="kpi-cell kpi-accent-green">
+                <div class="kpi-cell-label">Total Entradas</div>
+                <div class="kpi-cell-value kpi-green">{{ $totalEntradas }}</div>
+            </div>
+            <div class="kpi-cell kpi-accent-red">
+                <div class="kpi-cell-label">Total Saídas</div>
+                <div class="kpi-cell-value kpi-red">{{ $totalSaidas }}</div>
+            </div>
+            <div class="kpi-cell kpi-accent-blue">
+                <div class="kpi-cell-label">Movimentos Hoje</div>
+                <div class="kpi-cell-value kpi-blue">{{ $movimentosHoje }}</div>
+            </div>
+            <div class="kpi-cell kpi-accent-gray">
+                <div class="kpi-cell-label">Total Registos</div>
+                <div class="kpi-cell-value kpi-gray">{{ $movimentos->count() }}</div>
+            </div>
         </div>
     </div>
 
-    {{-- ── FILTROS APLICADOS (se existirem) ── --}}
+    {{-- ── FILTROS APLICADOS ── --}}
     @if(collect($filtros ?? [])->filter()->isNotEmpty())
     <div class="filters-row">
-        <strong>Filtros aplicados:</strong>
+        <strong>Filtros:</strong>
         @if($filtros['tipo'] ?? null) Tipo: <strong>{{ ucfirst($filtros['tipo']) }}</strong> &nbsp;·&nbsp; @endif
         @if($filtros['responsavel'] ?? null) Responsável: <strong>{{ $filtros['responsavel'] }}</strong> &nbsp;·&nbsp; @endif
         @if($filtros['data_inicio'] ?? null) De: <strong>{{ $filtros['data_inicio'] }}</strong> @endif
-        @if($filtros['data_fim'] ?? null) Até: <strong>{{ $filtros['data_fim'] }}</strong> @endif
+        @if($filtros['data_fim'] ?? null) &nbsp;Até: <strong>{{ $filtros['data_fim'] }}</strong> @endif
     </div>
     @endif
 
     {{-- ── TABLE ── --}}
-    <table>
+    <table class="data-table">
         <thead>
             <tr>
-                <th style="width:36px;">#</th>
+                <th style="width:30px;">#</th>
                 <th>Produto / Material</th>
-                <th style="width:76px;">Tipo</th>
-                <th style="width:72px;" class="right">Qtd.</th>
-                <th style="width:120px;">Responsável</th>
+                <th style="width:70px;">Tipo</th>
+                <th style="width:66px;" class="right">Qtd.</th>
+                <th style="width:115px;">Responsável</th>
                 <th>Observações</th>
-                <th style="width:80px;" class="right">Data</th>
+                <th style="width:72px;" class="right">Data</th>
             </tr>
         </thead>
         <tbody>
             @forelse($movimentos as $mov)
             <tr>
-                <td style="color:#94a3b8;font-size:7.5pt;">{{ $mov->id }}</td>
+                <td style="color:#94a3b8;font-size:7pt;">{{ $mov->id }}</td>
                 <td>
                     <div class="prod-nome">{{ $mov->stockItem->nome ?? '—' }}</div>
                     @if($mov->stockItem->referencia ?? null)
@@ -270,27 +282,27 @@
                 </td>
                 <td>
                     @if($mov->tipo === 'entrada')
-                        <span class="badge badge-entrada">▼ Entrada</span>
+                        <span class="badge badge-entrada">&#9660; Entrada</span>
                     @else
-                        <span class="badge badge-saida">▲ Saída</span>
+                        <span class="badge badge-saida">&#9650; Saida</span>
                     @endif
                 </td>
                 <td class="right" style="font-weight:700;">
                     {{ number_format($mov->quantidade, 2, ',', '.') }}
                     @if($mov->stockItem->metadata['unidade'] ?? null)
-                        <span style="font-size:7pt;color:#94a3b8;font-weight:400;">{{ $mov->stockItem->metadata['unidade'] }}</span>
+                        <span style="font-size:6.5pt;color:#94a3b8;font-weight:400;">{{ $mov->stockItem->metadata['unidade'] }}</span>
                     @endif
                 </td>
                 <td>{{ $mov->responsavel }}</td>
-                <td style="color:#64748b;">{{ $mov->observacoes ?: '—' }}</td>
+                <td style="color:#64748b;font-size:7.5pt;">{{ $mov->observacoes ?: '—' }}</td>
                 <td class="right">
                     <div style="font-weight:600;">{{ $mov->created_at->format('d/m/Y') }}</div>
-                    <div style="font-size:7pt;color:#94a3b8;">{{ $mov->created_at->format('H:i') }}</div>
+                    <div style="font-size:6.5pt;color:#94a3b8;">{{ $mov->created_at->format('H:i') }}</div>
                 </td>
             </tr>
             @empty
             <tr>
-                <td colspan="7" style="text-align:center;padding:24px;color:#94a3b8;">
+                <td colspan="7" style="text-align:center;padding:20px;color:#94a3b8;">
                     Nenhum movimento encontrado.
                 </td>
             </tr>
