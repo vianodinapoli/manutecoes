@@ -572,7 +572,7 @@
             @can('acesso discharges')
             <x-nav-link :href="route('discharges.index')" :active="request()->routeIs('discharges.*')" class="nav-item">
                 <i class="fas fa-sign-out-alt ni-icon"></i>
-                <span class="ni-text">Discharges</span>
+                <span class="ni-text">Descarga / Navio</span>
             </x-nav-link>
             @endcan
 
