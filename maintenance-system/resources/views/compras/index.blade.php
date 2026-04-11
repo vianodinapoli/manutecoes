@@ -382,7 +382,7 @@
                         <div class="detail-val" id="modal-solicitante-nome"></div>
                     </div>
                     <div class="col-md-3">
-                        <div class="detail-label">Fornecedor Sugerido</div>
+                        <div class="detail-label">Depratamento / Função</div>
                         <div class="detail-val" id="modal-fornecedor"></div>
                     </div>
                 </div>

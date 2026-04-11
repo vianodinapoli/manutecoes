@@ -73,7 +73,7 @@
                         </div>
                         
                         <div class="col-md-6 mt-3">
-                            <label class="form-label-sm">Fornecedor Sugerido</label>
+                            <label class="form-label-sm">Depratamento / Função</label>
                             <input type="text" name="fornecedor" class="form-control form-control-sm" value="{{ $compra->fornecedor }}">
                         </div>
 

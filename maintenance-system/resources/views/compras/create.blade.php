@@ -144,9 +144,9 @@
                                 <option value="Crítica">Crítica (Carro Parado)</option>
                             </select>
 
-                            <label class="field-label">Fornecedor Sugerido</label>
+                            <label class="field-label">Depratamento / Função</label>
                             <input type="text" name="fornecedor" class="form-control form-control-sm"
-                                   placeholder="Opcional">
+                                   placeholder="Ex: Administração / Ass. RH" required>
                         </div>
                     </div>
 
