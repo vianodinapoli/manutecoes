@@ -558,11 +558,13 @@
             </x-nav-link>
             @endcan
 
-            {{-- Viaturas --}}
-            <x-nav-link :href="route('viaturas.index')" :active="request()->routeIs('viaturas.*')" class="nav-item">
-                <i class="fas fa-truck-moving ni-icon"></i>
-                <span class="ni-text">Docs / Viaturas</span>
-            </x-nav-link>
+          {{-- Viaturas --}}
+@can('acesso viaturas')
+<x-nav-link :href="route('viaturas.index')" :active="request()->routeIs('viaturas.*')" class="nav-item">
+    <i class="fas fa-truck-moving ni-icon"></i>
+    <span class="ni-text">Docs / Viaturas</span>
+</x-nav-link>
+@endcan
 
             
 
@@ -575,14 +577,14 @@
             @endcan
 
 
-              {{-- Contabilidade --}}
-            <div class="sb-divider"></div>
-            <div class="sb-section">Contabilidade</div>
-
-            <x-nav-link :href="route('caixa.index')" :active="request()->routeIs('caixa.*')" class="nav-item">
-                <i class="fas fa-cash-register ni-icon"></i>
-                <span class="ni-text">Caixa e Bancos</span>
-            </x-nav-link>
+            @can('acesso caixa')
+<div class="sb-divider"></div>
+<div class="sb-section">Contabilidade</div>
+<x-nav-link :href="route('caixa.index')" :active="request()->routeIs('caixa.*')" class="nav-item">
+    <i class="fas fa-cash-register ni-icon"></i>
+    <span class="ni-text">Caixa e Bancos</span>
+</x-nav-link>
+@endcan
 
             {{-- Conta --}}
             <div class="sb-divider"></div>
@@ -595,11 +597,18 @@
 
             {{-- Admin --}}
             @hasrole('super-admin')
-            <div class="sb-section">Administração</div>
-            <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" class="nav-item">
-                <i class="fas fa-users-cog ni-icon"></i>
-                <span class="ni-text">Utilizadores</span>
-            </x-nav-link>
+          
+
+<div class="sb-section">Administração</div>
+<x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" class="nav-item">
+    <i class="fas fa-users-cog ni-icon"></i>
+    <span class="ni-text">Utilizadores</span>
+</x-nav-link>
+<x-nav-link :href="route('admin.backup.index')" :active="request()->routeIs('admin.backup.*')" class="nav-item">
+    <i class="fas fa-database ni-icon"></i>
+    <span class="ni-text">Backup BD</span>
+</x-nav-link>
+
             @endhasrole
 
         </nav>

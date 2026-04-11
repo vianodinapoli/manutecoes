@@ -6,65 +6,59 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class UserController extends Controller
 {
-    private function modulos(): array
-    {
-        return [
-            'acesso dashboard'    => ['label' => 'Dashboard',            'icon' => 'fa-home'],
-            'acesso equipamentos' => ['label' => 'Equipamentos/Máquinas','icon' => 'fa-tools'],
-            'acesso manutencoes'  => ['label' => 'Manutenções',          'icon' => 'fa-wrench'],
-            'acesso stock'        => ['label' => 'Stock',                'icon' => 'fa-boxes'],
-            'acesso movimentos'   => ['label' => 'Movimentos Armazém',   'icon' => 'fa-arrow-left-right'],
-            'acesso pedidos'      => ['label' => 'Pedidos/Requisições',  'icon' => 'fa-shopping-cart'],
-            'acesso combustivel'  => ['label' => 'Combustível',          'icon' => 'fa-gas-pump'],
-            'acesso discharges'   => ['label' => 'Discharges',           'icon' => 'fa-sign-out-alt'],
-            'adicionar registros' => ['label' => 'Adicionar Registos',   'icon' => 'fa-plus-circle'],
-            'editar status'       => ['label' => 'Editar Status',        'icon' => 'fa-edit'],
-            'gerir utilizadores'  => ['label' => 'Gerir Utilizadores',   'icon' => 'fa-users-cog'],
-        ];
-    }
+    private array $modulos = [
+        'acesso dashboard'   => ['label' => 'Dashboard',          'icon' => 'fa-home'],
+        'acesso equipamentos'=> ['label' => 'Equipamentos',       'icon' => 'fa-tools'],
+        'acesso manutencoes' => ['label' => 'Manutenções',        'icon' => 'fa-wrench'],
+        'acesso stock'       => ['label' => 'Stock',              'icon' => 'fa-boxes'],
+        'acesso movimentos'  => ['label' => 'Movimentos Armazém', 'icon' => 'fa-arrow-right-arrow-left'],
+        'acesso pedidos'     => ['label' => 'Pedidos/Requisições','icon' => 'fa-shopping-cart'],
+        'acesso combustivel' => ['label' => 'Combustível',        'icon' => 'fa-gas-pump'],
+        'acesso viaturas'    => ['label' => 'Viaturas',           'icon' => 'fa-truck-moving'],
+        'acesso discharges'  => ['label' => 'Discharges',         'icon' => 'fa-sign-out-alt'],
+        'acesso caixa'       => ['label' => 'Caixa e Bancos',     'icon' => 'fa-cash-register'],
+    ];
 
     public function index()
     {
-        $users   = User::with('roles', 'permissions')->orderBy('name')->get();
-        $modulos = $this->modulos();
-        $roles   = Role::orderBy('name')->get();
-        return view('admin.users.index', compact('users', 'modulos', 'roles'));
+        $users = User::with('roles', 'permissions')->orderBy('name')->get();
+        $roles = Role::orderBy('name')->get();
+
+        return view('admin.users.index', [
+            'users'   => $users,
+            'roles'   => $roles,
+            'modulos' => $this->modulos,
+        ]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name'         => ['required', 'string', 'max:255'],
-            'email'        => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password'     => ['required', 'confirmed', Rules\Password::defaults()],
-            'role'         => ['required', 'exists:roles,name'],
-            'permissoes'   => ['nullable', 'array'],
-            'permissoes.*' => ['exists:permissions,name'],
-        ], [
-            'name.required'     => 'O nome é obrigatório.',
-            'email.required'    => 'O email é obrigatório.',
-            'email.unique'      => 'Este email já está em uso.',
-            'password.required' => 'A password é obrigatória.',
-            'password.confirmed'=> 'As passwords não coincidem.',
-            'role.required'     => 'Selecione um cargo.',
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+            'role'     => 'required|string|exists:roles,name',
         ]);
 
         $user = User::create([
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'password' => Hash::make($request->password),
         ]);
 
-        $user->syncRoles([$validated['role']]);
+        $user->syncRoles([$request->role]);
 
-        if ($validated['role'] !== 'super-admin') {
-            $user->syncPermissions($validated['permissoes'] ?? []);
+        if ($request->role !== 'super-admin') {
+            $perms = array_intersect(
+                $request->input('permissoes', []),
+                array_keys($this->modulos)
+            );
+            $user->syncPermissions($perms);
         }
 
         return redirect()->route('admin.users.index')
@@ -73,64 +67,68 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        $rules = [
-            'name'         => ['required', 'string', 'max:255'],
-            'email'        => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'role'         => ['required', 'exists:roles,name'],
-            'permissoes'   => ['nullable', 'array'],
-            'permissoes.*' => ['exists:permissions,name'],
-        ];
-        if ($request->filled('password')) {
-            $rules['password'] = ['confirmed', Rules\Password::defaults()];
-        }
-        $validated = $request->validate($rules, [
-            'name.required'  => 'O nome é obrigatório.',
-            'email.required' => 'O email é obrigatório.',
-            'email.unique'   => 'Este email já está em uso.',
-            'role.required'  => 'Selecione um cargo.',
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:8|confirmed',
+            'role'     => 'required|string|exists:roles,name',
         ]);
 
-        $user->name  = $validated['name'];
-        $user->email = $validated['email'];
-        if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
-        }
-        $user->save();
-        $user->syncRoles([$validated['role']]);
+        $user->update([
+            'name'  => $request->name,
+            'email' => $request->email,
+            ...($request->filled('password')
+                ? ['password' => Hash::make($request->password)]
+                : []),
+        ]);
 
-        if ($validated['role'] !== 'super-admin') {
-            $user->syncPermissions($validated['permissoes'] ?? []);
+        $user->syncRoles([$request->role]);
+
+        if ($request->role !== 'super-admin') {
+            $perms = array_intersect(
+                $request->input('permissoes', []),
+                array_keys($this->modulos)
+            );
+            $user->syncPermissions($perms);
         } else {
+            // Super-admin não precisa de permissões directas
             $user->syncPermissions([]);
         }
 
-        return back()->with('success', "Utilizador {$user->name} actualizado com sucesso.");
-    }
+        // Limpar cache de permissões
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-    public function toggleAdmin(User $user)
-    {
-        if ($user->id === auth()->id()) {
-            return back()->with('error', 'Não podes remover o teu próprio acesso de administrador!');
-        }
-        if ($user->hasRole('super-admin')) {
-            $user->removeRole('super-admin');
-            if (Role::where('name', 'utilizador')->exists()) {
-                $user->assignRole('utilizador');
-            }
-            $msg = "Acesso de Admin removido para {$user->name}";
-        } else {
-            $user->assignRole('super-admin');
-            $msg = "{$user->name} agora é Super Admin!";
-        }
-        return back()->with('success', $msg);
+        return redirect()->route('admin.users.index')
+            ->with('success', "Utilizador {$user->name} actualizado.");
     }
 
     public function destroy(User $user)
     {
         if ($user->id === auth()->id()) {
-            return back()->with('error', 'Não podes eliminar a tua própria conta!');
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Não podes eliminar a tua própria conta.');
         }
+
+        $nome = $user->name;
         $user->delete();
-        return back()->with('success', 'Utilizador eliminado com sucesso.');
+
+        return redirect()->route('admin.users.index')
+            ->with('success', "Utilizador {$nome} eliminado.");
+    }
+
+    public function toggleAdmin(User $user)
+    {
+        if ($user->hasRole('super-admin')) {
+            $user->removeRole('super-admin');
+            $user->assignRole('utilizador');
+        } else {
+            $user->syncRoles(['super-admin']);
+            $user->syncPermissions([]);
+        }
+
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        return redirect()->route('admin.users.index')
+            ->with('success', "Role de {$user->name} actualizado.");
     }
 }
