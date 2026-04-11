@@ -57,8 +57,8 @@
     .btn-filter { background: #1e293b; color: #fff; border: none; border-radius: 8px; padding: 7px 14px; font-size: .8rem; font-weight: 600; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
     .btn-filter-clear { background: #fff; color: #64748b; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px 14px; font-size: .8rem; font-weight: 600; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
     .btn-filter-clear:hover { background: #f1f5f9; color: #334155; }
-    .btn-print { background: #fff; color: #334155; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 14px; font-size: .8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .15s; white-space: nowrap; }
-    .btn-print:hover { background: #f1f5f9; border-color: #cbd5e1; }
+    .btn-print { background: #fff; color: #334155; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 14px; font-size: .8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .15s; white-space: nowrap; text-decoration: none; }
+    .btn-print:hover { background: #f1f5f9; border-color: #cbd5e1; color: #334155; }
 
     /* ══ STOCK INFO (modal) ══ */
     #stock-disponivel-wrap { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; font-size: .8rem; color: #334155; display: none; margin-top: 8px; }
@@ -125,55 +125,6 @@
         .filter-grid { grid-template-columns: 1fr; }
         .form-row-2 { grid-template-columns: 1fr; }
     }
-
-    /* ══════════════════════════════════════════
-       IMPRESSÃO
-    ══════════════════════════════════════════ */
-    .print-only { display: none; }
-
-    @media print {
-        /* Esconder tudo da app */
-        #sidebar,
-        main.content-area > nav,        /* navbar de navegação */
-        .page-header,                    /* header da página com título */
-        .no-print { display: none !important; }
-
-        /* Mostrar elementos de impressão */
-        .print-only { display: block !important; }
-        #print-footer { display: flex !important; }
-
-        body, html { background: #fff !important; }
-
-        /* Tabela sem sombras */
-        .table-card { border: none !important; box-shadow: none !important; border-radius: 0 !important; overflow: visible !important; }
-
-        /* Tabela */
-        .mov-table { width: 100% !important; table-layout: auto !important; }
-        .mov-table thead th { font-size: .65rem !important; padding: 6px 10px !important; background: #f1f5f9 !important; color: #334155 !important; border-bottom: 1.5px solid #cbd5e1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .mov-table tbody td { font-size: .72rem !important; padding: 6px 10px !important; color: #334155 !important; }
-        .mov-table tbody tr:nth-child(even) td { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
-        /* Badges */
-        .badge-entrada { background: #dcfce7 !important; color: #166534 !important; border: 1px solid #86efac !important; border-radius: 4px !important; font-size: .65rem !important; padding: 2px 7px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .badge-saida   { background: #fee2e2 !important; color: #991b1b !important; border: 1px solid #fca5a5 !important; border-radius: 4px !important; font-size: .65rem !important; padding: 2px 7px !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
-        /* Obs sem truncar */
-        .obs-text { max-width: none !important; white-space: normal !important; }
-
-        /* Cabeçalho de impressão */
-        #print-header { display: block !important; padding: 0 0 12px; border-bottom: 2px solid #1e293b; margin-bottom: 14px; }
-
-        /* KPIs do cabeçalho */
-        .ph-kpis { display: flex !important; gap: 28px; padding: 8px 12px; background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 6px; margin-top: 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .ph-kpi-val-green { color: #16a34a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .ph-kpi-val-red   { color: #dc2626 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .ph-kpi-val-blue  { color: #1a56db !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
-        /* Rodapé de impressão */
-        #print-footer { justify-content: space-between; padding: 8px 0 0; border-top: 1px solid #e2e8f0; margin-top: 10px; font-size: .62rem; color: #94a3b8; }
-
-        @page { size: A4 landscape; margin: 14mm 12mm; }
-    }
 </style>
 
 {{-- ═══════════════════════════════════════════════
@@ -183,33 +134,36 @@
 
     {{-- ALERTAS --}}
     @if(session('success'))
-    <div class="alert alert-success d-flex align-items-center gap-2 mb-3 no-print" style="border-radius:10px;font-size:.82rem;">
+    <div class="alert alert-success d-flex align-items-center gap-2 mb-3" style="border-radius:10px;font-size:.82rem;">
         <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
     </div>
     @endif
     @if(session('error'))
-    <div class="alert alert-danger d-flex align-items-center gap-2 mb-3 no-print" style="border-radius:10px;font-size:.82rem;">
+    <div class="alert alert-danger d-flex align-items-center gap-2 mb-3" style="border-radius:10px;font-size:.82rem;">
         <i class="bi bi-exclamation-circle-fill"></i> {{ session('error') }}
     </div>
     @endif
     @if($errors->any())
-    <div class="alert alert-danger mb-3 no-print" style="border-radius:10px;font-size:.82rem;">
+    <div class="alert alert-danger mb-3" style="border-radius:10px;font-size:.82rem;">
         <i class="bi bi-exclamation-circle-fill me-2"></i>
         @foreach($errors->all() as $e)<div>{{ $e }}</div>@endforeach
     </div>
     @endif
 
     {{-- CABEÇALHO --}}
-    <div class="page-header-row no-print">
+    <div class="page-header-row">
         <div>
             <div style="font-size:.58rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#94a3b8;margin-bottom:3px;">Armazém</div>
             <h4 class="fw-bold mb-1" style="color:#1e293b;font-size:1.25rem;">Movimentos de Stock</h4>
             <p style="font-size:.75rem;color:#94a3b8;margin:0;">Entradas e saídas de materiais</p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <button class="btn-print" onclick="imprimirRelatorio()">
-                <i class="bi bi-printer-fill"></i> Imprimir Relatório
-            </button>
+            {{-- ── BOTÃO PDF: passa os filtros activos como query string ── --}}
+            <a class="btn-print"
+               href="{{ route('movimentos.pdf', request()->query()) }}"
+               target="_blank">
+                <i class="bi bi-file-earmark-pdf-fill"></i> Exportar PDF
+            </a>
             <button class="btn-primary-dark" onclick="abrirModalNovo()">
                 <i class="bi bi-plus-lg"></i> Registar Movimento
             </button>
@@ -217,7 +171,7 @@
     </div>
 
     {{-- KPIs --}}
-    <div class="kpi-grid no-print">
+    <div class="kpi-grid">
         <div class="kpi-card green">
             <div class="kpi-icon green"><i class="bi bi-arrow-down-circle-fill"></i></div>
             <div>
@@ -242,7 +196,7 @@
     </div>
 
     {{-- FILTROS --}}
-    <div class="filter-card no-print">
+    <div class="filter-card">
         <form method="GET" action="{{ route('movimentos.index') }}">
             <div class="filter-grid">
                 <div>
@@ -289,52 +243,8 @@
     {{-- TABELA --}}
     <div class="table-card">
 
-        {{-- ══ CABEÇALHO DE IMPRESSÃO (oculto no ecrã) ══ --}}
-        <div id="print-header" class="print-only" style="padding: 0 20px 12px;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-                <div>
-                    <div style="font-size:1rem;font-weight:800;color:#1e293b;">
-                        Relatório de Movimentos de Stock
-                    </div>
-                    <div style="font-size:.7rem;color:#64748b;margin-top:2px;">
-                        Fábrica de Explosivos Moçambique, Lda · Gerado em: <strong id="print-data-hora"></strong>
-                    </div>
-                </div>
-                <div style="font-size:.72rem;color:#64748b;text-align:right;line-height:1.7;">
-                    @if(request()->hasAny(['stock_item_id','tipo','responsavel','data_inicio','data_fim']))
-                        <div style="font-weight:700;color:#1e293b;">Filtros aplicados:</div>
-                        @if(request('tipo'))<div>Tipo: <strong>{{ ucfirst(request('tipo')) }}</strong></div>@endif
-                        @if(request('data_inicio'))<div>De: <strong>{{ request('data_inicio') }}</strong></div>@endif
-                        @if(request('data_fim'))<div>Até: <strong>{{ request('data_fim') }}</strong></div>@endif
-                        @if(request('responsavel'))<div>Responsável: <strong>{{ request('responsavel') }}</strong></div>@endif
-                    @else
-                        <div>Todos os movimentos</div>
-                    @endif
-                </div>
-            </div>
-            <div class="ph-kpis">
-                <div>
-                    <span style="display:block;font-size:.6rem;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;font-weight:600;">Total Entradas</span>
-                    <strong class="ph-kpi-val-green" style="font-size:.95rem;">{{ $totalEntradas }}</strong>
-                </div>
-                <div>
-                    <span style="display:block;font-size:.6rem;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;font-weight:600;">Total Saídas</span>
-                    <strong class="ph-kpi-val-red" style="font-size:.95rem;">{{ $totalSaidas }}</strong>
-                </div>
-                <div>
-                    <span style="display:block;font-size:.6rem;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;font-weight:600;">Movimentos Hoje</span>
-                    <strong class="ph-kpi-val-blue" style="font-size:.95rem;">{{ $movimentosHoje }}</strong>
-                </div>
-                <div>
-                    <span style="display:block;font-size:.6rem;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;font-weight:600;">Registos (página)</span>
-                    <strong style="font-size:.95rem;color:#1e293b;">{{ $movimentos->count() }}</strong>
-                </div>
-            </div>
-        </div>
-        {{-- ══ FIM CABEÇALHO IMPRESSÃO ══ --}}
-
-        {{-- Cabeçalho do card (ecrã) --}}
-        <div class="table-card-head no-print">
+        {{-- Cabeçalho do card --}}
+        <div class="table-card-head">
             <div style="display:flex;align-items:center;gap:10px;">
                 <div class="table-card-icon"><i class="bi bi-arrow-left-right"></i></div>
                 <div>
@@ -356,7 +266,7 @@
                         <th style="width:140px;">Responsável</th>
                         <th style="width:200px;">Observações</th>
                         <th style="width:110px;">Data</th>
-                        <th style="width:80px;" class="no-print text-end">Ações</th>
+                        <th style="width:80px;" class="text-end">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -382,7 +292,7 @@
                         </td>
                         <td>
                             <div style="display:flex;align-items:center;gap:7px;">
-                                <div class="avatar no-print">{{ strtoupper(substr($mov->responsavel ?? 'U', 0, 1)) }}</div>
+                                <div class="avatar">{{ strtoupper(substr($mov->responsavel ?? 'U', 0, 1)) }}</div>
                                 <span style="font-size:.78rem;">{{ $mov->responsavel }}</span>
                             </div>
                         </td>
@@ -395,7 +305,7 @@
                             <div style="font-size:.78rem;font-weight:600;">{{ $mov->created_at->format('d/m/Y') }}</div>
                             <div style="font-size:.68rem;color:#94a3b8;">{{ $mov->created_at->format('H:i') }}</div>
                         </td>
-                        <td class="text-end no-print">
+                        <td class="text-end">
                             <div style="display:flex;justify-content:flex-end;gap:4px;">
                                 <button class="btn-outline-sm"
                                     title="Editar"
@@ -431,15 +341,9 @@
             </table>
         </div>
 
-        {{-- Rodapé de impressão --}}
-        <div id="print-footer" class="print-only" style="padding: 0 20px;">
-            <span>Fábrica de Explosivos Moçambique, Lda · Sistema de Gestão de Stock</span>
-            <span id="print-footer-data"></span>
-        </div>
-
         {{-- Paginação --}}
         @if($movimentos->hasPages())
-        <div class="pagination-wrap no-print">
+        <div class="pagination-wrap">
             <span>A mostrar {{ $movimentos->firstItem() }}–{{ $movimentos->lastItem() }} de {{ $movimentos->total() }}</span>
             <div>{{ $movimentos->links() }}</div>
         </div>
@@ -453,7 +357,7 @@
 {{-- ═══════════════════════════════════════════════
      MODAL — NOVO MOVIMENTO
 ═══════════════════════════════════════════════ --}}
-<div class="modal-overlay no-print" id="modalNovo">
+<div class="modal-overlay" id="modalNovo">
     <div class="modal-box">
         <div class="modal-header">
             <div>
@@ -554,7 +458,7 @@
 {{-- ═══════════════════════════════════════════════
      MODAL — EDITAR MOVIMENTO
 ═══════════════════════════════════════════════ --}}
-<div class="modal-overlay no-print" id="modalEditar">
+<div class="modal-overlay" id="modalEditar">
     <div class="modal-box">
         <div class="modal-header">
             <div>
@@ -590,7 +494,7 @@
 {{-- ═══════════════════════════════════════════════
      MODAL — CONFIRMAR ANULAÇÃO
 ═══════════════════════════════════════════════ --}}
-<div class="modal-overlay no-print" id="modalConfirmar">
+<div class="modal-overlay" id="modalConfirmar">
     <div style="display:flex;align-items:center;justify-content:center;width:100%;">
         <div class="confirm-box">
             <div class="confirm-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
@@ -707,29 +611,6 @@ function confirmarAnulacao(id, tipo, produto, quantidade) {
     document.getElementById('modalConfirmar').classList.add('show');
     document.body.style.overflow = 'hidden';
 }
-
-/* ══ Impressão ═════════════════════════════════════
-   Preenche data/hora — o CSS trata do show/hide.
-══════════════════════════════════════════════════ */
-function preencherDataHora() {
-    var agora = new Date();
-    var txt = agora.toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', year: 'numeric' })
-            + ' às '
-            + agora.toLocaleTimeString('pt-MZ', { hour: '2-digit', minute: '2-digit' });
-
-    var el1 = document.getElementById('print-data-hora');
-    var el2 = document.getElementById('print-footer-data');
-    if (el1) el1.textContent = txt;
-    if (el2) el2.textContent = txt;
-}
-
-function imprimirRelatorio() {
-    preencherDataHora();
-    window.print();
-}
-
-/* Funciona também com Ctrl+P directo */
-window.addEventListener('beforeprint', preencherDataHora);
 
 /* ══ Abrir modal se houver erros de validação ══════ */
 @if($errors->any())

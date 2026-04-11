@@ -345,7 +345,7 @@
             {{-- Header vermelho FEM --}}
             <div class="modal-header-fem d-flex justify-content-between align-items-center d-print-none">
                 <div>
-                    <h6 class="text-white fw-bold mb-0"><i class="bi bi-file-earmark-text me-2"></i>Ficha de Requisição</h6>
+                    <h6 class="text-white fw-bold mb-0"><i class="bi bi-file-earmark-text me-2"></i>Ficha de Requisição interna</h6>
                     <span class="text-white opacity-75" style="font-size:.7rem;">Nº <span id="modal-id-header"></span></span>
                 </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>

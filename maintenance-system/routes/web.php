@@ -61,12 +61,15 @@ Route::middleware('auth')->group(function () {
 
     // ── Movimentos de Armazém ───────────────────────────────
     Route::middleware('permission:acesso movimentos')->group(function () {
+Route::get('/movimentos/pdf', [MovimentoArmazemController::class, 'exportPdf'])->name('movimentos.pdf');
         Route::get   ('/movimentos',             [MovimentoArmazemController::class, 'index'])  ->name('movimentos.index');
         Route::post  ('/movimentos',             [MovimentoArmazemController::class, 'store'])  ->name('movimentos.store');
         Route::put   ('/movimentos/{movimento}', [MovimentoArmazemController::class, 'update']) ->name('movimentos.update');
         Route::delete('/movimentos/{movimento}', [MovimentoArmazemController::class, 'destroy'])->name('movimentos.destroy');
         Route::get   ('/api/produtos/{produto}/stock', [MovimentoArmazemController::class, 'stockAtual'])->name('api.produto.stock');
-    });
+    
+
+        });
 
 
 // Exportar ANTES do resource (para não conflituar com {viatura})

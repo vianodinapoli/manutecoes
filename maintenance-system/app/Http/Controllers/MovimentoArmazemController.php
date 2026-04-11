@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class MovimentoArmazemController extends Controller
 {
@@ -44,6 +45,49 @@ class MovimentoArmazemController extends Controller
         return view('armazem.movimentos.index', compact(
             'movimentos', 'stockItems', 'totalEntradas', 'totalSaidas', 'movimentosHoje'
         ));
+    }
+
+    /*──────────────────────────────────────
+     | EXPORT PDF — relatório de movimentos
+    ──────────────────────────────────────*/
+    public function exportPdf(Request $request)
+    {
+        $query = MovimentoArmazem::with('stockItem')
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('tipo')) {
+            $query->where('tipo', $request->tipo);
+        }
+        if ($request->filled('stock_item_id')) {
+            $query->where('stock_item_id', $request->stock_item_id);
+        }
+        if ($request->filled('responsavel')) {
+            $query->where('responsavel', 'like', '%' . $request->responsavel . '%');
+        }
+        if ($request->filled('data_inicio')) {
+            $query->whereDate('created_at', '>=', $request->data_inicio);
+        }
+        if ($request->filled('data_fim')) {
+            $query->whereDate('created_at', '<=', $request->data_fim);
+        }
+
+        $movimentos     = $query->get();
+        $totalEntradas  = $movimentos->where('tipo', 'entrada')->count();
+        $totalSaidas    = $movimentos->where('tipo', 'saida')->count();
+        $movimentosHoje = $movimentos->filter(fn($m) => $m->created_at->isToday())->count();
+
+        $filtros = [
+            'tipo'        => $request->tipo,
+            'responsavel' => $request->responsavel,
+            'data_inicio' => $request->data_inicio,
+            'data_fim'    => $request->data_fim,
+        ];
+
+        $pdf = Pdf::loadView('armazem.movimentos.pdf', compact(
+            'movimentos', 'totalEntradas', 'totalSaidas', 'movimentosHoje', 'filtros'
+        ))->setPaper('a4', 'portrait');
+
+        return $pdf->download('movimentos-' . now()->format('Ymd-Hi') . '.pdf');
     }
 
     /*──────────────────────────────────────
@@ -88,14 +132,14 @@ class MovimentoArmazemController extends Controller
                     'user_id'       => Auth::id(),
                 ]);
 
-               if (class_exists(\App\Models\Activity::class)) {
-    \App\Models\Activity::create([
-        'description' => ($validated['tipo'] === 'saida' ? 'Saída' : 'Entrada') . ' de ' . $validated['quantidade'] . ' × ' . $item->nome,
-        'type'        => 'stock',
-        'user_name'   => $validated['responsavel'],
-        'status'      => 'concluido',
-    ]);
-}
+                if (class_exists(\App\Models\Activity::class)) {
+                    \App\Models\Activity::create([
+                        'description' => ($validated['tipo'] === 'saida' ? 'Saída' : 'Entrada') . ' de ' . $validated['quantidade'] . ' × ' . $item->nome,
+                        'type'        => 'stock',
+                        'user_name'   => $validated['responsavel'],
+                        'status'      => 'concluido',
+                    ]);
+                }
             });
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());
