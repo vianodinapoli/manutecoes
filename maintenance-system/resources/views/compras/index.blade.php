@@ -227,22 +227,30 @@
                         </span>
                     </td>
                     <td class="text-center">
-                        <form action="{{ route('compras.status', $compra->id) }}" method="POST" class="m-0">
-                            @csrf @method('PATCH')
-                            <select name="status" onchange="this.form.submit()"
-                                    class="badge-status {{ $status_color }} shadow-sm">
-                                @if(auth()->user()->hasRole('super-admin'))
-                                    @foreach(['Pendente','Em processo','Aprovado','Rejeitado','Finalizado'] as $opt)
-                                    <option value="{{ $opt }}" {{ $compra->status == $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                                    @endforeach
-                                @else
-                                    <option value="{{ $compra->status }}" selected>{{ $compra->status }}</option>
-                                    <option value="Em processo">Em processo</option>
-                                    <option value="Finalizado">Finalizado</option>
-                                @endif
-                            </select>
-                        </form>
-                    </td>
+    @if(auth()->user()->hasRole('super-admin'))
+        {{-- Super admin — dropdown completo --}}
+        <form action="{{ route('compras.status', $compra->id) }}" method="POST" class="m-0">
+            @csrf @method('PATCH')
+            <select name="status" onchange="this.form.submit()"
+                    class="badge-status {{ $status_color }} shadow-sm">
+                @foreach(['Pendente','Em processo','Aprovado','Rejeitado','Finalizado'] as $opt)
+                <option value="{{ $opt }}" {{ $compra->status == $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                @endforeach
+            </select>
+        </form>
+    @else
+        {{-- Gestor e utilizador — apenas vêem o badge, não podem alterar --}}
+        <span class="badge-status {{ $status_color }} shadow-sm d-inline-block text-center"
+              style="cursor:default;pointer-events:none;">
+            {{ $compra->status }}
+        </span>
+    @endif
+    @if($compra->status_updated_by)
+    <div class="status-updated-by">
+        <i class="bi bi-person-check"></i> {{ $compra->status_updated_by }}
+    </div>
+    @endif
+</td>
                     <td class="text-center">
                         @if($compra->attachments->count() > 0 || $compra->items->count() > 0)
                         <button type="button"
@@ -466,7 +474,9 @@
 <script src="https://cdn.datatables.net/v/bs5/dt-2.0.8/datatables.min.js"></script>
 
 <script>
+
 var _deleteFormId = null;
+var podeEditarItens = {{ auth()->user()->hasRole('super-admin') || auth()->user()->hasRole('gestor') ? 'true' : 'false' }};
 
 function showToast(){ var t=document.getElementById('toastSuccess'); t.classList.add('show'); setTimeout(closeToast,4000); }
 function closeToast(){ document.getElementById('toastSuccess').classList.remove('show'); }
@@ -550,39 +560,54 @@ $(document).ready(function(){
 
     /* ── Renderizar linhas de itens ── */
     function renderItens(itens) {
-        var html = '';
-        if (!itens.length) {
-            html = '<tr><td colspan="4" class="text-center text-muted py-3">Sem itens</td></tr>';
-        } else {
-            itens.forEach(function(item){
-                var st       = item.item_status || null;
-                var rowClass = st === 'rejected' ? 'item-row-rejected' : (st === 'purchased' ? 'item-row-purchased' : '');
-                var rejClass = st === 'rejected'  ? 'active-rejected'  : '';
-                var purClass = st === 'purchased' ? 'active-purchased' : '';
-                var printBadge = '';
-                if (st === 'rejected')  printBadge = ' <span class="item-status-print text-danger d-none d-print-inline">✗ Não comprado</span>';
-                if (st === 'purchased') printBadge = ' <span class="item-status-print text-success d-none d-print-inline">✓ Comprado</span>';
+    var html = '';
+    if (!itens.length) {
+        html = '<tr><td colspan="4" class="text-center text-muted py-3">Sem itens</td></tr>';
+    } else {
+        itens.forEach(function(item){
+            var st       = item.item_status || null;
+            var rowClass = st === 'rejected' ? 'item-row-rejected' : (st === 'purchased' ? 'item-row-purchased' : '');
+            var rejClass = st === 'rejected'  ? 'active-rejected'  : '';
+            var purClass = st === 'purchased' ? 'active-purchased' : '';
 
-                html +=
-                    '<tr class="text-center ' + rowClass + '" data-item-id="' + item.id + '" data-item-status="' + (st||'') + '">' +
-                        '<td class="text-start ps-3">' + item.item_name + printBadge + '</td>' +
-                        '<td class="fw-bold">' + item.quantity + '</td>' +
-                        '<td>' + (item.destino || '—') + '</td>' +
-                        '<td class="d-print-none">' +
-                            '<div class="d-flex justify-content-center gap-1">' +
-                                '<button class="item-status-btn ' + rejClass + '" data-action="rejected" data-item-id="' + item.id + '" title="Não vai ser comprado">' +
-                                    '<i class="bi bi-ban"></i>' +
-                                '</button>' +
-                                '<button class="item-status-btn ' + purClass + '" data-action="purchased" data-item-id="' + item.id + '" title="Já foi comprado">' +
-                                    '<i class="bi bi-check2-circle"></i>' +
-                                '</button>' +
-                            '</div>' +
-                        '</td>' +
-                    '</tr>';
-            });
-        }
-        $('#modal-tabela-itens').html(html);
+            var printBadge = '';
+            if (st === 'rejected')  printBadge = ' <span class="item-status-print text-danger d-none d-print-inline">✗ Não comprado</span>';
+            if (st === 'purchased') printBadge = ' <span class="item-status-print text-success d-none d-print-inline">✓ Comprado</span>';
+
+            var updatedBy = item.item_status_updated_by
+                ? '<div class="updated-by-tag"><i class="bi bi-person-check"></i>' + item.item_status_updated_by + '</div>'
+                : '';
+
+            // Botões apenas para super-admin e gestor
+            var estadoCell = '';
+            if (podeEditarItens) {
+                estadoCell =
+                    '<div class="d-flex justify-content-center gap-1">' +
+                        '<button class="item-status-btn ' + rejClass + '" data-action="rejected" data-item-id="' + item.id + '" title="Não vai ser comprado">' +
+                            '<i class="bi bi-ban"></i>' +
+                        '</button>' +
+                        '<button class="item-status-btn ' + purClass + '" data-action="purchased" data-item-id="' + item.id + '" title="Já foi comprado">' +
+                            '<i class="bi bi-check2-circle"></i>' +
+                        '</button>' +
+                    '</div>';
+            } else {
+                // Utilizador comum — apenas vê o estado, não pode alterar
+                if (st === 'rejected')  estadoCell = '<span class="badge" style="background:#fce8e6;color:#c60a1a;border:1px solid #f8b8b8;font-size:.65rem;"><i class="bi bi-ban me-1"></i>Não comprado</span>';
+                else if (st === 'purchased') estadoCell = '<span class="badge" style="background:#e6f4ea;color:#198754;border:1px solid #c3e6cb;font-size:.65rem;"><i class="bi bi-check2-circle me-1"></i>Comprado</span>';
+                else estadoCell = '<span class="text-muted" style="font-size:.72rem;">Pendente</span>';
+            }
+
+            html +=
+                '<tr class="text-center ' + rowClass + '" data-item-id="' + item.id + '" data-item-status="' + (st||'') + '">' +
+                    '<td class="text-start ps-3">' + item.item_name + printBadge + updatedBy + '</td>' +
+                    '<td class="fw-bold">' + item.quantity + '</td>' +
+                    '<td>' + (item.destino || '—') + '</td>' +
+                    '<td class="d-print-none">' + estadoCell + '</td>' +
+                '</tr>';
+        });
     }
+    $('#modal-tabela-itens').html(html);
+}
 
     /* ── Barra de progresso ── */
     function renderProgresso(itens) {
