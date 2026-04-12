@@ -10,7 +10,7 @@
                     <a href="{{ route('dashboard') }}">
     <img src="{{ asset('images/bymozelogo.png') }}" 
          class="h-12 w-auto object-contain" 
-         alt="{{ config('app.name', 'Laravel') }}">
+         alt="{{ config('app.name', 'FEM - Fábrica de Explosivos') }}">
 </a>
                 </div>
 

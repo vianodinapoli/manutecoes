@@ -1484,7 +1484,7 @@
                         var purClass = st === 'purchased' ? 'active-purchased' : '';
                         var printBadge = '';
                         if (st === 'rejected') printBadge =
-                            ' <span class="item-status-print text-danger d-none d-print-inline">✗ Não comprado</span>';
+                            ' <span class="item-status-print text-danger d-none d-print-inline">✗ Não será comprado</span>';
                         if (st === 'purchased') printBadge =
                             ' <span class="item-status-print text-success d-none d-print-inline">✓ Comprado</span>';
                         var updatedBy = item.item_status_updated_by ?
@@ -1504,7 +1504,7 @@
                                 '</div>';
                         } else {
                             if (st === 'rejected') estadoCell =
-                                '<span class="badge" style="background:#fce8e6;color:#c60a1a;border:1px solid #f8b8b8;font-size:.65rem;"><i class="bi bi-ban me-1"></i>Não comprado</span>';
+                                '<span class="badge" style="background:#fce8e6;color:#c60a1a;border:1px solid #f8b8b8;font-size:.65rem;"><i class="bi bi-ban me-1"></i>Não será comprado</span>';
                             else if (st === 'purchased') estadoCell =
                                 '<span class="badge" style="background:#e6f4ea;color:#198754;border:1px solid #c3e6cb;font-size:.65rem;"><i class="bi bi-check2-circle me-1"></i>Comprado</span>';
                             else estadoCell =
