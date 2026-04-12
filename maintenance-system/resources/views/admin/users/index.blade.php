@@ -19,6 +19,7 @@
     .avatar-lg { width:38px; height:38px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; font-size:.85rem; font-weight:700; color:#475569; flex-shrink:0; }
     .role-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:.68rem; font-weight:700; border:1px solid; }
     .role-badge.admin { background:#fef2f2; color:#991b1b; border-color:#fecaca; }
+    .role-badge.gestor { background:#fffbeb; color:#92400e; border-color:#fde68a; }
     .role-badge.user  { background:#f1f5f9; color:#475569; border-color:#e2e8f0; }
     .perm-chips { display:flex; flex-wrap:wrap; gap:4px; }
     .perm-chip { display:inline-flex; align-items:center; padding:2px 7px; border-radius:5px; font-size:.62rem; font-weight:600; background:#eff6ff; color:#1a56db; border:1px solid #bfdbfe; white-space:nowrap; }
@@ -65,11 +66,11 @@
     @media (max-width:768px) {
         .form-row-2 { grid-template-columns:1fr; }
         .modulos-grid { grid-template-columns:repeat(2,1fr); }
-        .usr-table th:nth-child(3), .usr-table td:nth-child(3) { display:none; }
+        .usr-table th:nth-child(4), .usr-table td:nth-child(4) { display:none; }
     }
     @media (max-width:480px) {
         .modulos-grid { grid-template-columns:1fr 1fr; }
-        .usr-table th:nth-child(2), .usr-table td:nth-child(2) { display:none; }
+        .usr-table th:nth-child(3), .usr-table td:nth-child(3) { display:none; }
     }
 </style>
 
@@ -96,6 +97,18 @@
         </div>
     </div>
 
+    {{-- Flash --}}
+    @if(session('success'))
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 16px;font-size:.8rem;color:#166534;display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+        <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
+    </div>
+    @endif
+    @if(session('error'))
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 16px;font-size:.8rem;color:#991b1b;display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+        <i class="bi bi-exclamation-circle-fill"></i> {{ session('error') }}
+    </div>
+    @endif
+
     {{-- TABELA --}}
     <div class="table-card">
         <div class="table-card-head">
@@ -110,8 +123,9 @@
             <table class="usr-table">
                 <thead>
                     <tr>
-                        <th style="width:260px;">Utilizador</th>
-                        <th style="width:130px;">Cargo</th>
+                        <th style="width:220px;">Utilizador</th>
+                        <th style="width:160px;">Departamento / Função</th>
+                        <th style="width:120px;">Cargo</th>
                         <th>Permissões Activas</th>
                         <th style="width:110px;" class="text-end pe-4">Ações</th>
                     </tr>
@@ -119,11 +133,13 @@
                 <tbody>
                     @foreach($users as $user)
                     @php
-                        $isSelf       = $user->id === auth()->id();
-                        $isSuperAdmin = $user->hasRole('super-admin');
+                        $isSelf        = $user->id === auth()->id();
+                        $isSuperAdmin  = $user->hasRole('super-admin');
+                        $isGestor      = $user->hasRole('gestor');
                         $permsDirectas = $user->getDirectPermissions()->pluck('name');
                     @endphp
                     <tr>
+                        {{-- Utilizador --}}
                         <td>
                             <div style="display:flex;align-items:center;gap:10px;">
                                 <div class="avatar-lg">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
@@ -133,16 +149,35 @@
                                         @if($isSelf)<span style="font-size:.62rem;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:4px;padding:1px 6px;margin-left:4px;">Você</span>@endif
                                     </div>
                                     <div style="font-size:.72rem;color:#94a3b8;">{{ $user->email }}</div>
+                                    <div style="font-size:.68rem;color:#cbd5e1;margin-top:1px;">
+                                        <i class="bi bi-calendar3 me-1"></i>{{ $user->created_at->format('d/m/Y') }}
+                                    </div>
                                 </div>
                             </div>
                         </td>
+
+                        {{-- Departamento / Função --}}
+                        <td>
+                            <div style="font-size:.8rem;font-weight:600;color:#334155;">
+                                {{ $user->departamento ?? '—' }}
+                            </div>
+                            <div style="font-size:.7rem;color:#94a3b8;">
+                                {{ $user->funcao ?? '—' }}
+                            </div>
+                        </td>
+
+                        {{-- Cargo --}}
                         <td>
                             @if($isSuperAdmin)
-                            <span class="role-badge admin"><i class="bi bi-shield-check"></i> Super Admin</span>
+                                <span class="role-badge admin"><i class="bi bi-shield-check"></i> Super Admin</span>
+                            @elseif($isGestor)
+                                <span class="role-badge gestor"><i class="bi bi-briefcase"></i> Gestor</span>
                             @else
-                            <span class="role-badge user"><i class="bi bi-person"></i> Utilizador</span>
+                                <span class="role-badge user"><i class="bi bi-person"></i> Utilizador</span>
                             @endif
                         </td>
+
+                        {{-- Permissões --}}
                         <td>
                             <div class="perm-chips">
                                 @if($isSuperAdmin)
@@ -156,6 +191,8 @@
                                 @endif
                             </div>
                         </td>
+
+                        {{-- Ações --}}
                         <td class="text-end pe-4">
                             <div style="display:flex;justify-content:flex-end;gap:5px;">
                                 <button class="btn-edit" onclick="abrirEditar({{ $user->id }})">
@@ -173,12 +210,15 @@
                             </div>
                         </td>
                     </tr>
+
                     <script>
                         window._userData = window._userData || {};
                         window._userData[{{ $user->id }}] = {
                             id:           {{ $user->id }},
                             name:         "{{ addslashes($user->name) }}",
                             email:        "{{ addslashes($user->email) }}",
+                            departamento: "{{ addslashes($user->departamento ?? '') }}",
+                            funcao:       "{{ addslashes($user->funcao ?? '') }}",
                             role:         "{{ $user->roles->first()?->name ?? 'utilizador' }}",
                             isSelf:       {{ $isSelf ? 'true' : 'false' }},
                             isSuperAdmin: {{ $isSuperAdmin ? 'true' : 'false' }},
@@ -225,6 +265,19 @@
                         <label class="form-label-sm">Email <span class="required-star">*</span></label>
                         <input type="email" name="email" class="form-input" required placeholder="email@exemplo.com"
                                value="{{ old('email') }}">
+                    </div>
+                </div>
+
+                <div class="form-row-2 mb-14">
+                    <div>
+                        <label class="form-label-sm">Departamento</label>
+                        <input type="text" name="departamento" class="form-input" placeholder="Ex: Produção"
+                               value="{{ old('departamento') }}">
+                    </div>
+                    <div>
+                        <label class="form-label-sm">Função</label>
+                        <input type="text" name="funcao" class="form-input" placeholder="Ex: Técnico"
+                               value="{{ old('funcao') }}">
                     </div>
                 </div>
 
@@ -311,6 +364,17 @@
 
                 <div class="form-row-2 mb-14">
                     <div>
+                        <label class="form-label-sm">Departamento</label>
+                        <input type="text" name="departamento" id="edit-departamento" class="form-input" placeholder="Ex: Produção">
+                    </div>
+                    <div>
+                        <label class="form-label-sm">Função</label>
+                        <input type="text" name="funcao" id="edit-funcao" class="form-input" placeholder="Ex: Técnico">
+                    </div>
+                </div>
+
+                <div class="form-row-2 mb-14">
+                    <div>
                         <label class="form-label-sm">Nova Password <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#94a3b8;">(vazio = não altera)</span></label>
                         <input type="password" name="password" id="edit-password" class="form-input" autocomplete="new-password">
                     </div>
@@ -361,9 +425,7 @@
 </div>
 
 <script>
-    // ── Abrir/fechar ────────────────────────────────────
     function abrirCriar() {
-        // Limpar form
         document.getElementById('formCriar').reset();
         document.querySelectorAll('#modalCriar .modulo-check').forEach(function(el) {
             el.classList.remove('checked');
@@ -378,12 +440,13 @@
         if (!u) return;
 
         document.getElementById('formEditar').action = '/admin/users/' + u.id;
-        document.getElementById('edit-name').value   = u.name;
-        document.getElementById('edit-email').value  = u.email;
-        document.getElementById('edit-password').value = '';
+        document.getElementById('edit-name').value         = u.name;
+        document.getElementById('edit-email').value        = u.email;
+        document.getElementById('edit-departamento').value = u.departamento || '';
+        document.getElementById('edit-funcao').value       = u.funcao       || '';
+        document.getElementById('edit-password').value     = '';
         document.getElementById('modal-subtitle').textContent = u.email;
-
-        document.getElementById('edit-role').value = u.role;
+        document.getElementById('edit-role').value         = u.role;
 
         // Desmarcar tudo
         document.querySelectorAll('#modalEditar [name="permissoes[]"]').forEach(function(cb) {
@@ -406,13 +469,9 @@
         document.body.style.overflow = '';
     }
 
-    // ── Toggle permissões ───────────────────────────────
-    function togglePermissoesCriar(role) {
-        _togglePerms('#permissoes-section-criar', role);
-    }
-    function togglePermissoesEditar(role) {
-        _togglePerms('#permissoes-section-editar', role);
-    }
+    function togglePermissoesCriar(role) { _togglePerms('#permissoes-section-criar', role); }
+    function togglePermissoesEditar(role) { _togglePerms('#permissoes-section-editar', role); }
+
     function _togglePerms(sectionSelector, role) {
         var inputs = document.querySelectorAll(sectionSelector + ' input[type=checkbox]');
         if (role === 'super-admin') {
@@ -432,19 +491,15 @@
         }
     }
 
-    // ── Fechar ao clicar fora / ESC ─────────────────────
     ['modalCriar','modalEditar'].forEach(function(id) {
         document.getElementById(id).addEventListener('click', function(e) {
             if (e.target === this) fecharModal(id);
         });
     });
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            ['modalCriar','modalEditar'].forEach(fecharModal);
-        }
+        if (e.key === 'Escape') { ['modalCriar','modalEditar'].forEach(fecharModal); }
     });
 
-    // ── Reabrir modal criar se houver erros de validação ──
     @if($errors->any() && old('_modal') === 'criar')
         document.addEventListener('DOMContentLoaded', function() { abrirCriar(); });
     @endif

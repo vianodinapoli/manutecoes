@@ -22,6 +22,7 @@ class UserController extends Controller
         'acesso viaturas'    => ['label' => 'Viaturas',           'icon' => 'fa-truck-moving'],
         'acesso discharges'  => ['label' => 'Discharges',         'icon' => 'fa-sign-out-alt'],
         'acesso caixa'       => ['label' => 'Caixa e Bancos',     'icon' => 'fa-cash-register'],
+        'emitir requisicoes' => ['label' => 'Emitir Requisições', 'icon' => 'fa-file-arrow-up'],
     ];
 
     public function index()
@@ -37,70 +38,76 @@ class UserController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'role'     => 'required|string|exists:roles,name',
-        ]);
+{
+    $request->validate([
+        'name'         => 'required|string|max:255',
+        'email'        => 'required|email|unique:users,email',
+        'password'     => 'required|string|min:8|confirmed',
+        'role'         => 'required|string|exists:roles,name',
+        'departamento' => 'nullable|string|max:255',
+        'funcao'       => 'nullable|string|max:255',
+    ]);
 
-        $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+    $user = User::create([
+        'name'         => $request->name,
+        'email'        => $request->email,
+        'password'     => Hash::make($request->password),
+        'departamento' => $request->departamento,
+        'funcao'       => $request->funcao,
+    ]);
 
-        $user->syncRoles([$request->role]);
+    $user->syncRoles([$request->role]);
 
-        if ($request->role !== 'super-admin') {
-            $perms = array_intersect(
-                $request->input('permissoes', []),
-                array_keys($this->modulos)
-            );
-            $user->syncPermissions($perms);
-        }
-
-        return redirect()->route('admin.users.index')
-            ->with('success', "Utilizador {$user->name} criado com sucesso.");
+    if ($request->role !== 'super-admin') {
+        $perms = array_intersect(
+            $request->input('permissoes', []),
+            array_keys($this->modulos)
+        );
+        $user->syncPermissions($perms);
     }
 
-    public function update(Request $request, User $user)
-    {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8|confirmed',
-            'role'     => 'required|string|exists:roles,name',
-        ]);
+    return redirect()->route('admin.users.index')
+        ->with('success', "Utilizador {$user->name} criado com sucesso.");
+}
 
-        $user->update([
-            'name'  => $request->name,
-            'email' => $request->email,
-            ...($request->filled('password')
-                ? ['password' => Hash::make($request->password)]
-                : []),
-        ]);
+public function update(Request $request, User $user)
+{
+    $request->validate([
+        'name'         => 'required|string|max:255',
+        'email'        => 'required|email|unique:users,email,' . $user->id,
+        'password'     => 'nullable|string|min:8|confirmed',
+        'role'         => 'required|string|exists:roles,name',
+        'departamento' => 'nullable|string|max:255',
+        'funcao'       => 'nullable|string|max:255',
+    ]);
 
-        $user->syncRoles([$request->role]);
+    $user->update([
+        'name'         => $request->name,
+        'email'        => $request->email,
+        'departamento' => $request->departamento,
+        'funcao'       => $request->funcao,
+        ...($request->filled('password')
+            ? ['password' => Hash::make($request->password)]
+            : []),
+    ]);
 
-        if ($request->role !== 'super-admin') {
-            $perms = array_intersect(
-                $request->input('permissoes', []),
-                array_keys($this->modulos)
-            );
-            $user->syncPermissions($perms);
-        } else {
-            // Super-admin não precisa de permissões directas
-            $user->syncPermissions([]);
-        }
+    $user->syncRoles([$request->role]);
 
-        // Limpar cache de permissões
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
-
-        return redirect()->route('admin.users.index')
-            ->with('success', "Utilizador {$user->name} actualizado.");
+    if ($request->role !== 'super-admin') {
+        $perms = array_intersect(
+            $request->input('permissoes', []),
+            array_keys($this->modulos)
+        );
+        $user->syncPermissions($perms);
+    } else {
+        $user->syncPermissions([]);
     }
+
+    app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+    return redirect()->route('admin.users.index')
+        ->with('success', "Utilizador {$user->name} actualizado.");
+}
 
     public function destroy(User $user)
     {

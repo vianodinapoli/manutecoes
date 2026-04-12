@@ -28,6 +28,7 @@ class RoleAndPermissionSeeder extends Seeder
             'adicionar registros',
             'editar status',
             'gerir utilizadores',
+            'emitir requisicoes',
         ];
 
         foreach ($permissoes as $perm) {
