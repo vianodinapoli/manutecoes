@@ -518,37 +518,46 @@
             @endcanany
 
             {{-- Pedidos / Requisições --}}
-            @can('acesso pedidos')
-            <div class="sb-dropdown"
-                 x-data="{ open: {{ request()->routeIs('suppliers.*', 'compras.*', 'requisicao.*', 'requisicoes.*') ? 'true' : 'false' }} }">
-                <div class="sb-dropdown-trigger" :class="open ? 'open' : ''" @click="open = !open">
-                    <i class="fas fa-shopping-cart ni-icon"></i>
-                    <span class="ni-text">Pedidos / Requisições</span>
-                    <i class="fas fa-chevron-right sb-chevron"></i>
-                </div>
-                <div x-show="open" x-cloak x-collapse class="sb-dropdown-items">
-                    <x-nav-link :href="route('compras.index')" :active="request()->routeIs('compras.index')" class="nav-item">
-                        <i class="fas fa-list-ul ni-icon"></i><span class="ni-text">Pedidos Internos</span>
-                    </x-nav-link>
-                    <x-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')" class="nav-item">
-                        <i class="fas fa-truck ni-icon"></i><span class="ni-text">Fornecedores</span>
-                    </x-nav-link>
-                    <x-nav-link :href="route('requisicoes.create')" :active="request()->routeIs('requisicoes.create')" class="nav-item">
-                        <i class="fas fa-plus-circle ni-icon"></i><span class="ni-text">Nova Requisição</span>
-                    </x-nav-link>
-                    <x-nav-link :href="route('requisicoes.index')" :active="request()->routeIs('requisicoes.index')" class="nav-item">
-                        <i class="fas fa-list ni-icon"></i><span class="ni-text">Lista de Requisições</span>
-                    </x-nav-link>
-                </div>
-                <div class="sb-flyout">
-                    <div class="sb-flyout-label">Pedidos / Requisições</div>
-                    <a href="{{ route('compras.index') }}"><i class="fas fa-list-ul"></i> Pedidos Internos</a>
-                    <a href="{{ route('suppliers.index') }}"><i class="fas fa-truck"></i> Fornecedores</a>
-                    <a href="{{ route('requisicoes.create') }}"><i class="fas fa-plus-circle"></i> Nova Requisição</a>
-                    <a href="{{ route('requisicoes.index') }}"><i class="fas fa-list"></i> Lista de Requisições</a>
-                </div>
-            </div>
-            @endcan
+@can('acesso pedidos')
+<div class="sb-dropdown"
+     x-data="{ open: {{ request()->routeIs('suppliers.*', 'compras.*', 'requisicao.*', 'requisicoes.*') ? 'true' : 'false' }} }">
+    <div class="sb-dropdown-trigger" :class="open ? 'open' : ''" @click="open = !open">
+        <i class="fas fa-shopping-cart ni-icon"></i>
+        <span class="ni-text">Pedidos / Requisições</span>
+        <i class="fas fa-chevron-right sb-chevron"></i>
+    </div>
+    <div x-show="open" x-cloak x-collapse class="sb-dropdown-items">
+
+        {{-- Todos com acesso pedidos vêem Pedidos Internos --}}
+        <x-nav-link :href="route('compras.index')" :active="request()->routeIs('compras.index')" class="nav-item">
+            <i class="fas fa-list-ul ni-icon"></i><span class="ni-text">Pedidos Internos</span>
+        </x-nav-link>
+
+        {{-- Apenas super-admin e gestor vêem o resto --}}
+        @if(auth()->user()->hasRole('super-admin') || auth()->user()->hasRole('gestor'))
+        <x-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')" class="nav-item">
+            <i class="fas fa-truck ni-icon"></i><span class="ni-text">Fornecedores</span>
+        </x-nav-link>
+        <x-nav-link :href="route('requisicoes.create')" :active="request()->routeIs('requisicoes.create')" class="nav-item">
+            <i class="fas fa-plus-circle ni-icon"></i><span class="ni-text">Nova Requisição</span>
+        </x-nav-link>
+        <x-nav-link :href="route('requisicoes.index')" :active="request()->routeIs('requisicoes.index')" class="nav-item">
+            <i class="fas fa-list ni-icon"></i><span class="ni-text">Lista de Requisições</span>
+        </x-nav-link>
+        @endif
+
+    </div>
+    <div class="sb-flyout">
+        <div class="sb-flyout-label">Pedidos / Requisições</div>
+        <a href="{{ route('compras.index') }}"><i class="fas fa-list-ul"></i> Pedidos Internos</a>
+        @if(auth()->user()->hasRole('super-admin') || auth()->user()->hasRole('gestor'))
+        <a href="{{ route('suppliers.index') }}"><i class="fas fa-truck"></i> Fornecedores</a>
+        <a href="{{ route('requisicoes.create') }}"><i class="fas fa-plus-circle"></i> Nova Requisição</a>
+        <a href="{{ route('requisicoes.index') }}"><i class="fas fa-list"></i> Lista de Requisições</a>
+        @endif
+    </div>
+</div>
+@endcan
 
             {{-- Combustível --}}
             @can('acesso combustivel')
