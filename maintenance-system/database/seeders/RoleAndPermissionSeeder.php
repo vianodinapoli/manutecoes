@@ -15,7 +15,6 @@ class RoleAndPermissionSeeder extends Seeder
 
         // ── 1. Todas as permissões ──
         $permissoes = [
-            // Acesso a módulos
             'acesso dashboard',
             'acesso equipamentos',
             'acesso manutencoes',
@@ -24,7 +23,8 @@ class RoleAndPermissionSeeder extends Seeder
             'acesso pedidos',
             'acesso combustivel',
             'acesso discharges',
-            // Acções
+            'acesso viaturas',
+            'acesso caixa',
             'adicionar registros',
             'editar status',
             'gerir utilizadores',
@@ -36,34 +36,20 @@ class RoleAndPermissionSeeder extends Seeder
 
         // ── 2. Roles ──
 
-        // Super Admin — acesso total
+        // Super Admin — acesso total, único com tudo
         $superAdmin = Role::firstOrCreate(['name' => 'super-admin']);
         $superAdmin->syncPermissions(Permission::all());
 
-        // Gestor — acesso a tudo excepto gerir utilizadores
+        // Gestor — apenas dashboard por defeito, resto atribuído individualmente
         $gestor = Role::firstOrCreate(['name' => 'gestor']);
         $gestor->syncPermissions([
             'acesso dashboard',
-            'acesso equipamentos',
-            'acesso manutencoes',
-            'acesso stock',
-            'acesso movimentos',
-            'acesso pedidos',
-            'acesso combustivel',
-            'acesso discharges',
-            'adicionar registros',
-            'editar status',
         ]);
 
-        // Utilizador comum — acesso básico
+        // Utilizador — apenas dashboard por defeito, resto atribuído individualmente
         $utilizador = Role::firstOrCreate(['name' => 'utilizador']);
         $utilizador->syncPermissions([
             'acesso dashboard',
-            'acesso equipamentos',
-            'acesso manutencoes',
-            'acesso stock',
-            'acesso pedidos',
-            'adicionar registros',
         ]);
 
         // ── 3. Super Admin padrão ──
