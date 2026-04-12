@@ -81,6 +81,15 @@
     #modal-tabela-itens td,#modal-tabela-itens th{font-size:.8rem}
     .signature-font{font-family:'Dancing Script',cursive;font-size:2.2rem;color:#003d99;display:inline-block;line-height:1}
 
+    /* ── Item status buttons ── */
+    .item-status-btn{width:28px;height:28px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;border:1px solid #dee2e6;background:#f8f9fa;color:#adb5bd;cursor:pointer;transition:all .18s}
+    .item-status-btn:hover{transform:scale(1.15)}
+    .item-status-btn.active-rejected{background:#fce8e6;border-color:#f8b8b8;color:#c60a1a}
+    .item-status-btn.active-purchased{background:#e6f4ea;border-color:#c3e6cb;color:#198754}
+    .item-row-rejected{background:#fff5f5!important;opacity:.75}
+    .item-row-purchased{background:#f0fdf4!important}
+    .item-status-print{font-size:.7rem;font-weight:700}
+
     /* ── Print ── */
     @media print{
         @page{size:A4;margin:2cm}
@@ -342,7 +351,6 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
 
-            {{-- Header vermelho FEM --}}
             <div class="modal-header-fem d-flex justify-content-between align-items-center d-print-none">
                 <div>
                     <h6 class="text-white fw-bold mb-0"><i class="bi bi-file-earmark-text me-2"></i>Ficha de Requisição interna</h6>
@@ -353,7 +361,7 @@
 
             <div class="modal-body p-4" id="printArea">
 
-                {{-- Cabeçalho de impressão (visível só no print) --}}
+                {{-- Cabeçalho de impressão --}}
                 <div class="d-none d-print-block border-bottom pb-3 mb-4">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
@@ -367,7 +375,7 @@
                     </div>
                 </div>
 
-                {{-- Info topo ── --}}
+                {{-- Info topo --}}
                 <div class="row g-3 mb-4">
                     <div class="col-md-3">
                         <div class="detail-label">Nº Registo</div>
@@ -382,7 +390,7 @@
                         <div class="detail-val" id="modal-solicitante-nome"></div>
                     </div>
                     <div class="col-md-3">
-                        <div class="detail-label">Depratamento / Função</div>
+                        <div class="detail-label">Departamento / Função</div>
                         <div class="detail-val" id="modal-fornecedor"></div>
                     </div>
                 </div>
@@ -393,22 +401,33 @@
                     <div class="obs-box" id="modal-obs"></div>
                 </div>
 
+                {{-- Legenda --}}
+                <div class="d-flex gap-3 align-items-center mb-2 d-print-none" style="font-size:.72rem;color:#6c757d;">
+                    <span><i class="bi bi-ban text-danger me-1"></i>Não vai ser comprado</span>
+                    <span><i class="bi bi-check2-circle text-success me-1"></i>Já foi comprado</span>
+                    <span class="ms-auto fst-italic">Clica nos ícones para actualizar o estado de cada item</span>
+                </div>
+
                 {{-- Tabela itens --}}
                 <div class="detail-label mb-2" style="color:#c60a1a;border-bottom:2px solid #c60a1a;padding-bottom:6px;">
                     <i class="bi bi-box-seam me-1"></i> Itens da Solicitação
                 </div>
-                <div class="table-responsive mb-4">
+                <div class="table-responsive mb-3">
                     <table class="table table-bordered table-sm">
                         <thead style="background:#c60a1a;">
                             <tr class="text-center text-white" style="font-size:.7rem;letter-spacing:.6px;text-transform:uppercase;">
-                                <th class="fw-bold" style="width:50%;">Material / Descrição</th>
+                                <th class="fw-bold text-start ps-3" style="width:42%;">Material / Descrição</th>
                                 <th class="fw-bold">Qtd</th>
                                 <th class="fw-bold">Destino / Obra</th>
+                                <th class="fw-bold d-print-none" style="width:90px;">Estado</th>
                             </tr>
                         </thead>
                         <tbody id="modal-tabela-itens"></tbody>
                     </table>
                 </div>
+
+                {{-- Barra de progresso --}}
+                <div id="modal-progresso" class="mb-4 d-print-none"></div>
 
                 {{-- Assinatura --}}
                 <div class="row mt-4 pt-3">
@@ -471,6 +490,7 @@ $(document).on('keydown', function(e){ if (e.key === 'Escape') closeConfirm(); }
 function closeConfirm(){ $('#confirmOverlay').removeClass('open'); }
 
 $(document).ready(function(){
+
     var table = $('#comprasTable').DataTable({
         language: { url: 'https://cdn.datatables.net/plug-ins/2.0.8/i18n/pt-BR.json' },
         order: [[0,'desc']],
@@ -478,9 +498,7 @@ $(document).ready(function(){
     });
 
     $.fn.dataTable.ext.search.push(function(settings, data){
-        var min = $('#min-date').val();
-        var max = $('#max-date').val();
-        var dateStr = data[6];
+        var min = $('#min-date').val(), max = $('#max-date').val(), dateStr = data[6];
         if (!dateStr) return true;
         var p = dateStr.split('/');
         var valDate = p[2] + p[1] + p[0];
@@ -495,6 +513,7 @@ $(document).ready(function(){
     $('#min-date, #max-date').on('change', function(){ table.draw(); });
     $('#clear-filters').on('click', function(){ $('#min-date, #max-date').val(''); table.draw(); });
 
+    /* ── Abrir modal de detalhes ── */
     $(document).on('click', '.btn-show-details', function(){
         var btn = $(this);
         try {
@@ -510,16 +529,8 @@ $(document).ready(function(){
             var itens  = JSON.parse(btn.attr('data-itens')  || '[]');
             var anexos = JSON.parse(btn.attr('data-anexos') || '[]');
 
-            var htmlItens = '';
-            itens.forEach(function(item){
-                htmlItens +=
-                    '<tr class="text-center" style="font-size:.8rem;">' +
-                        '<td class="text-start ps-3">' + item.item_name + '</td>' +
-                        '<td class="fw-bold">' + item.quantity + '</td>' +
-                        '<td>' + (item.destino || '—') + '</td>' +
-                    '</tr>';
-            });
-            $('#modal-tabela-itens').html(htmlItens || '<tr><td colspan="3" class="text-center text-muted">Sem itens</td></tr>');
+            renderItens(itens);
+            renderProgresso(itens);
 
             var htmlAnexos = '';
             if (anexos.length > 0) {
@@ -534,10 +545,111 @@ $(document).ready(function(){
                 htmlAnexos = '<span class="text-muted small">Nenhum documento anexado.</span>';
             }
             $('#modal-anexos-lista').html(htmlAnexos);
-        } catch(e){
-            console.error('Erro no Parse do Modal:', e);
-        }
+        } catch(e){ console.error('Erro no Parse do Modal:', e); }
     });
+
+    /* ── Renderizar linhas de itens ── */
+    function renderItens(itens) {
+        var html = '';
+        if (!itens.length) {
+            html = '<tr><td colspan="4" class="text-center text-muted py-3">Sem itens</td></tr>';
+        } else {
+            itens.forEach(function(item){
+                var st       = item.item_status || null;
+                var rowClass = st === 'rejected' ? 'item-row-rejected' : (st === 'purchased' ? 'item-row-purchased' : '');
+                var rejClass = st === 'rejected'  ? 'active-rejected'  : '';
+                var purClass = st === 'purchased' ? 'active-purchased' : '';
+                var printBadge = '';
+                if (st === 'rejected')  printBadge = ' <span class="item-status-print text-danger d-none d-print-inline">✗ Não comprado</span>';
+                if (st === 'purchased') printBadge = ' <span class="item-status-print text-success d-none d-print-inline">✓ Comprado</span>';
+
+                html +=
+                    '<tr class="text-center ' + rowClass + '" data-item-id="' + item.id + '" data-item-status="' + (st||'') + '">' +
+                        '<td class="text-start ps-3">' + item.item_name + printBadge + '</td>' +
+                        '<td class="fw-bold">' + item.quantity + '</td>' +
+                        '<td>' + (item.destino || '—') + '</td>' +
+                        '<td class="d-print-none">' +
+                            '<div class="d-flex justify-content-center gap-1">' +
+                                '<button class="item-status-btn ' + rejClass + '" data-action="rejected" data-item-id="' + item.id + '" title="Não vai ser comprado">' +
+                                    '<i class="bi bi-ban"></i>' +
+                                '</button>' +
+                                '<button class="item-status-btn ' + purClass + '" data-action="purchased" data-item-id="' + item.id + '" title="Já foi comprado">' +
+                                    '<i class="bi bi-check2-circle"></i>' +
+                                '</button>' +
+                            '</div>' +
+                        '</td>' +
+                    '</tr>';
+            });
+        }
+        $('#modal-tabela-itens').html(html);
+    }
+
+    /* ── Barra de progresso ── */
+    function renderProgresso(itens) {
+        if (!itens.length) { $('#modal-progresso').html(''); return; }
+        var total     = itens.length;
+        var purchased = itens.filter(function(i){ return i.item_status === 'purchased'; }).length;
+        var rejected  = itens.filter(function(i){ return i.item_status === 'rejected';  }).length;
+        var pending   = total - purchased - rejected;
+        buildProgresso(total, purchased, rejected, pending);
+    }
+
+    function buildProgresso(total, purchased, rejected, pending) {
+        var pctPurch = total ? Math.round((purchased / total) * 100) : 0;
+        var pctRej   = total ? Math.round((rejected  / total) * 100) : 0;
+        var pctPend  = 100 - pctPurch - pctRej;
+        $('#modal-progresso').html(
+            '<div class="d-flex gap-3 mb-2" style="font-size:.74rem;">' +
+                '<span class="fw-bold text-success"><i class="bi bi-check2-circle me-1"></i>' + purchased + ' comprado(s)</span>' +
+                '<span class="fw-bold text-danger"><i class="bi bi-ban me-1"></i>' + rejected + ' rejeitado(s)</span>' +
+                '<span class="fw-bold text-secondary"><i class="bi bi-hourglass-split me-1"></i>' + pending + ' pendente(s)</span>' +
+            '</div>' +
+            '<div class="progress" style="height:8px;border-radius:8px;">' +
+                '<div class="progress-bar bg-success" style="width:' + pctPurch + '%"></div>' +
+                '<div class="progress-bar bg-danger"  style="width:' + pctRej   + '%"></div>' +
+                '<div class="progress-bar bg-light border" style="width:' + pctPend  + '%"></div>' +
+            '</div>'
+        );
+    }
+
+    function recalcProgressFromDOM() {
+        var total     = $('#modal-tabela-itens tr[data-item-id]').length;
+        var purchased = $('#modal-tabela-itens tr.item-row-purchased').length;
+        var rejected  = $('#modal-tabela-itens tr.item-row-rejected').length;
+        var pending   = total - purchased - rejected;
+        buildProgresso(total, purchased, rejected, pending);
+    }
+
+    /* ── Click nos botões de estado por item ── */
+    $(document).on('click', '.item-status-btn', function(){
+        var btn      = $(this);
+        var action   = btn.data('action');
+        var itemId   = btn.data('item-id');
+        var row      = btn.closest('tr');
+        var current  = row.data('item-status');
+        var newStatus = (current === action) ? null : action;
+
+        $.ajax({
+            url: '{{ route("compras.items.status", ":id") }}'.replace(':id', itemId),
+            method: 'PATCH',
+            data: { _token: '{{ csrf_token() }}', item_status: newStatus },
+            success: function(){
+                row.data('item-status', newStatus || '');
+                row.removeClass('item-row-rejected item-row-purchased');
+                if (newStatus === 'rejected')  row.addClass('item-row-rejected');
+                if (newStatus === 'purchased') row.addClass('item-row-purchased');
+
+                row.find('.item-status-btn').removeClass('active-rejected active-purchased');
+                if (newStatus) {
+                    row.find('[data-action="' + newStatus + '"]')
+                       .addClass(newStatus === 'rejected' ? 'active-rejected' : 'active-purchased');
+                }
+                recalcProgressFromDOM();
+            },
+            error: function(){ alert('Erro ao actualizar o estado do item.'); }
+        });
+    });
+
 });
 </script>
 

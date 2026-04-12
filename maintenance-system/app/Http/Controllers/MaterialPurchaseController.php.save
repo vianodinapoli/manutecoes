@@ -86,20 +86,23 @@ class MaterialPurchaseController extends Controller
     // para lidar com os arrays de itens, se desejar permitir edição multilinear.
     
     public function updateStatus(Request $request, $id)
-{
-    $compra = \App\Models\MaterialPurchase::findOrFail($id);
+    {
+        $compra = MaterialPurchase::findOrFail($id);
+        $user = auth()->user();
 
-    $request->validate([
-        'status' => 'required|in:Pendente,Em processo,Aprovado,Rejeitado,Finalizado'
-    ]);
+        if (in_array($compra->status, $this->lockedStatuses) && !$user->hasRole('super-admin')) {
+            return back()->with('error', 'Apenas administradores podem reabrir pedidos finalizados.');
+        }
 
-    $compra->update([
-        'status'             => $request->status,
-        'status_updated_by'  => auth()->user()->name,
-    ]);
+        $allowedStatus = $user->hasRole('super-admin') 
+            ? ['Pendente', 'Em processo', 'Aprovado', 'Rejeitado', 'Finalizado']
+            : ['Em processo', 'Finalizado', 'Rejeitado'];
 
-    return redirect()->back()->with('success', 'Estado actualizado com sucesso.');
-}
+        $request->validate(['status' => 'required|in:' . implode(',', $allowedStatus)]);
+
+        $compra->update(['status' => $request->status]);
+        return back()->with('success', "Status atualizado!");
+    }
 
     public function destroy($id)
     {
@@ -189,14 +192,4 @@ class MaterialPurchaseController extends Controller
             });
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Erro ao atualizar: ' . $e->getMessage());
-        }
-    }
-
-    public function updateItemStatus(Request $request, $itemId)
-{
-    $item = \App\Models\MaterialPurchaseItem::findOrFail($itemId);
-    $request->validate(['item_status' => 'nullable|in:rejected,purchased']);
-    $item->update(['item_status' => $request->item_status]);
-    return response()->json(['success' => true, 'item_status' => $item->item_status]);
-}
-}
+       

@@ -14,7 +14,10 @@ class MaterialPurchaseItem extends Model
         'item_name', 
         'quantity', 
         'destino', 
-        'price'
+        'price',
+         'item_status',
+         'status',
+          'status_updated_by'
     ];
 
     public function purchase()

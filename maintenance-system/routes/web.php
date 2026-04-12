@@ -78,6 +78,7 @@ Route::middleware('auth')->group(function () {
 
     // ── Pedidos / Requisições ───────────────────────────────
     Route::middleware('permission:acesso pedidos')->group(function () {
+        Route::patch('compras/items/{item}/status', [MaterialPurchaseController::class, 'updateItemStatus'])->name('compras.items.status');
         Route::resource('compras', MaterialPurchaseController::class);
         Route::patch('compras/{compra}/status', [MaterialPurchaseController::class, 'updateStatus'])->name('compras.status');
         Route::resource('suppliers', SupplierController::class);
