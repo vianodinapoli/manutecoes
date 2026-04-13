@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\StockItem;
 use App\Models\Activity;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class StockItemController extends Controller
 {
@@ -14,21 +15,28 @@ class StockItemController extends Controller
     protected function validationRules(int $id = null): array
     {
         return [
-            'nome' => 'required|string|max:255',
-            'referencia' => 'required|string|max:255|unique:stock_items,referencia,' . $id,
-            'quantidade' => 'required|integer|min:0',
-            'estado' => 'required|in:Novo,Recondicionado,Usado',
-            'numero_armazem' => 'required|string|max:255',
-            'seccao_armazem' => 'nullable|string|max:255',
+            'nome'             => 'required|string|max:255',
+            'referencia'       => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('stock_items')->where(
+                    fn ($q) => $q->where('marca_fabricante', request('marca_fabricante'))
+                )->ignore($id),
+            ],
+            'quantidade'       => 'required|integer|min:0',
+            'estado'           => 'required|in:Novo,Recondicionado,Usado',
+            'numero_armazem'   => 'required|string|max:255',
+            'seccao_armazem'   => 'nullable|string|max:255',
             'marca_fabricante' => 'nullable|string|max:255',
-            'modelo' => 'nullable|string|max:255',
-            'categoria' => 'nullable|string|max:255',
-            'sistema_maquina' => 'nullable|string|max:255',
-            'metadata_key.*' => 'nullable|string|max:255',
+            'modelo'           => 'nullable|string|max:255',
+            'categoria'        => 'nullable|string|max:255',
+            'sistema_maquina'  => 'nullable|string|max:255',
+            'metadata_key.*'   => 'nullable|string|max:255',
             'metadata_value.*' => 'nullable|string|max:255',
         ];
     }
-    
+
     /**
      * Processa os campos dinâmicos para JSON.
      */
@@ -36,7 +44,7 @@ class StockItemController extends Controller
     {
         $metadata = [];
         if (isset($request->metadata_key) && is_array($request->metadata_key)) {
-            $keys = $request->metadata_key;
+            $keys   = $request->metadata_key;
             $values = $request->metadata_value;
             for ($i = 0; $i < count($keys); $i++) {
                 if (!empty(trim($keys[$i]))) {
@@ -64,21 +72,23 @@ class StockItemController extends Controller
     public function store(Request $request)
     {
         // 1. Validação
-        $request->validate($this->validationRules());
+        $request->validate($this->validationRules(), [
+            'referencia.unique' => 'Esta referência já existe para esta marca.',
+        ]);
 
         // 2. Preparar dados
-        $data = $request->except(['metadata_key', 'metadata_value']);
+        $data             = $request->except(['metadata_key', 'metadata_value']);
         $data['metadata'] = $this->processMetadata($request);
 
-        // 3. Criar o item primeiro (para ter o objeto e evitar erro de null)
+        // 3. Criar o item
         $stockItem = StockItem::create($data);
 
-        // 4. Registar Atividade Detalhada
+        // 4. Registar Atividade
         Activity::create([
-            'type' => 'stock',
+            'type'        => 'stock',
             'description' => "Entrada inicial: {$stockItem->quantidade} unidades de {$stockItem->nome} (Ref: {$stockItem->referencia})",
-            'user_name' => auth()->user()->name,
-            'status' => 'concluido'
+            'user_name'   => auth()->user()->name,
+            'status'      => 'concluido',
         ]);
 
         return redirect()->route('stock-items.show', $stockItem->id)
@@ -96,36 +106,38 @@ class StockItemController extends Controller
     }
 
     /**
-     * ATUALIZAR ITEM (SAÍDAS OU EDIÇÕES)
+     * ATUALIZAR ITEM
      */
     public function update(Request $request, StockItem $stockItem)
     {
         // 1. Validação
-        $request->validate($this->validationRules($stockItem->id));
+        $request->validate($this->validationRules($stockItem->id), [
+            'referencia.unique' => 'Esta referência já existe para esta marca.',
+        ]);
 
         // 2. Guardar valores antigos para a descrição da atividade
         $qtdAnterior = $stockItem->quantidade;
 
         // 3. Processar e Atualizar
-        $data = $request->except(['metadata_key', 'metadata_value']);
+        $data             = $request->except(['metadata_key', 'metadata_value']);
         $data['metadata'] = $this->processMetadata($request);
-        
+
         $stockItem->update($data);
 
         // 4. Gerar descrição baseada na mudança de quantidade
         $mensagem = "Editou o item {$stockItem->nome}";
         if ($qtdAnterior != $stockItem->quantidade) {
             $diferenca = $stockItem->quantidade - $qtdAnterior;
-            $acao = $diferenca > 0 ? "Entrada" : "Saída";
-            $mensagem = "{$acao} de " . abs($diferenca) . " unidades de {$stockItem->nome} (Stock atual: {$stockItem->quantidade})";
+            $acao      = $diferenca > 0 ? 'Entrada' : 'Saída';
+            $mensagem  = "{$acao} de " . abs($diferenca) . " unidades de {$stockItem->nome} (Stock atual: {$stockItem->quantidade})";
         }
 
         // 5. Registar Atividade
         Activity::create([
-            'type' => 'stock',
+            'type'        => 'stock',
             'description' => $mensagem,
-            'user_name' => auth()->user()->name,
-            'status' => $stockItem->quantidade <= 5 ? 'alerta' : 'concluido'
+            'user_name'   => auth()->user()->name,
+            'status'      => $stockItem->quantidade <= 5 ? 'alerta' : 'concluido',
         ]);
 
         return redirect()->route('stock-items.show', $stockItem->id)
@@ -138,10 +150,10 @@ class StockItemController extends Controller
         $stockItem->delete();
 
         Activity::create([
-            'type' => 'stock',
+            'type'        => 'stock',
             'description' => "Eliminou o item {$nomeRemovido} do sistema",
-            'user_name' => auth()->user()->name,
-            'status' => 'alerta'
+            'user_name'   => auth()->user()->name,
+            'status'      => 'alerta',
         ]);
 
         return redirect()->route('stock-items.index')
@@ -154,25 +166,33 @@ class StockItemController extends Controller
     public function export(Request $request)
     {
         $items = StockItem::all();
-        $type = $request->query('type', 'excel');
+        $type  = $request->query('type', 'excel');
 
         if ($type === 'excel') {
             $fileName = 'mapa_de_stock_' . date('d-m-Y') . '.csv';
-            $headers = [
-                "Content-type"        => "text/csv; charset=UTF-8",
-                "Content-Disposition" => "attachment; filename=$fileName",
+            $headers  = [
+                'Content-type'        => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=$fileName",
             ];
 
-            $callback = function() use($items) {
+            $callback = function () use ($items) {
                 $file = fopen('php://output', 'w');
-                fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+                fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
                 fputcsv($file, ['Nome do Artigo', 'Referência', 'Marca', 'Qtd', 'Estado', 'Armazém'], ';');
 
                 foreach ($items as $item) {
-                    fputcsv($file, [$item->nome, $item->referencia, $item->marca_fabricante, $item->quantidade, $item->estado, $item->numero_armazem], ';');
+                    fputcsv($file, [
+                        $item->nome,
+                        $item->referencia,
+                        $item->marca_fabricante,
+                        $item->quantidade,
+                        $item->estado,
+                        $item->numero_armazem,
+                    ], ';');
                 }
                 fclose($file);
             };
+
             return response()->stream($callback, 200, $headers);
         }
 
