@@ -1,7 +1,37 @@
 <x-app-layout>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
 <style>
+
+
+
+/* ══ Tom Select custom ══ */
+.ts-wrapper .ts-control {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: .82rem;
+    color: #334155;
+    padding: 6px 12px;
+    box-shadow: none;
+}
+.ts-wrapper.focus .ts-control {
+    border-color: #64748b;
+    box-shadow: 0 0 0 3px rgba(100,116,139,.1);
+}
+.ts-dropdown {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.1);
+    font-size: .82rem;
+}
+.ts-dropdown .option:hover,
+.ts-dropdown .option.active {
+    background: #f1f5f9;
+    color: #1e293b;
+}
     /* ══ RESET / BASE ══ */
     *, *::before, *::after { box-sizing: border-box; }
 
@@ -158,7 +188,6 @@
             <p style="font-size:.75rem;color:#94a3b8;margin:0;">Entradas e saídas de materiais</p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            {{-- ── BOTÃO PDF: passa os filtros activos como query string ── --}}
             <a class="btn-print"
                href="{{ route('movimentos.pdf', request()->query()) }}"
                target="_blank">
@@ -243,7 +272,6 @@
     {{-- TABELA --}}
     <div class="table-card">
 
-        {{-- Cabeçalho do card --}}
         <div class="table-card-head">
             <div style="display:flex;align-items:center;gap:10px;">
                 <div class="table-card-icon"><i class="bi bi-arrow-left-right"></i></div>
@@ -254,7 +282,6 @@
             </div>
         </div>
 
-        {{-- Tabela --}}
         <div class="table-responsive">
             <table class="mov-table">
                 <thead>
@@ -311,6 +338,9 @@
                                     title="Editar"
                                     onclick="abrirModalEditar(
                                         {{ $mov->id }},
+                                        '{{ $mov->tipo }}',
+                                        {{ $mov->stock_item_id }},
+                                        {{ $mov->quantidade }},
                                         '{{ addslashes($mov->responsavel) }}',
                                         '{{ addslashes($mov->observacoes ?? '') }}'
                                     )">
@@ -341,7 +371,6 @@
             </table>
         </div>
 
-        {{-- Paginação --}}
         @if($movimentos->hasPages())
         <div class="pagination-wrap">
             <span>A mostrar {{ $movimentos->firstItem() }}–{{ $movimentos->lastItem() }} de {{ $movimentos->total() }}</span>
@@ -403,7 +432,6 @@
                         @endforeach
                     </select>
 
-                    {{-- Stock disponível --}}
                     <div id="stock-disponivel-wrap">
                         <span>Stock disponível:</span>
                         <span>
@@ -463,7 +491,7 @@
         <div class="modal-header">
             <div>
                 <div class="modal-title"><i class="bi bi-pencil me-2" style="color:#f59e0b;"></i>Editar Movimento</div>
-                <div class="modal-subtitle">Apenas responsável e observações são editáveis</div>
+                <div class="modal-subtitle">Corrige os dados do movimento</div>
             </div>
             <button class="modal-close" onclick="fecharModal('modalEditar')"><i class="bi bi-x-lg"></i></button>
         </div>
@@ -471,16 +499,62 @@
             @csrf
             @method('PUT')
             <div class="modal-body">
+
+                {{-- Tipo --}}
                 <div style="margin-bottom:14px;">
-                    <label class="form-label" for="edit-responsavel">Responsável</label>
-                    <input type="text" name="responsavel" id="edit-responsavel"
-                           class="form-control-custom" required>
+                    <label class="form-label">Tipo de Movimento</label>
+                    <div class="tipo-toggle">
+                        <div class="tipo-btn entrada selected" id="edit-btn-entrada" onclick="selecionarTipoEditar('entrada')">
+                            <span class="tipo-btn-icon">📥</span>
+                            <span class="tipo-btn-label">Entrada</span>
+                        </div>
+                        <div class="tipo-btn saida" id="edit-btn-saida" onclick="selecionarTipoEditar('saida')">
+                            <span class="tipo-btn-icon">📤</span>
+                            <span class="tipo-btn-label">Saída</span>
+                        </div>
+                    </div>
+                    <input type="hidden" name="tipo" id="edit-input-tipo" value="entrada">
                 </div>
+
+                {{-- Produto --}}
+                <div style="margin-bottom:14px;">
+                    <label class="form-label">Produto / Material</label>
+                    <select name="stock_item_id" id="edit-stock-item-id" class="form-control-custom" required>
+                        <option value="">— Selecione —</option>
+                        @foreach($stockItems as $p)
+                        <option value="{{ $p->id }}"
+                                data-stock="{{ $p->quantidade }}"
+                                data-unidade="{{ $p->metadata['unidade'] ?? '' }}">
+                            {{ $p->nome }}@if($p->referencia) ({{ $p->referencia }})@endif
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Quantidade + Responsável --}}
+                <div class="form-row-2" style="margin-bottom:14px;">
+                    <div>
+                        <label class="form-label">Quantidade</label>
+                        <input type="number" name="quantidade" id="edit-quantidade"
+                               class="form-control-custom"
+                               min="0.01" step="0.01" placeholder="0.00" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Responsável</label>
+                        <input type="text" name="responsavel" id="edit-responsavel"
+                               class="form-control-custom" required>
+                    </div>
+                </div>
+
+                {{-- Observações --}}
                 <div>
-                    <label class="form-label" for="edit-observacoes">Observações</label>
+                    <label class="form-label">Observações
+                        <span style="font-weight:400;text-transform:none;letter-spacing:0;">(opcional)</span>
+                    </label>
                     <textarea name="observacoes" id="edit-observacoes"
-                              class="form-control-custom" rows="3"></textarea>
+                              class="form-control-custom" rows="2"></textarea>
                 </div>
+
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-confirm-cancel" onclick="fecharModal('modalEditar')">Cancelar</button>
@@ -514,6 +588,25 @@
 
 
 <script>
+
+
+/* ══ Tom Select — dropdowns pesquisáveis ════════ */
+var tsNovo   = null;
+var tsEditar = null;
+
+document.addEventListener('DOMContentLoaded', function () {
+    tsNovo = new TomSelect('#stock_item_id', {
+        placeholder: '— Selecione um produto —',
+        allowEmptyOption: true,
+        onChange: function(value) { carregarStock(value); }
+    });
+
+    tsEditar = new TomSelect('#edit-stock-item-id', {
+        placeholder: '— Selecione —',
+        allowEmptyOption: true
+    });
+});
+
 /* ══ Abrir / fechar modais ════════════════════════ */
 function abrirModalNovo() {
     document.getElementById('modalNovo').classList.add('show');
@@ -540,24 +633,31 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-/* ══ Tipo entrada / saída ═════════════════════════ */
+/* ══ Tipo entrada / saída — Modal Novo ═══════════ */
 function selecionarTipo(tipo) {
     document.getElementById('input-tipo').value = tipo;
-
     var btnE = document.getElementById('btn-entrada');
     var btnS = document.getElementById('btn-saida');
-
     btnE.classList.toggle('selected', tipo === 'entrada');
     btnE.classList.toggle('entrada',  tipo === 'entrada');
     btnS.classList.toggle('selected', tipo === 'saida');
     btnS.classList.toggle('saida',    tipo === 'saida');
-
     document.getElementById('btn-submit-label').textContent =
         tipo === 'entrada' ? 'Registar Entrada' : 'Registar Saída';
 
-    /* Mostrar stock se produto já selecionado */
     var wrap = document.getElementById('stock-disponivel-wrap');
     if (wrap.dataset.loaded) wrap.classList.add('show');
+}
+
+/* ══ Tipo entrada / saída — Modal Editar ════════ */
+function selecionarTipoEditar(tipo) {
+    document.getElementById('edit-input-tipo').value = tipo;
+    var btnE = document.getElementById('edit-btn-entrada');
+    var btnS = document.getElementById('edit-btn-saida');
+    btnE.classList.toggle('selected', tipo === 'entrada');
+    btnE.classList.toggle('entrada',  tipo === 'entrada');
+    btnS.classList.toggle('selected', tipo === 'saida');
+    btnS.classList.toggle('saida',    tipo === 'saida');
 }
 
 /* ══ Carregar stock do produto ════════════════════ */
@@ -589,10 +689,13 @@ function carregarStock(produtoId) {
 }
 
 /* ══ Abrir modal editar ════════════════════════════ */
-function abrirModalEditar(id, responsavel, observacoes) {
+function abrirModalEditar(id, tipo, stockItemId, quantidade, responsavel, observacoes) {
     document.getElementById('formEditar').action = "{{ url('/movimentos') }}/" + id;
-    document.getElementById('edit-responsavel').value = responsavel;
-    document.getElementById('edit-observacoes').value = observacoes;
+    selecionarTipoEditar(tipo);
+    if (tsEditar) tsEditar.setValue(stockItemId);
+    document.getElementById('edit-quantidade').value    = quantidade;
+    document.getElementById('edit-responsavel').value   = responsavel;
+    document.getElementById('edit-observacoes').value   = observacoes;
     document.getElementById('modalEditar').classList.add('show');
     document.body.style.overflow = 'hidden';
 }
