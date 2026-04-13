@@ -240,7 +240,7 @@ $(document).ready(function () {
                 data: {!! json_encode($dadosStock->pluck('total')) !!},
                 backgroundColor: [
     /* Azuis & Índigos */
-    '#2563eb','#1d4ed8','#3b82f6','#60a5fa','#1e40af',
+    '#2563eb','#5078e9','#3b82f6','#60a5fa','#1e40af',
     '#4f46e5','#6366f1','#818cf8','#3730a3','#a5b4fc',
 
     /* Verdes & Teais */
