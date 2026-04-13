@@ -1340,26 +1340,43 @@
 
         /* ── Status dropdown ── */
         function toggleStatusDropdown(btn, id) {
-            var menu = document.getElementById('statusMenu-' + id);
+    var menu = document.getElementById('statusMenu-' + id);
 
-            if (_activeMenu && _activeMenu !== menu) {
-                _activeMenu.classList.remove('open');
-                _activeMenu.previousElementSibling && _activeMenu.previousElementSibling.classList.remove('open');
-            }
+    if (_activeMenu && _activeMenu !== menu) {
+        _activeMenu.classList.remove('open');
+        _activeMenu.previousElementSibling && _activeMenu.previousElementSibling.classList.remove('open');
+    }
 
-            var isOpen = menu.classList.contains('open');
-            menu.classList.toggle('open', !isOpen);
-            btn.classList.toggle('open', !isOpen);
+    var isOpen = menu.classList.contains('open');
+    menu.classList.toggle('open', !isOpen);
+    btn.classList.toggle('open', !isOpen);
 
-            if (!isOpen) {
-                var rect = btn.getBoundingClientRect();
-                menu.style.top = (rect.bottom + 5 + window.scrollY) + 'px';
-                menu.style.left = (rect.left + window.scrollX) + 'px';
-                _activeMenu = menu;
-            } else {
-                _activeMenu = null;
-            }
+    if (!isOpen) {
+        var rect = btn.getBoundingClientRect();
+        var menuHeight = 220; // altura estimada do menu
+        var spaceBelow = window.innerHeight - rect.bottom;
+
+        if (spaceBelow < menuHeight) {
+            // Abre para cima
+            menu.style.top = (rect.top - menuHeight - 5) + 'px';
+        } else {
+            // Abre para baixo
+            menu.style.top = (rect.bottom + 5) + 'px';
         }
+
+        // Evitar sair pela direita
+        var menuWidth = 165;
+        var left = rect.left;
+        if (left + menuWidth > window.innerWidth) {
+            left = window.innerWidth - menuWidth - 8;
+        }
+        menu.style.left = left + 'px';
+
+        _activeMenu = menu;
+    } else {
+        _activeMenu = null;
+    }
+}
 
         function selectStatus(id, label, key, item) {
             var wrap = item.closest('.status-dropdown-wrap');
