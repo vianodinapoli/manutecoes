@@ -123,9 +123,9 @@
             <a href="{{ route('machines.export', ['type' => 'pdf']) }}" class="top-btn danger-outline">
                 <i class="bi bi-file-earmark-pdf"></i> PDF
             </a>
-            <button onclick="window.print()" class="top-btn">
+            <!-- <button onclick="window.print()" class="top-btn">
                 <i class="bi bi-printer"></i> Imprimir
-            </button>
+            </button> -->
             <a href="{{ route('machines.create') }}" class="top-btn primary">
                 <i class="bi bi-plus-lg"></i> Adicionar
             </a>
