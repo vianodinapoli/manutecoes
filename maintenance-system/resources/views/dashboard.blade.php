@@ -239,33 +239,28 @@ $(document).ready(function () {
             datasets: [{
                 data: {!! json_encode($dadosStock->pluck('total')) !!},
                 backgroundColor: [
-    /* Azuis & Índigos */
-    '#2563eb','#5078e9','#3b82f6','#60a5fa','#1e40af',
-    '#4f46e5','#6366f1','#818cf8','#3730a3','#a5b4fc',
-
-    /* Verdes & Teais */
-    '#059669','#10b981','#34d399','#047857','#6ee7b7',
-    '#0d9488','#14b8a6','#2dd4bf','#0f766e','#99f6e4',
-
-    /* Laranjas & Âmbares */
-    '#d97706','#f59e0b','#fbbf24','#b45309','#fcd34d',
-    '#ea580c','#f97316','#fb923c','#c2410c','#fed7aa',
-
-    /* Vermelhos & Rosas */
-    '#dc2626','#ef4444','#f87171','#b91c1c','#fca5a5',
-    '#db2777','#ec4899','#f472b6','#be185d','#fbcfe8',
-
-    /* Roxos & Violetas */
-    '#7c3aed','#8b5cf6','#a78bfa','#6d28d9','#c4b5fd',
-    '#9333ea','#a855f7','#c084fc','#7e22ce','#e9d5ff',
-
-    /* Cianos & Azuis claros */
-    '#0284c7','#0ea5e9','#38bdf8','#0369a1','#7dd3fc',
-    '#0891b2','#06b6d4','#67e8f9','#0e7490','#a5f3fc',
-
-    /* Limas & Amarelos */
-    '#65a30d','#84cc16','#a3e635','#4d7c0f','#bef264',
-    '#ca8a04','#eab308','#facc15','#a16207','#fef08a',
+    '#e6194b', // vermelho forte
+  '#3cb44b', // verde
+  '#ffe119', // amarelo
+  '#4363d8', // azul
+  '#f58231', // laranja
+  '#911eb4', // roxo
+  '#46f0f0', // ciano
+  '#f032e6', // magenta
+  '#bcf60c', // lima
+  '#fabebe', // rosa claro
+  '#008080', // teal escuro
+  '#e6beff', // lavanda
+  '#9a6324', // castanho
+  '#fffac8', // amarelo claro
+  '#800000', // vinho
+  '#aaffc3', // verde claro
+  '#808000', // oliva
+  '#ffd8b1', // pêssego
+  '#000075', // azul escuro
+  '#808080', // cinza
+  '#000000', // preto
+  '#ffffff'  // branco (usa só em fundo escuro)
 ],
                 hoverOffset: 10,
                 borderWidth: 0
