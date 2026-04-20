@@ -152,24 +152,14 @@
     </table>
 
     {{-- TOTAIS --}}
-    <div class="totals">
-        <table>
-            <tr>
-                <td class="label">Total Líquido</td>
-                <td class="value">{{ number_format($requisicao->total_liquid, 2, ',', '.') }} MT</td>
-            </tr>
-            @if($requisicao->has_tax)
-            <tr>
-                <td class="label">IVA (16%)</td>
-                <td class="value">{{ number_format($requisicao->tax_amount, 2, ',', '.') }} MT</td>
-            </tr>
-            @endif
-            <tr class="total-final">
-                <td class="label" style="color:white;">TOTAL GERAL</td>
-                <td class="value">{{ number_format($requisicao->total_final, 2, ',', '.') }} MT</td>
-            </tr>
-        </table>
-    </div>
+<div class="totals">
+    <table>
+        <tr class="total-final">
+            <td class="label" style="color:white;">TOTAL GERAL</td>
+            <td class="value">{{ number_format($requisicao->total_final, 2, ',', '.') }} MT</td>
+        </tr>
+    </table>
+</div>
 
     {{-- RODAPÉ --}}
     <div class="page-footer">

@@ -597,14 +597,7 @@ function gerarExtratoPDF() {
 <!-- TOTAIS -->
 <div class="totals-wrap">
     <table>
-        <tr>
-            <td class="lbl">Total Líquido</td>
-            <td class="val">${fmt(sumLiquid)}</td>
-        </tr>
-        <tr>
-            <td class="lbl">IVA (16%)</td>
-            <td class="val">${fmt(sumIva)}</td>
-        </tr>
+       
         <tr class="grand">
             <td class="lbl">TOTAL GERAL</td>
             <td class="val">${fmt(sumTotal)}</td>
