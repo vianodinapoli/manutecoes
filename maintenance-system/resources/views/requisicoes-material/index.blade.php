@@ -271,48 +271,92 @@
     </div>
 
     {{-- FILTROS --}}
-    <div class="filter-panel no-print">
-        <div class="filter-title"><i class="fas fa-filter"></i> Filtros de Pesquisa</div>
-        <div class="filter-group">
-            <div class="filter-item">
-                <label>Data Início</label>
-                <input type="date" id="filtroDataInicio">
-            </div>
-            <div class="filter-item">
-                <label>Data Fim</label>
-                <input type="date" id="filtroDataFim">
-            </div>
-            <div class="filter-item">
-                <label>Destino</label>
-                <input type="text" id="filtroDestino" placeholder="Filtrar destino...">
-            </div>
-            <div class="filter-item">
-                <label>Estado</label>
-                <select id="filtroStatus">
-                    <option value="">Todos</option>
-                    <option value="EMITIDA">Emitida</option>
-                    <option value="CONFIRMADA">Confirmada</option>
-                    <option value="FINALIZADA">Finalizada</option>
-                    <option value="CANCELADO">Cancelado</option>
-                </select>
-            </div>
-            <div class="d-flex gap-2 align-items-end">
-                <button class="btn-filter btn-filter-clear" id="btnLimparFiltros">
-                    <i class="fas fa-times"></i> Limpar
-                </button>
-            </div>
+   {{-- FILTROS --}}
+<div class="filter-panel no-print">
+    <div class="filter-title"><i class="fas fa-filter"></i> Filtros de Pesquisa</div>
+    <div class="filter-group">
+
+        {{-- Nº Requisição --}}
+        <div class="filter-item">
+            <label>Nº Requisição</label>
+            <input type="text" id="filtroNumero" placeholder="Ex: 0012" style="min-width:110px;">
         </div>
-        <div id="extractBar">
-            <div class="ext-info">
-                <i class="fas fa-check-circle me-1" style="color:#c60a1a;"></i>
-                Filtro activo: <span id="extractCount">0</span> requisição(ões) encontrada(s)
-                <span id="extractLabel" style="color:#7f1d1d;"></span>
-            </div>
-            <button class="btn-filter btn-filter-pdf" onclick="gerarExtratoPDF()">
-                <i class="fas fa-file-arrow-down me-1"></i> Exportar Extrato PDF
+
+        {{-- Data --}}
+        <div class="filter-item">
+            <label>Data Início</label>
+            <input type="date" id="filtroDataInicio">
+        </div>
+        <div class="filter-item">
+            <label>Data Fim</label>
+            <input type="date" id="filtroDataFim">
+        </div>
+
+        {{-- Destino --}}
+        <div class="filter-item">
+            <label>Destino</label>
+            <input type="text" id="filtroDestino" placeholder="Filtrar destino...">
+        </div>
+
+        {{-- Fornecedor --}}
+        <div class="filter-item">
+            <label>Fornecedor</label>
+            <select id="filtroFornecedor" style="min-width:170px;">
+                <option value="">Todos</option>
+                @foreach($suppliers as $s)
+                <option value="{{ strtolower($s->name) }}">{{ $s->name }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        {{-- Motorista --}}
+        <div class="filter-item">
+            <label>Motorista</label>
+            <input type="text" id="filtroMotorista" placeholder="Nome do motorista...">
+        </div>
+
+        {{-- Matrícula --}}
+        <div class="filter-item">
+            <label>Matrícula</label>
+            <input type="text" id="filtroMatricula" placeholder="Ex: MBE-1234-M" style="min-width:130px;">
+        </div>
+
+        {{-- Responsável --}}
+        <div class="filter-item">
+            <label>Responsável</label>
+            <input type="text" id="filtroResponsavel" placeholder="Responsável...">
+        </div>
+
+        {{-- Estado --}}
+        <div class="filter-item">
+            <label>Estado</label>
+            <select id="filtroStatus">
+                <option value="">Todos</option>
+                <option value="EMITIDA">Emitida</option>
+                <option value="CONFIRMADA">Confirmada</option>
+                <option value="FINALIZADA">Finalizada</option>
+                <option value="CANCELADO">Cancelado</option>
+            </select>
+        </div>
+
+        <div class="d-flex gap-2 align-items-end">
+            <button class="btn-filter btn-filter-clear" id="btnLimparFiltros">
+                <i class="fas fa-times"></i> Limpar
             </button>
         </div>
     </div>
+
+    <div id="extractBar">
+        <div class="ext-info">
+            <i class="fas fa-check-circle me-1" style="color:#c60a1a;"></i>
+            Filtro activo: <span id="extractCount">0</span> requisição(ões) encontrada(s)
+            <span id="extractLabel" style="color:#7f1d1d;"></span>
+        </div>
+        <button class="btn-filter btn-filter-pdf" onclick="gerarExtratoPDF()">
+            <i class="fas fa-file-arrow-down me-1"></i> Exportar Extrato PDF
+        </button>
+    </div>
+</div>
 
     {{-- PRINT ONLY: cabeçalho --}}
     <div class="print-only print-header" id="printHeader">
@@ -792,57 +836,89 @@ const table = $('#tblRequisicoes').DataTable({
 });
 
 // ════════════════════════════════════════════
-// Filtros
+// Filtros — via DataTables ext.search (funciona com paginação)
 // ════════════════════════════════════════════
-function aplicarFiltros() {
+$.fn.dataTable.ext.search.push(function (settings, _data, dataIndex) {
+    if (settings.nTable.id !== 'tblRequisicoes') return true;
+
+    const node = $(table.row(dataIndex).node());
     const di   = $('#filtroDataInicio').val();
     const df   = $('#filtroDataFim').val();
     const dest = $('#filtroDestino').val().toLowerCase().trim();
     const st   = $('#filtroStatus').val();
-    let count  = 0;
+    const num  = $('#filtroNumero').val().trim().replace(/^#/, '').replace(/^0+/, '');
+    const mot  = $('#filtroMotorista').val().toLowerCase().trim();
+    const mat  = $('#filtroMatricula').val().toLowerCase().trim();
+    const resp = $('#filtroResponsavel').val().toLowerCase().trim();
+    const forn = $('#filtroFornecedor').val().toLowerCase().trim();
 
-    table.rows().every(function () {
-        const row = $(this.node());
-        let show = true;
-        if (di   && row.data('date')    < di)            show = false;
-        if (df   && row.data('date')    > df)            show = false;
-        if (dest && !row.data('destino').includes(dest)) show = false;
-        if (st   && row.data('status') !== st)           show = false;
-        $(this.node()).toggle(show);
-        if (show) count++;
-    });
+    if (di   && String(node.data('date'))        < di)                                       return false;
+    if (df   && String(node.data('date'))        > df)                                       return false;
+    if (st   && node.data('status')             !== st)                                      return false;
+    if (num  && !String(node.data('req-id')).includes(num))                                  return false;
+    if (dest && !String(node.data('destino')).toLowerCase().includes(dest))                  return false;
+    if (forn && !String(node.data('fornecedor')).toLowerCase().includes(forn))               return false;
+    if (mot  && !String(node.data('motorista')).toLowerCase().includes(mot))                 return false;
+    if (mat  && !String(node.data('matricula')).toLowerCase().includes(mat))                 return false;
+    if (resp && !String(node.data('responsavel')).toLowerCase().includes(resp))              return false;
 
-    updateExtractBar(count, di, df, dest, st);
+    return true;
+});
+
+function aplicarFiltros() {
+    table.draw();
+
+    // contar linhas filtradas (todas as páginas)
+    const count = table.rows({ filter: 'applied' }).count();
+
+    const f = {
+        di:   $('#filtroDataInicio').val(),
+        df:   $('#filtroDataFim').val(),
+        dest: $('#filtroDestino').val().trim(),
+        st:   $('#filtroStatus').val(),
+        num:  $('#filtroNumero').val().trim(),
+        mot:  $('#filtroMotorista').val().trim(),
+        mat:  $('#filtroMatricula').val().trim(),
+        resp: $('#filtroResponsavel').val().trim(),
+        forn: $('#filtroFornecedor').val(),
+    };
+    const algumActivo = Object.values(f).some(v => v !== '');
+
+    $('#extractCount').text(count);
+    const partes = [];
+    if (f.num)  partes.push('Nº: ' + f.num);
+    if (f.di)   partes.push('De '  + f.di.split('-').reverse().join('/'));
+    if (f.df)   partes.push('até ' + f.df.split('-').reverse().join('/'));
+    if (f.dest) partes.push('Destino: "' + f.dest + '"');
+    if (f.forn) partes.push('Fornecedor: "' + f.forn + '"');
+    if (f.mot)  partes.push('Motorista: "' + f.mot + '"');
+    if (f.mat)  partes.push('Matrícula: "' + f.mat + '"');
+    if (f.resp) partes.push('Responsável: "' + f.resp + '"');
+    if (f.st)   partes.push('Estado: ' + f.st);
+    $('#extractLabel').text(partes.length ? ' — ' + partes.join(' | ') : '');
+    $('#extractBar').toggleClass('visible', algumActivo && count > 0);
 }
 
-$('#filtroDataInicio,#filtroDataFim,#filtroDestino,#filtroStatus')
+$('#filtroDataInicio, #filtroDataFim, #filtroDestino, #filtroStatus, ' +
+  '#filtroNumero, #filtroMotorista, #filtroMatricula, #filtroResponsavel, #filtroFornecedor')
     .on('input change', aplicarFiltros);
 
 $('#btnLimparFiltros').on('click', function () {
-    $('#filtroDataInicio,#filtroDataFim,#filtroDestino').val('');
-    $('#filtroStatus').val('');
-    table.rows().every(function () { $(this.node()).show(); });
+    $('#filtroDataInicio, #filtroDataFim, #filtroDestino, ' +
+      '#filtroNumero, #filtroMotorista, #filtroMatricula, #filtroResponsavel').val('');
+    $('#filtroStatus, #filtroFornecedor').val('');
+    table.draw();
     $('#extractBar').removeClass('visible');
 });
-
-function updateExtractBar(count, di, df, dest, st) {
-    $('#extractCount').text(count);
-    const partes = [];
-    if (di)   partes.push('De ' + di.split('-').reverse().join('/'));
-    if (df)   partes.push('até ' + df.split('-').reverse().join('/'));
-    if (dest) partes.push('Destino: "' + dest + '"');
-    if (st)   partes.push('Estado: ' + st);
-    $('#extractLabel').text(partes.length ? ' — ' + partes.join(' | ') : '');
-    $('#extractBar').toggleClass('visible', count > 0);
-}
 
 // ════════════════════════════════════════════
 // Gerar Extrato PDF
 // ════════════════════════════════════════════
 function gerarExtratoPDF() {
+    // lê TODAS as linhas filtradas, não só a página actual
     const rows = [];
-    $('#tblRequisicoes tbody tr:visible').each(function () {
-        const r = $(this);
+    table.rows({ filter: 'applied' }).every(function () {
+        const r = $(this.node());
         rows.push({
             id:          r.data('req-id'),
             data:        r.data('date-fmt'),
@@ -862,30 +938,37 @@ function gerarExtratoPDF() {
     const df   = $('#filtroDataFim').val();
     const dest = $('#filtroDestino').val();
     const st   = $('#filtroStatus').val();
+    const num  = $('#filtroNumero').val();
+    const mot  = $('#filtroMotorista').val();
+    const mat  = $('#filtroMatricula').val();
+    const resp = $('#filtroResponsavel').val();
+    const forn = $('#filtroFornecedor').val();
+
     const periodoStr = (di || df)
         ? (di ? di.split('-').reverse().join('/') : '—') + ' a ' + (df ? df.split('-').reverse().join('/') : '—')
         : 'Todo o período';
+
     const filtrosTexto = [
+        num  ? 'Nº: ' + num           : null,
         dest ? 'Destino: "' + dest + '"' : null,
-        st   ? 'Estado: ' + st          : null,
+        forn ? 'Fornecedor: "' + forn + '"' : null,
+        mot  ? 'Motorista: "' + mot + '"' : null,
+        mat  ? 'Matrícula: "' + mat + '"' : null,
+        resp ? 'Responsável: "' + resp + '"' : null,
+        st   ? 'Estado: ' + st        : null,
         (di || df) ? 'Período: ' + periodoStr : null,
     ].filter(Boolean).join(' | ') || 'Todos os registos';
 
     function parseVal(str) {
-        return parseFloat(String(str).replace(/\./g,'').replace(',','.')) || 0;
+        return parseFloat(String(str).replace(/\./g, '').replace(',', '.')) || 0;
     }
     const sumTotal = rows.reduce((a, r) => a + parseVal(r.total), 0);
-    const fmt = n => n.toLocaleString('pt-PT', { minimumFractionDigits:2, maximumFractionDigits:2 }) + ' MT';
+    const fmt = n => n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MT';
     const dataHoje  = new Date().toLocaleDateString('pt-PT');
-    const horaAgora = new Date().toLocaleTimeString('pt-PT', { hour:'2-digit', minute:'2-digit' });
+    const horaAgora = new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
 
     const statusBadge = s => {
-        const map = {
-            'EMITIDA':    '#0369a1',
-            'CONFIRMADA': '#a16207',
-            'FINALIZADA': '#15803d',
-            'CANCELADO':  '#dc2626',
-        };
+        const map = { EMITIDA: '#0369a1', CONFIRMADA: '#a16207', FINALIZADA: '#15803d', CANCELADO: '#dc2626' };
         return `<span style="background:${map[s]||'#64748b'};color:#fff;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700;">${s}</span>`;
     };
 
@@ -936,7 +1019,6 @@ tbody td{padding:8px 10px;font-size:11px}
 </style></head><body>
 <div class="header">
     <div>
-        <img src="/images/bymozelogo.png" style="width:72px;height:auto;margin-bottom:6px;" alt="">
         <div class="company-name">Fábrica de Explosivos de Moçambique</div>
         <div class="company-detail">Contribuinte Nº 400019029<br>Av. Samora Machel Nº — Parcela 10<br>Telef. +258 21 745 86/03 | FAX. +258 21 745 802</div>
     </div>
@@ -946,7 +1028,7 @@ tbody td{padding:8px 10px;font-size:11px}
     </div>
 </div>
 <div class="filter-summary">
-    <div class="fs-item" style="flex:2;"><div class="fs-label">Filtros</div><div class="fs-value">${filtrosTexto}</div></div>
+    <div class="fs-item" style="flex:2;"><div class="fs-label">Filtros Aplicados</div><div class="fs-value">${filtrosTexto}</div></div>
     <div class="fs-item" style="flex:0 0 160px;"><div class="fs-label">Período</div><div class="fs-value">${periodoStr}</div></div>
     <div class="fs-item" style="flex:0 0 120px;"><div class="fs-label">Nº Requisições</div><div class="fs-value">${rows.length}</div></div>
 </div>
@@ -990,16 +1072,14 @@ tbody td{padding:8px 10px;font-size:11px}
 // ════════════════════════════════════════════
 function loadPredef() {
     try { return JSON.parse(localStorage.getItem('req_predef') || '[]'); }
-    catch(e) { return []; }
+    catch (e) { return []; }
 }
-function savePredef(arr) {
-    localStorage.setItem('req_predef', JSON.stringify(arr));
-}
+function savePredef(arr) { localStorage.setItem('req_predef', JSON.stringify(arr)); }
+
 function renderPredefManage() {
     const arr  = loadPredef();
     const wrap = $('#predefManageList');
     $('#predefEmptyMsg').toggle(arr.length === 0);
-    // remove existing items
     wrap.find('.predef-manage-item').remove();
     arr.forEach((p, i) => {
         wrap.append(`
@@ -1016,11 +1096,11 @@ function renderPredefManage() {
     });
 }
 function renderPredefPanel() {
-    const arr = loadPredef();
+    const arr  = loadPredef();
     const list = $('#predefList');
     list.empty();
     if (!arr.length) {
-        list.html('<div class="text-center text-muted py-3 small"><i class="fas fa-inbox fa-2x mb-1 d-block opacity-25"></i>Sem predefinições. Cria na gestão acima.</div>');
+        list.html('<div class="text-center text-muted py-3 small"><i class="fas fa-inbox fa-2x mb-1 d-block opacity-25"></i>Sem predefinições.</div>');
         return;
     }
     arr.forEach((p, i) => {
@@ -1033,7 +1113,6 @@ function renderPredefPanel() {
     });
 }
 
-// Adicionar predefinição
 $('#btnSalvarPredef').on('click', function () {
     const nome    = $('#predefNome').val().trim();
     const unidade = $('#predefUnidade').val();
@@ -1042,49 +1121,32 @@ $('#btnSalvarPredef').on('click', function () {
     const arr = loadPredef();
     arr.push({ nome, unidade, preco: preco || '0' });
     savePredef(arr);
-    $('#predefNome').val('');
-    $('#predefPreco').val('');
-    renderPredefManage();
-    renderPredefPanel();
+    $('#predefNome').val(''); $('#predefPreco').val('');
+    renderPredefManage(); renderPredefPanel();
     showToast('Predefinição adicionada.', false);
 });
 
-// Eliminar predefinição
 $(document).on('click', '.btn-del-predef', function () {
-    const idx = parseInt($(this).data('idx'));
     const arr = loadPredef();
-    arr.splice(idx, 1);
+    arr.splice(parseInt($(this).data('idx')), 1);
     savePredef(arr);
-    renderPredefManage();
-    renderPredefPanel();
+    renderPredefManage(); renderPredefPanel();
 });
 
-// Clicar numa predefinição no painel insere um item
 $(document).on('click', '#predefList .predef-item', function () {
-    const idx = parseInt($(this).data('idx'));
-    const p   = loadPredef()[idx];
+    const p = loadPredef()[parseInt($(this).data('idx'))];
     if (!p) return;
     $('#itemsBody').append(itemRow({ description: p.nome, unit: p.unidade, unit_price: p.preco }));
     recalcTotal();
-    // fechar painel
     $('#predefPanel').hide();
 });
 
-// Botão mostrar/ocultar painel
-$('#btnShowPredef').on('click', function () {
-    renderPredefPanel();
-    $('#predefPanel').toggle();
-});
+$('#btnShowPredef').on('click', function () { renderPredefPanel(); $('#predefPanel').toggle(); });
 $('#btnClosePredef').on('click', function () { $('#predefPanel').hide(); });
-
-// Abrir modal gestão
-$('#btnGerir').on('click', function () {
-    renderPredefManage();
-    new bootstrap.Modal('#modalPredef').show();
-});
+$('#btnGerir').on('click', function () { renderPredefManage(); new bootstrap.Modal('#modalPredef').show(); });
 
 // ════════════════════════════════════════════
-// Items do modal
+// Itens do modal
 // ════════════════════════════════════════════
 const UNITS = ['kg','g','mg','t','m','cm','mm','km','m²','m³','l','ml','un','cx','pc'];
 
@@ -1115,17 +1177,13 @@ function recalcTotal() {
         const qty   = parseFloat($(this).find('.item-qty').val())   || 0;
         const price = parseFloat($(this).find('.item-price').val()) || 0;
         const sub   = qty * price;
-        $(this).find('.item-subtotal').text(
-            sub.toLocaleString('pt-PT', { minimumFractionDigits: 2 })
-        );
+        $(this).find('.item-subtotal').text(sub.toLocaleString('pt-PT', { minimumFractionDigits: 2 }));
         total += sub;
     });
-    $('#totalGeral').text(
-        total.toLocaleString('pt-PT', { minimumFractionDigits: 2 }) + ' MT'
-    );
+    $('#totalGeral').text(total.toLocaleString('pt-PT', { minimumFractionDigits: 2 }) + ' MT');
 }
 
-$(document).on('input', '.item-qty,.item-price', recalcTotal);
+$(document).on('input', '.item-qty, .item-price', recalcTotal);
 $(document).on('click', '.btn-remove-item', function () {
     if ($('#itemsBody tr').length > 1) {
         $(this).closest('tr').remove();
@@ -1134,13 +1192,10 @@ $(document).on('click', '.btn-remove-item', function () {
         alert('A requisição precisa de pelo menos um item.');
     }
 });
-$('#btnAddItem').on('click', () => {
-    $('#itemsBody').append(itemRow());
-    $('#predefPanel').hide();
-});
+$('#btnAddItem').on('click', function () { $('#itemsBody').append(itemRow()); $('#predefPanel').hide(); });
 
 // ════════════════════════════════════════════
-// Modal Nova
+// Modal Nova Requisição
 // ════════════════════════════════════════════
 $('#btnNova').on('click', function () {
     $('#modalTitle').text('Nova Requisição de Material');
@@ -1152,7 +1207,7 @@ $('#btnNova').on('click', function () {
     $('#predefPanel').hide();
     $('#itemsBody').html(itemRow());
     recalcTotal();
-    $('#btnSalvar').html('<i class="fas fa-paper-plane me-1"></i> Emitir Requisição');
+    $('#btnSalvar').prop('disabled', false).html('<i class="fas fa-paper-plane me-1"></i> Emitir Requisição');
     new bootstrap.Modal('#modalRequisicao').show();
 });
 
@@ -1161,24 +1216,32 @@ $('#btnNova').on('click', function () {
 // ════════════════════════════════════════════
 $(document).on('click', '.btn-edit', function () {
     const id = $(this).data('id');
-    $.get(`/requisicoes-material/${id}`, function (data) {
-        $('#modalTitle').text('Editar Requisição #' + String(data.id).padStart(4,'0'));
-        $('#req_id').val(data.id);
-        $('#req_date').val(data.date);
-        $('#req_destino').val(data.destino);
-        $('#req_supplier_id').val(data.supplier_id ?? '');
-        $('#req_motorista').val(data.motorista);
-        $('#req_matricula').val(data.matricula);
-        $('#req_responsavel').val(data.responsavel);
-        $('#req_observacoes').val(data.observacoes);
-        $('#req_status').val(data.status);
-        $('#statusWrap').removeClass('d-none');
-        $('#predefPanel').hide();
-        $('#itemsBody').empty();
-        (data.items ?? []).forEach(item => $('#itemsBody').append(itemRow(item)));
-        recalcTotal();
-        $('#btnSalvar').html('<i class="fas fa-save me-1"></i> Guardar Alterações');
-        new bootstrap.Modal('#modalRequisicao').show();
+    $.ajax({
+        url: `/requisicoes-material/${id}`,
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        success(data) {
+            $('#modalTitle').text('Editar Requisição #' + String(data.id).padStart(4, '0'));
+            $('#req_id').val(data.id);
+            $('#req_date').val(data.date);
+            $('#req_destino').val(data.destino);
+            $('#req_supplier_id').val(data.supplier_id ?? '');
+            $('#req_motorista').val(data.motorista ?? '');
+            $('#req_matricula').val(data.matricula ?? '');
+            $('#req_responsavel').val(data.responsavel ?? '');
+            $('#req_observacoes').val(data.observacoes ?? '');
+            $('#req_status').val(data.status);
+            $('#statusWrap').removeClass('d-none');
+            $('#predefPanel').hide();
+            $('#itemsBody').empty();
+            (data.items ?? []).forEach(item => $('#itemsBody').append(itemRow(item)));
+            recalcTotal();
+            $('#btnSalvar').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Guardar Alterações');
+            new bootstrap.Modal('#modalRequisicao').show();
+        },
+        error(xhr) {
+            alert('Erro ao carregar requisição:\n' + (xhr.responseJSON?.message ?? 'Erro desconhecido.'));
+        },
     });
 });
 
@@ -1211,15 +1274,12 @@ $('#btnSalvar').on('click', function () {
         matricula:   $('#req_matricula').val(),
         responsavel: $('#req_responsavel').val(),
         observacoes: $('#req_observacoes').val(),
-        // Nova: só altera status se estiver no campo visível (edição)
         status:      $('#statusWrap').hasClass('d-none') ? 'EMITIDA' : ($('#req_status').val() || 'EMITIDA'),
         items,
     };
     if (id) payload._method = 'PUT';
 
-    const url = id
-        ? `/requisicoes-material/${id}`
-        : '{{ route("requisicoes-material.store") }}';
+    const url = id ? `/requisicoes-material/${id}` : '{{ route("requisicoes-material.store") }}';
 
     $('#btnSalvar').prop('disabled', true)
         .html('<span class="spinner-border spinner-border-sm me-1"></span> A guardar...');
@@ -1246,37 +1306,26 @@ $('#btnSalvar').on('click', function () {
 // Modal Confirmar Carga
 // ════════════════════════════════════════════
 $(document).on('click', '.btn-confirm-carga', function () {
-    const id      = $(this).data('id');
-    const num     = $(this).data('num');
-    const destino = $(this).data('destino');
-    $('#carga_req_id').val(id);
-    $('#cargaModalSub').text('Requisição ' + num + ' — ' + destino);
-    $('#carga_peso').val('');
-    $('#carga_valor').val('');
+    $('#carga_req_id').val($(this).data('id'));
+    $('#cargaModalSub').text('Requisição ' + $(this).data('num') + ' — ' + $(this).data('destino'));
+    $('#carga_peso, #carga_valor').val('');
     $('#btnFinalizar').prop('disabled', false)
         .html('<i class="fas fa-check-double"></i> Confirmar e Finalizar');
     new bootstrap.Modal('#modalConfirmarCarga').show();
 });
 
 $('#btnFinalizar').on('click', function () {
-    const id    = $('#carga_req_id').val();
     const peso  = $('#carga_peso').val();
     const valor = $('#carga_valor').val();
-
-    if (!peso || !valor)
-        return alert('Por favor preenche o peso e o valor da carga antes de finalizar.');
+    if (!peso || !valor) return alert('Preenche o peso e o valor da carga antes de finalizar.');
 
     $(this).prop('disabled', true)
         .html('<span class="spinner-border spinner-border-sm me-1"></span> A finalizar...');
 
     $.ajax({
-        url:    `/requisicoes-material/${id}/confirmar-carga`,
+        url:    `/requisicoes-material/${$('#carga_req_id').val()}/confirmar-carga`,
         method: 'POST',
-        data: {
-            _token:       '{{ csrf_token() }}',
-            peso_confirmado: peso,
-            valor_carga:     valor,
-        },
+        data:   { _token: '{{ csrf_token() }}', peso_confirmado: peso, valor_carga: valor },
         success() {
             bootstrap.Modal.getInstance('#modalConfirmarCarga').hide();
             showToast('Requisição finalizada com sucesso!', false);
@@ -1298,34 +1347,33 @@ let _deleteId = null;
 $(document).on('click', '.btn-delete', function () {
     _deleteId = $(this).data('id');
     $('#confirmLabel').text($(this).data('num'));
-    $('#confirmOkBtn').prop('disabled', false)
-        .html('<i class="fas fa-trash"></i> Eliminar');
+    $('#confirmOkBtn').prop('disabled', false).html('<i class="fas fa-trash"></i> Eliminar');
     $('#confirmOverlay').addClass('open');
 });
 
 $('#confirmOkBtn').on('click', function () {
-    const btn = this;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> A eliminar...';
+    $(this).prop('disabled', true)
+        .html('<span class="spinner-border spinner-border-sm me-1"></span> A eliminar...');
+
     $.ajax({
         url:    `/requisicoes-material/${_deleteId}`,
         method: 'POST',
         data:   { _token: '{{ csrf_token() }}', _method: 'DELETE' },
         success() {
             closeConfirm();
-            showToast('Requisição eliminada com sucesso.');
-            setTimeout(() => location.reload(), 1500);
+            // remove a linha do DataTable sem recarregar a página
+            table.row(`[data-req-id="${_deleteId}"]`).remove().draw();
+            showToast('Requisição eliminada com sucesso.', false);
         },
-        error() { closeConfirm(); alert('Erro ao eliminar.'); },
+        error() {
+            closeConfirm();
+            showToast('Erro ao eliminar a requisição.', true);
+        },
     });
 });
 
-$('#confirmOverlay').on('click', function (e) {
-    if (e.target === this) closeConfirm();
-});
-$(document).on('keydown', e => {
-    if (e.key === 'Escape') closeConfirm();
-});
+$('#confirmOverlay').on('click', function (e) { if (e.target === this) closeConfirm(); });
+$(document).on('keydown', e => { if (e.key === 'Escape') closeConfirm(); });
 function closeConfirm() { $('#confirmOverlay').removeClass('open'); }
 
 // ════════════════════════════════════════════

@@ -547,11 +547,13 @@
         </x-nav-link>
       
         @endif
-         <x-nav-link :href="route('requisicoes-material.index')"
-            :active="request()->routeIs('requisicoes-material.*')" class="nav-item">
-            <i class="fas fa-dolly ni-icon"></i>
-            <span class="ni-text">Req. de Material</span>
-        </x-nav-link>
+       @can('requisicoes-material')
+<x-nav-link :href="route('requisicoes-material.index')"
+    :active="request()->routeIs('requisicoes-material.*')" class="nav-item">
+    <i class="fas fa-dolly ni-icon"></i>
+    <span class="ni-text">Req. de Material</span>
+</x-nav-link>
+@endcan
 
     </div>
     <div class="sb-flyout">
