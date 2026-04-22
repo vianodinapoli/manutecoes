@@ -15,6 +15,7 @@ use App\Http\Controllers\DischargeController;
 use App\Http\Controllers\MovimentoArmazemController;
 use App\Http\Controllers\ViaturaController;
 use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\RequisicaoMaterialController;
 
 // ── Página inicial ──────────────────────────────────────────
 Route::get('/', function () {
@@ -134,6 +135,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/backup',          [BackupController::class, 'index'])   ->name('backup.index');
     Route::get('/backup/download', [BackupController::class, 'download'])->name('backup.download');
     Route::post('/backup/restore', [BackupController::class, 'restore']) ->name('backup.restore');
+    });
+
+    //REQUISIÇÃO MATERIAL
+Route::middleware(['auth', 'permission:requisicoes-material'])
+    ->group(function () {
+        Route::resource('requisicoes-material', RequisicaoMaterialController::class)
+             ->except(['create', 'edit']);
+        Route::get('requisicoes-material/{requisicaoMaterial}/pdf',
+            [RequisicaoMaterialController::class, 'pdf'])
+            ->name('requisicoes-material.pdf');
+
+            Route::post('requisicoes-material/{id}/confirmar-carga', [RequisicaoMaterialController::class, 'confirmarCarga']);
+Route::resource('requisicoes-material', RequisicaoMaterialController::class);
     });
 
 });

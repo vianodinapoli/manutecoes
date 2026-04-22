@@ -23,6 +23,7 @@ class UserController extends Controller
         'acesso discharges'  => ['label' => 'Discharges',         'icon' => 'fa-sign-out-alt'],
         'acesso caixa'       => ['label' => 'Caixa e Bancos',     'icon' => 'fa-cash-register'],
         'emitir requisicoes' => ['label' => 'Emitir Requisições', 'icon' => 'fa-file-arrow-up'],
+        'requisicoes-material' => ['label' => 'Requisições de Material', 'icon' => 'fa-dolly'],
     ];
 
     public function index()

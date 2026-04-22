@@ -1412,18 +1412,22 @@
         /* ── DataTable + filtros ── */
         $(document).ready(function() {
 
-            var table = $('#comprasTable').DataTable({
-                language: {
-                    url: 'https://cdn.datatables.net/plug-ins/2.0.8/i18n/pt-BR.json'
-                },
-                order: [
-                    [0, 'desc']
-                ],
-                columnDefs: [{
-                    orderable: false,
-                    targets: [3, 4, 7]
-                }]
-            });
+        var table = $('#comprasTable').DataTable({
+    language: {
+        url: 'https://cdn.datatables.net/plug-ins/2.0.8/i18n/pt-BR.json'
+    },
+    // Força a ordenação descendente na coluna 0 (ID)
+    order: [[0, 'asc']],
+    
+    // Define explicitamente que a coluna 0 é numérica para evitar erros de ordenação
+    columnDefs: [
+        { type: 'num', targets: 0 },
+        { orderable: false, targets: [3, 4, 7] }
+    ],
+    
+    // Impede que o DataTables "lembre" da ordenação anterior que você testou
+    stateSave: false 
+});
 
             $.fn.dataTable.ext.search.push(function(settings, data) {
                 var min = $('#min-date').val(),
