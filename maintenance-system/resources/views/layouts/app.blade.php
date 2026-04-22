@@ -534,13 +534,6 @@
         </x-nav-link>
         @endcan
 
-        @can('requisicoes-material')
-        <x-nav-link :href="route('requisicoes-material.index')"
-            :active="request()->routeIs('requisicoes-material.*')" class="nav-item">
-            <i class="fas fa-dolly ni-icon"></i>
-            <span class="ni-text">Req. de Material</span>
-        </x-nav-link>
-        @endcan
 
         @if(auth()->user()->hasRole('super-admin') || auth()->user()->hasRole('gestor'))
         <x-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')" class="nav-item">
@@ -552,7 +545,13 @@
         <x-nav-link :href="route('requisicoes.index')" :active="request()->routeIs('requisicoes.index')" class="nav-item">
             <i class="fas fa-list ni-icon"></i><span class="ni-text">Lista de Requisições</span>
         </x-nav-link>
+      
         @endif
+         <x-nav-link :href="route('requisicoes-material.index')"
+            :active="request()->routeIs('requisicoes-material.*')" class="nav-item">
+            <i class="fas fa-dolly ni-icon"></i>
+            <span class="ni-text">Req. de Material</span>
+        </x-nav-link>
 
     </div>
     <div class="sb-flyout">

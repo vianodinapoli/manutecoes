@@ -140,8 +140,7 @@ Route::middleware('auth')->group(function () {
     //REQUISIÇÃO MATERIAL
 Route::middleware(['auth', 'permission:requisicoes-material'])
     ->group(function () {
-        Route::resource('requisicoes-material', RequisicaoMaterialController::class)
-             ->except(['create', 'edit']);
+      
         Route::get('requisicoes-material/{requisicaoMaterial}/pdf',
             [RequisicaoMaterialController::class, 'pdf'])
             ->name('requisicoes-material.pdf');
