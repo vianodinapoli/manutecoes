@@ -239,28 +239,30 @@ $(document).ready(function () {
             datasets: [{
                 data: {!! json_encode($dadosStock->pluck('total')) !!},
                 backgroundColor: [
-    '#e6194b', // vermelho forte
-  '#3cb44b', // verde
-  '#ffe119', // amarelo
-  '#4363d8', // azul
-  '#f58231', // laranja
-  '#911eb4', // roxo
-  '#46f0f0', // ciano
-  '#f032e6', // magenta
-  '#bcf60c', // lima
-  '#fabebe', // rosa claro
-  '#008080', // teal escuro
-  '#e6beff', // lavanda
-  '#9a6324', // castanho
-  '#fffac8', // amarelo claro
-  '#800000', // vinho
-  '#aaffc3', // verde claro
-  '#808000', // oliva
-  '#ffd8b1', // pêssego
-  '#000075', // azul escuro
-  '#808080', // cinza
-  '#000000', // preto
-  '#ffffff'  // branco (usa só em fundo escuro)
+                    '#7ed953ff',
+                       '#121212ff',
+                        '#ff1e56ff',
+                       '#707070ff',
+                       '#fbfaf8ff',
+                       
+                       '#187fc4ff',
+                       '#001f2bff',
+                      
+                       
+ '#342cc9ff',
+ '#8b3ecfff',
+ '#ddff00ff',
+ 
+                    '#187fc4ff', // Steel Blue
+                    '#7ed953ff', // Radioactive Grass
+                    '#ff1e56ff', // Hot Fuchsia
+                    '#8b3ecfff', // Blue Violet
+                    '#ddff00ff', // Lime Yellow
+                    '#342cc9ff', // Persian Blue
+                    '#001f2bff', // Ink Black
+                    '#707070ff', // Dim Grey
+                    '#121212ff', // Onyx
+                    '#fbfaf8ff'  // Bright Snow
 ],
                 hoverOffset: 10,
                 borderWidth: 0
