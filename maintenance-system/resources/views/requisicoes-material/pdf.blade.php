@@ -119,12 +119,10 @@
     <table>
         <thead>
             <tr>
-                <th style="width:5%">#</th>
-                <th style="width:38%">Descrição</th>
-                <th class="right" style="width:13%">Quantidade</th>
-                <th class="center" style="width:9%">Unid.</th>
-                <th class="right" style="width:17%">Preço Unit.</th>
-                <th class="right" style="width:18%">Subtotal</th>
+               <th style="width:5%">#</th>
+<th style="width:50%">Descrição</th>
+<th class="right" style="width:20%">Quantidade</th>
+<th class="center" style="width:25%">Unid.</th>
             </tr>
         </thead>
         <tbody>
@@ -134,22 +132,13 @@
                 <td>{{ $item->description }}</td>
                 <td class="right">{{ number_format($item->quantity, 3, ',', '.') }}</td>
                 <td class="center">{{ $item->unit }}</td>
-                <td class="right">{{ number_format($item->unit_price, 2, ',', '.') }} MT</td>
-                <td class="right">{{ number_format($item->subtotal, 2, ',', '.') }} MT</td>
+               
             </tr>
             @endforeach
         </tbody>
     </table>
 
-    {{-- TOTAL --}}
-    <div class="totals">
-        <table>
-            <tr class="total-final">
-                <td>TOTAL GERAL</td>
-                <td class="right">{{ number_format($requisicao->total_final, 2, ',', '.') }} MT</td>
-            </tr>
-        </table>
-    </div>
+    
 
     {{-- OBSERVAÇÕES --}}
     @if($requisicao->observacoes)

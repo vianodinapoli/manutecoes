@@ -12,7 +12,7 @@ class RequisicaoMaterial extends Model
     protected $fillable = [
         'date', 'destino', 'supplier_id', 'matricula', 'motorista',
         'responsavel', 'observacoes', 'status', 'created_by', 'peso_confirmado',
-    'valor_carga',
+    'valor_carga', 'numero_guia',
     ];
 
     protected $casts = ['date' => 'date'];

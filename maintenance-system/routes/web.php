@@ -30,12 +30,12 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 // ── Rotas protegidas ────────────────────────────────────────
 Route::middleware('auth')->group(function () {
 
-    // Perfil (sem restrição — todos os utilizadores)
+    // Perfil
     Route::get('/profile',    [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile',  [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Download de ficheiros de manutenção (sem restrição)
+    // Download de ficheiros de manutenção
     Route::get('/download-file/{id}', function ($id) {
         $file = \App\Models\MaintenanceFile::findOrFail($id);
         return response()->file(storage_path('app/public/' . $file->filepath));
@@ -62,11 +62,11 @@ Route::middleware('auth')->group(function () {
 
     // ── Movimentos de Armazém ───────────────────────────────
     Route::middleware('permission:acesso movimentos')->group(function () {
-        Route::get('/movimentos/pdf',            [MovimentoArmazemController::class, 'exportPdf']) ->name('movimentos.pdf');
-        Route::get('/movimentos',                [MovimentoArmazemController::class, 'index'])     ->name('movimentos.index');
-        Route::post('/movimentos',               [MovimentoArmazemController::class, 'store'])     ->name('movimentos.store');
-        Route::put('/movimentos/{movimento}',    [MovimentoArmazemController::class, 'update'])    ->name('movimentos.update');
-        Route::delete('/movimentos/{movimento}', [MovimentoArmazemController::class, 'destroy'])   ->name('movimentos.destroy');
+        Route::get('/movimentos/pdf',            [MovimentoArmazemController::class, 'exportPdf'])->name('movimentos.pdf');
+        Route::get('/movimentos',                [MovimentoArmazemController::class, 'index'])    ->name('movimentos.index');
+        Route::post('/movimentos',               [MovimentoArmazemController::class, 'store'])    ->name('movimentos.store');
+        Route::put('/movimentos/{movimento}',    [MovimentoArmazemController::class, 'update'])   ->name('movimentos.update');
+        Route::delete('/movimentos/{movimento}', [MovimentoArmazemController::class, 'destroy'])  ->name('movimentos.destroy');
         Route::get('/api/produtos/{produto}/stock', [MovimentoArmazemController::class, 'stockAtual'])->name('api.produto.stock');
     });
 
@@ -83,33 +83,33 @@ Route::middleware('auth')->group(function () {
         Route::resource('compras', MaterialPurchaseController::class);
         Route::patch('compras/{compra}/status', [MaterialPurchaseController::class, 'updateStatus'])->name('compras.status');
         Route::resource('suppliers', SupplierController::class);
-        Route::get('/requisicoes',              [RequisitionController::class, 'index'])   ->name('requisicoes.index');
-        Route::get('/requisicoes/novo',         [RequisitionController::class, 'create'])  ->name('requisicoes.create');
-        Route::post('/requisicoes/store',       [RequisitionController::class, 'store'])   ->name('requisicoes.store');
-        Route::get('/requisicoes/{id}/json',    [RequisitionController::class, 'showJson'])->name('requisicoes.json');
-        Route::get('/requisicoes/{id}/pdf',     [RequisitionController::class, 'gerarPdf'])->name('requisicoes.pdf');
-        Route::delete('/requisicoes/{requisicao}', [RequisitionController::class, 'destroy'])->name('requisicoes.destroy');
-        Route::get('/requisicoes/{id}/edit',    [RequisitionController::class, 'edit'])    ->name('requisicoes.edit');
-        Route::put('/requisicoes/{id}',         [RequisitionController::class, 'update'])  ->name('requisicoes.update');
+        Route::get('/requisicoes',                 [RequisitionController::class, 'index'])   ->name('requisicoes.index');
+        Route::get('/requisicoes/novo',            [RequisitionController::class, 'create'])  ->name('requisicoes.create');
+        Route::post('/requisicoes/store',          [RequisitionController::class, 'store'])   ->name('requisicoes.store');
+        Route::get('/requisicoes/{id}/json',       [RequisitionController::class, 'showJson'])->name('requisicoes.json');
+        Route::get('/requisicoes/{id}/pdf',        [RequisitionController::class, 'gerarPdf'])->name('requisicoes.pdf');
+        Route::delete('/requisicoes/{requisicao}', [RequisitionController::class, 'destroy']) ->name('requisicoes.destroy');
+        Route::get('/requisicoes/{id}/edit',       [RequisitionController::class, 'edit'])    ->name('requisicoes.edit');
+        Route::put('/requisicoes/{id}',            [RequisitionController::class, 'update'])  ->name('requisicoes.update');
     });
 
     // ── Combustível ─────────────────────────────────────────
     Route::middleware('permission:acesso combustivel')->group(function () {
-        Route::get('/combustivel',                [FuelController::class, 'index'])          ->name('fuel.index');
-        Route::post('/combustivel',               [FuelController::class, 'store'])          ->name('fuel.store');
-        Route::post('/combustivel/entrada',       [FuelController::class, 'storeEntry'])     ->name('fuel.storeEntry');
-        Route::post('/combustivel/store',         [FuelController::class, 'store'])          ->name('fuel.store.alt');
-        Route::post('/combustivel/entry',         [FuelController::class, 'storeEntry'])     ->name('fuel.entry.store');
-        Route::post('/combustivel/tanks/store',   [FuelController::class, 'storeTank'])      ->name('fuel.tanks.store');
-        Route::post('/combustivel/fuel-settlement',[FuelController::class, 'storeSettlement'])->name('fuel.settlement.store');
-        Route::get('/fuel-log/{id}/edit',         [FuelController::class, 'editLog'])        ->name('fuel.log.edit');
-        Route::put('/fuel-log/{id}',              [FuelController::class, 'updateLog'])      ->name('fuel.log.update');
-        Route::delete('/fuel-log/{id}',           [FuelController::class, 'destroyLog'])     ->name('fuel.log.destroy');
-        Route::get('/fuel-entry/{id}/edit',       [FuelController::class, 'editEntry'])      ->name('fuel.entry.edit');
-        Route::put('/fuel-entry/{id}',            [FuelController::class, 'updateEntry'])    ->name('fuel.entry.update');
-        Route::delete('/fuel-entry/{id}',         [FuelController::class, 'destroyEntry'])   ->name('fuel.entry.destroy');
-        Route::get('/fuel-log/{id}/json',         [FuelController::class, 'getLogJson'])     ->name('fuel.log.json');
-        Route::get('/fuel-entry/{id}/json',       [FuelController::class, 'getEntryJson'])   ->name('fuel.entry.json');
+        Route::get('/combustivel',                 [FuelController::class, 'index'])           ->name('fuel.index');
+        Route::post('/combustivel',                [FuelController::class, 'store'])           ->name('fuel.store');
+        Route::post('/combustivel/entrada',        [FuelController::class, 'storeEntry'])      ->name('fuel.storeEntry');
+        Route::post('/combustivel/store',          [FuelController::class, 'store'])           ->name('fuel.store.alt');
+        Route::post('/combustivel/entry',          [FuelController::class, 'storeEntry'])      ->name('fuel.entry.store');
+        Route::post('/combustivel/tanks/store',    [FuelController::class, 'storeTank'])       ->name('fuel.tanks.store');
+        Route::post('/combustivel/fuel-settlement',[FuelController::class, 'storeSettlement']) ->name('fuel.settlement.store');
+        Route::get('/fuel-log/{id}/edit',          [FuelController::class, 'editLog'])         ->name('fuel.log.edit');
+        Route::put('/fuel-log/{id}',               [FuelController::class, 'updateLog'])       ->name('fuel.log.update');
+        Route::delete('/fuel-log/{id}',            [FuelController::class, 'destroyLog'])      ->name('fuel.log.destroy');
+        Route::get('/fuel-entry/{id}/edit',        [FuelController::class, 'editEntry'])       ->name('fuel.entry.edit');
+        Route::put('/fuel-entry/{id}',             [FuelController::class, 'updateEntry'])     ->name('fuel.entry.update');
+        Route::delete('/fuel-entry/{id}',          [FuelController::class, 'destroyEntry'])    ->name('fuel.entry.destroy');
+        Route::get('/fuel-log/{id}/json',          [FuelController::class, 'getLogJson'])      ->name('fuel.log.json');
+        Route::get('/fuel-entry/{id}/json',        [FuelController::class, 'getEntryJson'])    ->name('fuel.entry.json');
     });
 
     // ── Caixa e Bancos ──────────────────────────────────────
@@ -123,31 +123,34 @@ Route::middleware('auth')->group(function () {
         Route::patch('discharges/{discharge}/confirm', [DischargeController::class, 'confirm'])->name('discharges.confirm');
     });
 
-    // ── Administração (apenas super-admin) ──────────────────
+    // ── Administração ───────────────────────────────────────
     Route::middleware('role:super-admin')->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/users',               [UserController::class, 'index'])       ->name('users.index');
-        Route::post('/users',              [UserController::class, 'store'])       ->name('users.store');
-        Route::put('/users/{user}',        [UserController::class, 'update'])      ->name('users.update');
-        Route::post('/users/{user}/toggle',[UserController::class, 'toggleAdmin']) ->name('users.toggle');
-        Route::delete('/users/{user}',     [UserController::class, 'destroy'])     ->name('users.destroy');
-
-        // Backup
-    Route::get('/backup',          [BackupController::class, 'index'])   ->name('backup.index');
-    Route::get('/backup/download', [BackupController::class, 'download'])->name('backup.download');
-    Route::post('/backup/restore', [BackupController::class, 'restore']) ->name('backup.restore');
+        Route::get('/users',                [UserController::class, 'index'])       ->name('users.index');
+        Route::post('/users',               [UserController::class, 'store'])       ->name('users.store');
+        Route::put('/users/{user}',         [UserController::class, 'update'])      ->name('users.update');
+        Route::post('/users/{user}/toggle', [UserController::class, 'toggleAdmin']) ->name('users.toggle');
+        Route::delete('/users/{user}',      [UserController::class, 'destroy'])     ->name('users.destroy');
+        Route::get('/backup',               [BackupController::class, 'index'])     ->name('backup.index');
+        Route::get('/backup/download',      [BackupController::class, 'download'])  ->name('backup.download');
+        Route::post('/backup/restore',      [BackupController::class, 'restore'])   ->name('backup.restore');
     });
 
-    //REQUISIÇÃO MATERIAL
-Route::middleware(['auth', 'permission:requisicoes-material'])
-    ->group(function () {
-      
-        Route::get('requisicoes-material/{requisicaoMaterial}/pdf',
-            [RequisicaoMaterialController::class, 'pdf'])
-            ->name('requisicoes-material.pdf');
+    // ── Requisições de Material ─────────────────────────────
+Route::middleware('permission:requisicoes-material')->group(function () {
 
-            Route::post('requisicoes-material/{id}/confirmar-carga', [RequisicaoMaterialController::class, 'confirmarCarga']);
-Route::resource('requisicoes-material', RequisicaoMaterialController::class);
-    });
+    Route::get(
+        'requisicoes-material/{requisicaoMaterial}/pdf',
+        [RequisicaoMaterialController::class, 'pdf']
+    )->name('requisicoes-material.pdf');
+
+    Route::post(
+        'requisicoes-material/{requisicaoMaterial}/confirmar-carga',
+        [RequisicaoMaterialController::class, 'confirmarCarga']
+    )->name('requisicoes-material.confirmar-carga');
+
+    Route::resource('requisicoes-material', RequisicaoMaterialController::class)
+        ->parameters(['requisicoes-material' => 'requisicaoMaterial']); // ← esta linha
+});
 
 });
 

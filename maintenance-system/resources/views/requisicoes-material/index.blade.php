@@ -204,7 +204,7 @@
         $emitidas   = $requisicoes->where('status','EMITIDA')->count();
         $confirmadas= $requisicoes->where('status','CONFIRMADA')->count();
         $finalizadas= $requisicoes->where('status','FINALIZADA')->count();
-        $valorTotal = $requisicoes->sum('total_final');
+       $valorTotal = $requisicoes->where('status','FINALIZADA')->sum('total_final');
     @endphp
     <div class="row g-3 mb-4 no-print">
         <div class="col-6 col-md-2">
@@ -239,16 +239,18 @@
                 <i class="fas fa-check-circle kpi-icon" style="color:#16a34a;opacity:.08"></i>
             </div>
         </div>
-        <div class="col-12 col-md-4">
-            <div class="kpi-card red">
-                <div class="kpi-label">Valor Total</div>
-                <div class="kpi-value-sm" style="color:#c60a1a;">
-                    {{ number_format($valorTotal, 2, ',', '.') }} MT
-                </div>
-                <div class="kpi-sub">soma geral das requisições</div>
-                <i class="fas fa-coins kpi-icon" style="color:#c60a1a;opacity:.08"></i>
-            </div>
+      <div class="col-12 col-md-4">
+    <div class="kpi-card red">
+        <div class="kpi-label">Valor Total</div>
+        
+        <div class="kpi-value-sm" id="kpiValorTotal" style="color:#c60a1a;">
+            {{ number_format($valorTotal, 2, ',', '.') }} MT
         </div>
+        
+        <div class="kpi-sub">total das requisições finalizadas</div>
+        <i class="fas fa-coins kpi-icon" style="color:#c60a1a;opacity:.08"></i>
+    </div>
+</div>
     </div>
 
     {{-- FLUXO VISUAL --}}
@@ -374,104 +376,128 @@
         </div>
     </div>
 
-    {{-- TABELA --}}
     <div class="table-card">
-        <div class="p-3">
-            <table id="tblRequisicoes" class="table table-hover align-middle mb-0 w-100">
-                <thead>
-                    <tr>
-                        <th>Nº / DATA</th>
-                        <th>FORNECEDOR</th>
-                        <th>DESTINO</th>
-                        <th>MOTORISTA</th>
-                        <th>MATRÍCULA</th>
-                        <th>RESPONSÁVEL</th>
-                        <th>ESTADO</th>
-                        <th class="text-end">TOTAL (MT)</th>
-                        <th class="text-center no-print">AÇÕES</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($requisicoes as $req)
-                    <tr
-                        data-status="{{ $req->status }}"
-                        data-date="{{ $req->date->format('Y-m-d') }}"
-                        data-date-fmt="{{ $req->date->format('d/m/Y') }}"
-                        data-destino="{{ strtolower($req->destino) }}"
-                        data-destino-fmt="{{ $req->destino }}"
-                        data-req-id="{{ $req->id }}"
-                        data-fornecedor="{{ $req->supplier->name ?? '—' }}"
-                        data-motorista="{{ $req->motorista ?? '—' }}"
-                        data-matricula="{{ $req->matricula ?? '—' }}"
-                        data-responsavel="{{ $req->responsavel ?? '—' }}"
-                        data-total="{{ number_format($req->total_final, 2, ',', '.') }}"
-                        data-peso="{{ $req->peso_confirmado ?? '' }}"
-                        data-valor-carga="{{ $req->valor_carga ?? '' }}">
-                        <td>
-                            <span class="fw-bold" style="font-size:.8rem;color:#c60a1a;">
-                                #{{ str_pad($req->id, 4, '0', STR_PAD_LEFT) }}
-                            </span><br>
-                            <span class="text-muted" style="font-size:.72rem;">{{ $req->date->format('d/m/Y') }}</span>
-                        </td>
-                        <td>
-                            @if($req->supplier)
-                                <span class="fw-semibold" style="font-size:.78rem;">{{ $req->supplier->name }}</span>
-                                @if($req->supplier->nuit)
-                                    <div class="text-muted" style="font-size:.7rem;">NUIT: {{ $req->supplier->nuit }}</div>
-                                @endif
-                            @else
-                                <span class="text-muted">—</span>
+    <div class="p-3">
+        <table id="tblRequisicoes" class="table table-hover align-middle mb-0 w-100">
+            <thead>
+                <tr>
+                    <th>Nº / DATA</th> <th>FORNECEDOR</th> <th>CARGA / DESTINO</th> <th>MOTORISTA</th> <th>MATRÍCULA</th> <th>RESPONSÁVEL</th> <th>ESTADO</th> <th class="text-end">TOTAL (MT)</th> <th class="text-center no-print">AÇÕES</th> </tr>
+            </thead>
+            <tbody>
+                @foreach($requisicoes as $req)
+                <tr
+                    data-status="{{ $req->status }}"
+                    data-date="{{ $req->date->format('Y-m-d') }}"
+                    data-date-fmt="{{ $req->date->format('d/m/Y') }}"
+                    data-destino="{{ strtolower($req->destino) }}"
+                    data-destino-fmt="{{ $req->destino }}"
+                    data-req-id="{{ $req->id }}"
+                    data-fornecedor="{{ $req->supplier->name ?? '—' }}"
+                    data-motorista="{{ $req->motorista ?? '—' }}"
+                    data-matricula="{{ $req->matricula ?? '—' }}"
+                    data-responsavel="{{ $req->responsavel ?? '—' }}"
+                    data-total="{{ number_format($req->total_final, 2, ',', '.') }}"
+                    data-peso="{{ $req->peso_confirmado ?? '' }}"
+                    data-valor-carga="{{ $req->valor_carga ?? '' }}">
+                    
+                    {{-- 1. Nº / DATA + GUIA --}}
+                    <td>
+                        <span class="fw-bold" style="font-size:.8rem;color:#c60a1a;">
+                            #{{ str_pad($req->id, 4, '0', STR_PAD_LEFT) }}
+                        </span><br>
+                        <span class="text-muted" style="font-size:.72rem;">{{ $req->date->format('d/m/Y') }}</span>
+                        
+                        @if($req->numero_guia)
+                            <div class="mt-1" style="font-size:.65rem; color:#1e293b; font-weight:700;">
+                                <i class="fas fa-file-invoice me-1"></i>GUIA: {{ $req->numero_guia }}
+                            </div>
+                        @endif
+                    </td>
+
+                    {{-- 2. FORNECEDOR --}}
+                    <td>
+                        @if($req->supplier)
+                            <span class="fw-semibold" style="font-size:.78rem;">{{ $req->supplier->name }}</span>
+                            @if($req->supplier->nuit)
+                                <div class="text-muted" style="font-size:.7rem;">NUIT: {{ $req->supplier->nuit }}</div>
                             @endif
-                        </td>
-                        <td style="font-size:.82rem;">{{ $req->destino }}</td>
-                        <td style="font-size:.82rem;">{{ $req->motorista ?? '—' }}</td>
-                        <td style="font-size:.82rem;">{{ $req->matricula ?? '—' }}</td>
-                        <td style="font-size:.82rem;">{{ $req->responsavel ?? '—' }}</td>
-                        <td>
-                            @php
-                                $statusMap = [
-                                    'EMITIDA'    => ['badge-emitida',    'fa-paper-plane',    'Emitida'],
-                                    'CONFIRMADA' => ['badge-confirmada', 'fa-weight-hanging', 'Confirmada'],
-                                    'FINALIZADA' => ['badge-finalizada', 'fa-check-double',   'Finalizada'],
-                                    'CANCELADO'  => ['badge-cancelado',  'fa-ban',            'Cancelado'],
-                                ];
-                                [$cls, $ico, $lbl] = $statusMap[$req->status] ?? ['badge-emitida','fa-circle','—'];
-                            @endphp
-                            <span class="badge-status {{ $cls }}">
-                                <i class="fas {{ $ico }}"></i> {{ $lbl }}
-                            </span>
-                        </td>
-                        <td class="text-end fw-bold" style="font-size:.82rem;">
-                            {{ number_format($req->total_final, 2, ',', '.') }} MT
+                        @else
+                            <span class="text-muted">—</span>
+                        @endif
+                    </td>
+
+                    {{-- 3. CARGA / DESTINO --}}
+                    <td style="font-size:.82rem;">
+                        <span class="fw-bold">
+                            {{ $req->items->first()->description ?? '—' }}
+                        </span>
+                        <br>
+                        <span class="text-muted" style="font-size: .72rem;">
+                            <i class="fas fa-location-dot me-1"></i>{{ $req->destino }}
+                        </span>
+                    </td>
+
+                    {{-- 4. MOTORISTA --}}
+                    <td style="font-size:.82rem;">{{ $req->motorista ?? '—' }}</td>
+
+                    {{-- 5. MATRÍCULA --}}
+                    <td style="font-size:.82rem;">{{ $req->matricula ?? '—' }}</td>
+
+                    {{-- 6. RESPONSÁVEL --}}
+                    <td style="font-size:.82rem;">{{ $req->responsavel ?? '—' }}</td>
+
+                    {{-- 7. ESTADO --}}
+                    <td>
+                        @php
+                            $statusMap = [
+                                'EMITIDA'    => ['badge-emitida',    'fa-paper-plane',    'Emitida'],
+                                'CONFIRMADA' => ['badge-confirmada', 'fa-weight-hanging', 'Confirmada'],
+                                'FINALIZADA' => ['badge-finalizada', 'fa-check-double',   'Finalizada'],
+                                'CANCELADO'  => ['badge-cancelado',  'fa-ban',            'Cancelado'],
+                            ];
+                            [$cls, $ico, $lbl] = $statusMap[$req->status] ?? ['badge-emitida','fa-circle','—'];
+                        @endphp
+                        <span class="badge-status {{ $cls }}">
+                            <i class="fas {{ $ico }}"></i> {{ $lbl }}
+                        </span>
+                    </td>
+
+                    {{-- 8. TOTAL (MT) --}}
+                    <td class="text-end fw-bold" style="font-size:.82rem;">
+                        @if($req->status === 'FINALIZADA')
+                            {{ number_format($req->valor_carga ?? $req->total_final, 2, ',', '.') }} MT
                             @if($req->peso_confirmado)
                                 <div class="text-muted fw-normal" style="font-size:.7rem;">
-                                    <i class="fas fa-weight-hanging me-1"></i>{{ $req->peso_confirmado }} kg
+                                    <i class="fas fa-weight-hanging me-1"></i>{{ number_format($req->peso_confirmado, 2, ',', '.') }} kg
                                 </div>
                             @endif
-                        </td>
-                        <td class="text-center no-print" style="white-space:nowrap;">
-                            <a href="{{ route('requisicoes-material.pdf', $req) }}" target="_blank"
-                               class="action-btn text-danger border-danger border-opacity-25" title="PDF">
-                                <i class="fas fa-file-pdf"></i>
-                            </a>
-                            @can('requisicoes-material')
-                            {{-- Botão Confirmar Carga — só aparece se EMITIDA --}}
+                        @else
+                            <span class="text-muted" style="font-size:.75rem;font-style:italic;">
+                                — aguarda confirmação
+                            </span>
+                        @endif
+                    </td>
+
+                    {{-- 9. AÇÕES --}}
+                    <td class="text-center no-print" style="white-space:nowrap;">
+                        <a href="{{ route('requisicoes-material.pdf', $req) }}" target="_blank"
+                           class="action-btn text-danger border-danger border-opacity-25" title="PDF">
+                            <i class="fas fa-file-pdf"></i>
+                        </a>
+                        @can('requisicoes-material')
                             @if($req->status === 'EMITIDA')
-                            <button class="action-btn btn-confirm-carga text-warning border-warning border-opacity-50"
-                                data-id="{{ $req->id }}"
-                                data-num="#{{ str_pad($req->id, 4, '0', STR_PAD_LEFT) }}"
-                                data-destino="{{ $req->destino }}"
-                                title="Confirmar Carga">
-                                <i class="fas fa-weight-hanging"></i>
-                                <span>Confirmar</span>
-                            </button>
-                            @endif
-                            {{-- Botão Editar — só EMITIDA pode ser editada --}}
-                            @if($req->status === 'EMITIDA')
-                            <button class="action-btn text-primary border-primary border-opacity-25 btn-edit"
-                                data-id="{{ $req->id }}" title="Editar">
-                                <i class="fas fa-pencil-alt"></i>
-                            </button>
+                                <button class="action-btn btn-confirm-carga text-warning border-warning border-opacity-50"
+                                    data-id="{{ $req->id }}"
+                                    data-num="#{{ str_pad($req->id, 4, '0', STR_PAD_LEFT) }}"
+                                    data-destino="{{ $req->destino }}"
+                                    title="Confirmar Carga">
+                                    <i class="fas fa-weight-hanging"></i>
+                                    <span>Confirmar</span>
+                                </button>
+                                <button class="action-btn text-primary border-primary border-opacity-25 btn-edit"
+                                    data-id="{{ $req->id }}" title="Editar">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </button>
                             @endif
                             <button class="action-btn text-danger border-danger border-opacity-25 btn-delete"
                                 data-id="{{ $req->id }}"
@@ -479,14 +505,14 @@
                                 title="Eliminar">
                                 <i class="fas fa-trash"></i>
                             </button>
-                            @endcan
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+                        @endcan
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
+</div>
 
     {{-- PRINT ONLY: totais + rodapé --}}
     <div class="print-only print-totals" id="printTotals">
@@ -604,19 +630,19 @@
                                     </th>
                                     <th style="width:13%">Quantidade <span class="text-danger">*</span></th>
                                     <th style="width:10%">Unidade <span class="text-danger">*</span></th>
-                                    <th style="width:17%">Preço Unit. (MT) <span class="text-danger">*</span></th>
-                                    <th style="width:17%" class="text-end">Subtotal (MT)</th>
+                                    <!-- <th style="width:17%">Preço Unit. (MT) <span class="text-danger">*</span></th> -->
+                                    <!-- <th style="width:17%" class="text-end">Subtotal (MT)</th> -->
                                     <th style="width:8%"></th>
                                 </tr>
                             </thead>
                             <tbody id="itemsBody"></tbody>
-                            <tfoot class="table-light">
+                            <!-- <tfoot class="table-light">
                                 <tr>
                                     <td colspan="4" class="text-end fw-bold pe-2">TOTAL GERAL</td>
                                     <td class="text-end fw-bold" style="color:#c60a1a;" id="totalGeral">0,00 MT</td>
                                     <td></td>
                                 </tr>
-                            </tfoot>
+                            </tfoot> -->
                         </table>
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-success" id="btnAddItem">
@@ -699,6 +725,18 @@
                     </div>
                 </div>
 
+                <div class="carga-step mb-3">
+    <div class="carga-step-num">3</div>
+    <div class="carga-step-body">
+        <div class="carga-step-title">Número da Guia de Remessa</div>
+        <div class="carga-step-desc">Introduza o número oficial da guia que acompanha o material.</div>
+        <div class="carga-field mt-2">
+            <label>Nº da Guia</label>
+            <input type="text" id="carga_guia" placeholder="Ex: GR-2024/001">
+        </div>
+    </div>
+</div>
+
                 <div class="carga-step" style="background:#f0fdf4;border-color:#bbf7d0;">
                     <div class="carga-step-num" style="background:#16a34a;">3</div>
                     <div class="carga-step-body">
@@ -735,37 +773,34 @@
                     As predefinições são partilhadas por todos os utilizadores.
                 </p>
                 <div class="row g-2 mb-3 align-items-end">
-                    <div class="col-md-4">
-                        <label class="form-label small fw-semibold">Descrição do Material</label>
-                        <input type="text" class="form-control form-control-sm" id="predefNome" placeholder="Ex: Cimento Portland 50kg">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small fw-semibold">Unidade padrão</label>
-                        <select class="form-select form-select-sm" id="predefUnidade">
-                            <option value="un">un</option>
-                            <option value="kg">kg</option>
-                            <option value="g">g</option>
-                            <option value="mg">mg</option>
-                            <option value="t">t</option>
-                            <option value="m">m</option>
-                            <option value="m²">m²</option>
-                            <option value="m³">m³</option>
-                            <option value="l">l</option>
-                            <option value="ml">ml</option>
-                            <option value="cx">cx</option>
-                            <option value="pc">pc</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small fw-semibold">Preço Unit. padrão (MT)</label>
-                        <input type="number" class="form-control form-control-sm" id="predefPreco" step="0.01" min="0" placeholder="0.00">
-                    </div>
-                    <div class="col-md-3">
-                        <button class="btn btn-sm btn-danger w-100" id="btnSalvarPredef">
-                            <i class="fas fa-plus me-1"></i> Adicionar Predefinição
-                        </button>
-                    </div>
-                </div>
+    <div class="col-md-6">
+        <label class="form-label small fw-semibold">Descrição do Material</label>
+        <input type="text" class="form-control form-control-sm" id="predefNome"
+            placeholder="Ex: Cimento Portland 50kg">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label small fw-semibold">Unidade padrão</label>
+        <select class="form-select form-select-sm" id="predefUnidade">
+            <option value="un">un</option>
+            <option value="kg">kg</option>
+            <option value="g">g</option>
+            <option value="mg">mg</option>
+            <option value="t">t</option>
+            <option value="m">m</option>
+            <option value="m²">m²</option>
+            <option value="m³">m³</option>
+            <option value="l">l</option>
+            <option value="ml">ml</option>
+            <option value="cx">cx</option>
+            <option value="pc">pc</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-sm btn-danger w-100" id="btnSalvarPredef">
+            <i class="fas fa-plus me-1"></i> Adicionar Predefinição
+        </button>
+    </div>
+</div>
                 <hr>
                 <div id="predefManageList">
                     <div class="text-center text-muted py-3 small" id="predefEmptyMsg">
@@ -820,11 +855,20 @@
     </div>
 </div>
 @endsection
-
 @push('scripts')
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script>
+// ════════════════════════════════════════════
+// Helpers de Modal — Bootstrap 5 seguro
+// ════════════════════════════════════════════
+function showModal(id) {
+    bootstrap.Modal.getOrCreateInstance(document.getElementById(id)).show();
+}
+function hideModal(id) {
+    bootstrap.Modal.getInstance(document.getElementById(id))?.hide();
+}
+
 // ════════════════════════════════════════════
 // DataTable
 // ════════════════════════════════════════════
@@ -835,8 +879,9 @@ const table = $('#tblRequisicoes').DataTable({
     columnDefs: [{ orderable: false, targets: -1 }],
 });
 
+aplicarFiltros();
 // ════════════════════════════════════════════
-// Filtros — via DataTables ext.search (funciona com paginação)
+// Filtros — via DataTables ext.search
 // ════════════════════════════════════════════
 $.fn.dataTable.ext.search.push(function (settings, _data, dataIndex) {
     if (settings.nTable.id !== 'tblRequisicoes') return true;
@@ -852,24 +897,46 @@ $.fn.dataTable.ext.search.push(function (settings, _data, dataIndex) {
     const resp = $('#filtroResponsavel').val().toLowerCase().trim();
     const forn = $('#filtroFornecedor').val().toLowerCase().trim();
 
-    if (di   && String(node.data('date'))        < di)                                       return false;
-    if (df   && String(node.data('date'))        > df)                                       return false;
-    if (st   && node.data('status')             !== st)                                      return false;
-    if (num  && !String(node.data('req-id')).includes(num))                                  return false;
-    if (dest && !String(node.data('destino')).toLowerCase().includes(dest))                  return false;
-    if (forn && !String(node.data('fornecedor')).toLowerCase().includes(forn))               return false;
-    if (mot  && !String(node.data('motorista')).toLowerCase().includes(mot))                 return false;
-    if (mat  && !String(node.data('matricula')).toLowerCase().includes(mat))                 return false;
-    if (resp && !String(node.data('responsavel')).toLowerCase().includes(resp))              return false;
+    if (di   && String(node.data('date'))                              < di)   return false;
+    if (df   && String(node.data('date'))                              > df)   return false;
+    if (st   && node.data('status')                                   !== st)  return false;
+    if (num  && !String(node.data('req-id')).includes(num))                    return false;
+    if (dest && !String(node.data('destino')).toLowerCase().includes(dest))    return false;
+    if (forn && !String(node.data('fornecedor')).toLowerCase().includes(forn)) return false;
+    if (mot  && !String(node.data('motorista')).toLowerCase().includes(mot))   return false;
+    if (mat  && !String(node.data('matricula')).toLowerCase().includes(mat))   return false;
+    if (resp && !String(node.data('responsavel')).toLowerCase().includes(resp)) return false;
 
     return true;
 });
 
 function aplicarFiltros() {
     table.draw();
+    const filteredRows = table.rows({ filter: 'applied' });
+    const count = filteredRows.count();
 
-    // contar linhas filtradas (todas as páginas)
-    const count = table.rows({ filter: 'applied' }).count();
+    // ─── SOMA DINÂMICA NO JAVASCRIPT ───
+    let somaFiltrada = 0;
+
+    filteredRows.every(function() {
+        const node = $(this.node());
+        // Somamos apenas se o status for FINALIZADA
+        if (node.data('status') === 'FINALIZADA') {
+            // Pegamos o valor bruto do atributo data-valor-carga
+            // (Certifique-se que o seu <tr> na tabela tem: data-valor-carga="{{ $req->valor_carga }}")
+            const val = parseFloat(node.data('valor-carga')) || 0;
+            somaFiltrada += val;
+        }
+    });
+
+    // Aqui o JavaScript injeta o valor formatado no HTML (por isso precisamos do ID lá)
+    $('#kpiValorTotal').text(
+        somaFiltrada.toLocaleString('pt-PT', { 
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2 
+        }) + ' MT'
+    );
+    // ───────────────────────────────────
 
     const f = {
         di:   $('#filtroDataInicio').val(),
@@ -882,12 +949,13 @@ function aplicarFiltros() {
         resp: $('#filtroResponsavel').val().trim(),
         forn: $('#filtroFornecedor').val(),
     };
+    
     const algumActivo = Object.values(f).some(v => v !== '');
-
     $('#extractCount').text(count);
+    
     const partes = [];
     if (f.num)  partes.push('Nº: ' + f.num);
-    if (f.di)   partes.push('De '  + f.di.split('-').reverse().join('/'));
+    if (f.di)   partes.push('De ' + f.di.split('-').reverse().join('/'));
     if (f.df)   partes.push('até ' + f.df.split('-').reverse().join('/'));
     if (f.dest) partes.push('Destino: "' + f.dest + '"');
     if (f.forn) partes.push('Fornecedor: "' + f.forn + '"');
@@ -895,6 +963,7 @@ function aplicarFiltros() {
     if (f.mat)  partes.push('Matrícula: "' + f.mat + '"');
     if (f.resp) partes.push('Responsável: "' + f.resp + '"');
     if (f.st)   partes.push('Estado: ' + f.st);
+    
     $('#extractLabel').text(partes.length ? ' — ' + partes.join(' | ') : '');
     $('#extractBar').toggleClass('visible', algumActivo && count > 0);
 }
@@ -910,28 +979,33 @@ $('#btnLimparFiltros').on('click', function () {
     table.draw();
     $('#extractBar').removeClass('visible');
 });
-
 // ════════════════════════════════════════════
 // Gerar Extrato PDF
+// — só mostra Total (MT) para requisições FINALIZADAS
 // ════════════════════════════════════════════
 function gerarExtratoPDF() {
-    // lê TODAS as linhas filtradas, não só a página actual
     const rows = [];
     table.rows({ filter: 'applied' }).every(function () {
         const r = $(this.node());
+        // Pegamos a descrição que está no HTML da célula da tabela principal
+        // Buscamos o texto dentro da classe 'fw-bold' da coluna 3 (index 2)
+        const descFirstItem = r.find('td:eq(2) .fw-bold').text().trim();
+
         rows.push({
             id:          r.data('req-id'),
             data:        r.data('date-fmt'),
             destino:     r.data('destino-fmt'),
+            descricao:   descFirstItem || '—', // Nova propriedade capturada
             fornecedor:  r.data('fornecedor'),
             motorista:   r.data('motorista'),
             matricula:   r.data('matricula'),
             responsavel: r.data('responsavel'),
             status:      r.data('status'),
-            total:       r.data('total'),
+            valorCarga:  r.data('valor-carga') || '',
             peso:        r.data('peso') || '—',
         });
     });
+
     if (!rows.length) return;
 
     const di   = $('#filtroDataInicio').val();
@@ -949,21 +1023,25 @@ function gerarExtratoPDF() {
         : 'Todo o período';
 
     const filtrosTexto = [
-        num  ? 'Nº: ' + num           : null,
-        dest ? 'Destino: "' + dest + '"' : null,
-        forn ? 'Fornecedor: "' + forn + '"' : null,
-        mot  ? 'Motorista: "' + mot + '"' : null,
-        mat  ? 'Matrícula: "' + mat + '"' : null,
+        num  ? 'Nº: '            + num  : null,
+        dest ? 'Destino: "'      + dest + '"' : null,
+        forn ? 'Fornecedor: "'   + forn + '"' : null,
+        mot  ? 'Motorista: "'    + mot  + '"' : null,
+        mat  ? 'Matrícula: "'    + mat  + '"' : null,
         resp ? 'Responsável: "' + resp + '"' : null,
-        st   ? 'Estado: ' + st        : null,
+        st   ? 'Estado: '        + st   : null,
         (di || df) ? 'Período: ' + periodoStr : null,
     ].filter(Boolean).join(' | ') || 'Todos os registos';
 
     function parseVal(str) {
         return parseFloat(String(str).replace(/\./g, '').replace(',', '.')) || 0;
     }
-    const sumTotal = rows.reduce((a, r) => a + parseVal(r.total), 0);
-    const fmt = n => n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MT';
+
+    const sumTotal = rows
+        .filter(r => r.status === 'FINALIZADA' && r.valorCarga !== '')
+        .reduce((a, r) => a + parseVal(r.valorCarga), 0);
+
+    const fmt       = n => n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MT';
     const dataHoje  = new Date().toLocaleDateString('pt-PT');
     const horaAgora = new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
 
@@ -972,20 +1050,32 @@ function gerarExtratoPDF() {
         return `<span style="background:${map[s]||'#64748b'};color:#fff;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:700;">${s}</span>`;
     };
 
-    const linhas = rows.map((r, i) => `
-        <tr>
+    const linhas = rows.map((r, i) => {
+        const valorCell = (r.status === 'FINALIZADA' && r.valorCarga !== '')
+            ? `<strong>${parseVal(r.valorCarga).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2})} MT</strong>`
+            : `<span style="color:#94a3b8;font-style:italic;">—</span>`;
+
+        return `<tr>
             <td class="center">${i + 1}</td>
             <td><strong style="color:#c60a1a;">#${String(r.id).padStart(4,'0')}</strong></td>
             <td>${r.data}</td>
-            <td>${r.destino}</td>
+            <td>
+                <div style="font-weight:bold; color:#1e293b;">${r.descricao}</div>
+                <div style="font-size:9px; color:#64748b; margin-top:2px;">
+                    <i class="fas fa-location-dot"></i> ${r.destino}
+                </div>
+            </td>
             <td>${r.fornecedor}</td>
             <td>${r.motorista}</td>
             <td>${r.matricula}</td>
             <td>${r.responsavel}</td>
             <td class="center">${statusBadge(r.status)}</td>
-            <td class="right">${r.peso} kg</td>
-            <td class="right"><strong>${r.total} MT</strong></td>
-        </tr>`).join('');
+            <td class="right">${r.peso !== '—' ? r.peso + ' kg' : '—'}</td>
+            <td class="right">${valorCell}</td>
+        </tr>`;
+    }).join('');
+
+    const mostrarTotal = rows.some(r => r.status === 'FINALIZADA' && r.valorCarga !== '');
 
     const html = `<!DOCTYPE html>
 <html lang="pt"><head><meta charset="UTF-8">
@@ -1010,10 +1100,11 @@ thead th.right,td.right{text-align:right}
 thead th.center,td.center{text-align:center}
 tbody tr{border-bottom:1px solid #e8edf2}
 tbody tr:nth-child(even){background:#fdf5f5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-tbody td{padding:8px 10px;font-size:11px}
-.totals-wrap{width:280px;margin-left:auto;margin-bottom:24px}
+tbody td{padding:8px 10px;font-size:11px; vertical-align: middle;}
+.totals-wrap{width:300px;margin-left:auto;margin-bottom:24px}
 .totals-wrap tr.grand{background:#c60a1a;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .totals-wrap tr.grand td{padding:8px 10px;font-size:13px;font-weight:bold}
+.totals-wrap td.right{text-align:right}
 .page-footer{margin-top:32px;border-top:2px solid #c60a1a;padding-top:14px;display:flex;justify-content:space-between}
 @media print{body{padding:20px}@page{margin:12mm;size:A4 landscape}}
 </style></head><body>
@@ -1037,20 +1128,24 @@ tbody td{padding:8px 10px;font-size:11px}
         <th class="center" style="width:3%">#</th>
         <th style="width:6%">Nº</th>
         <th style="width:7%">Data</th>
-        <th style="width:14%">Destino</th>
-        <th style="width:14%">Fornecedor</th>
-        <th style="width:11%">Motorista</th>
-        <th style="width:9%">Matrícula</th>
-        <th style="width:11%">Responsável</th>
+        <th style="width:16%">Carga / Destino</th>
+        <th style="width:13%">Fornecedor</th>
+        <th style="width:10%">Motorista</th>
+        <th style="width:8%">Matrícula</th>
+        <th style="width:9%">Responsável</th>
         <th class="center" style="width:10%">Estado</th>
-        <th class="right" style="width:8%">Peso (kg)</th>
+        <th class="right" style="width:7%">Peso (kg)</th>
         <th class="right" style="width:11%">Total (MT)</th>
     </tr></thead>
     <tbody>${linhas}</tbody>
 </table>
+${mostrarTotal ? `
 <div class="totals-wrap">
-    <table><tr class="grand"><td>TOTAL GERAL</td><td class="right">${fmt(sumTotal)}</td></tr></table>
-</div>
+    <table>
+        <tr><td style="font-size:10px;color:#64748b;padding:6px 10px;">* Soma apenas das requisições finalizadas</td></tr>
+        <tr class="grand"><td>TOTAL GERAL</td><td class="right">${fmt(sumTotal)}</td></tr>
+    </table>
+</div>` : ''}
 <div class="page-footer">
     <div>
         <div style="font-size:8px;text-transform:uppercase;color:#64748b;">Gerado por</div>
@@ -1066,9 +1161,9 @@ tbody td{padding:8px 10px;font-size:11px}
     win.document.write(html);
     win.document.close();
 }
-
 // ════════════════════════════════════════════
 // Predefinições — localStorage
+// Preço removido do fluxo; mantém-se só nome + unidade
 // ════════════════════════════════════════════
 function loadPredef() {
     try { return JSON.parse(localStorage.getItem('req_predef') || '[]'); }
@@ -1086,7 +1181,7 @@ function renderPredefManage() {
             <div class="predef-manage-item">
                 <div style="flex:1;">
                     <div style="font-size:.82rem;font-weight:600;color:#1e293b;">${p.nome}</div>
-                    <div style="font-size:.72rem;color:#94a3b8;">${p.unidade} · ${Number(p.preco).toLocaleString('pt-PT',{minimumFractionDigits:2})} MT</div>
+                    <div style="font-size:.72rem;color:#94a3b8;">${p.unidade}</div>
                 </div>
                 <button class="btn btn-xs btn-outline-danger btn-del-predef" data-idx="${i}"
                     style="font-size:.7rem;padding:3px 8px;border-radius:5px;">
@@ -1107,7 +1202,7 @@ function renderPredefPanel() {
         list.append(`
             <div class="predef-item" data-idx="${i}">
                 <div class="predef-item-name">${p.nome}</div>
-                <div class="predef-item-details">${p.unidade} · ${Number(p.preco).toLocaleString('pt-PT',{minimumFractionDigits:2})} MT</div>
+                <div class="predef-item-details">${p.unidade}</div>
                 <div class="predef-item-add"><i class="fas fa-plus"></i></div>
             </div>`);
     });
@@ -1116,12 +1211,11 @@ function renderPredefPanel() {
 $('#btnSalvarPredef').on('click', function () {
     const nome    = $('#predefNome').val().trim();
     const unidade = $('#predefUnidade').val();
-    const preco   = $('#predefPreco').val();
     if (!nome) return alert('Introduz o nome do material.');
     const arr = loadPredef();
-    arr.push({ nome, unidade, preco: preco || '0' });
+    arr.push({ nome, unidade });
     savePredef(arr);
-    $('#predefNome').val(''); $('#predefPreco').val('');
+    $('#predefNome').val('');
     renderPredefManage(); renderPredefPanel();
     showToast('Predefinição adicionada.', false);
 });
@@ -1136,17 +1230,16 @@ $(document).on('click', '.btn-del-predef', function () {
 $(document).on('click', '#predefList .predef-item', function () {
     const p = loadPredef()[parseInt($(this).data('idx'))];
     if (!p) return;
-    $('#itemsBody').append(itemRow({ description: p.nome, unit: p.unidade, unit_price: p.preco }));
-    recalcTotal();
+    $('#itemsBody').append(itemRow({ description: p.nome, unit: p.unidade }));
     $('#predefPanel').hide();
 });
 
 $('#btnShowPredef').on('click', function () { renderPredefPanel(); $('#predefPanel').toggle(); });
 $('#btnClosePredef').on('click', function () { $('#predefPanel').hide(); });
-$('#btnGerir').on('click', function () { renderPredefManage(); new bootstrap.Modal('#modalPredef').show(); });
+$('#btnGerir').on('click', function () { renderPredefManage(); showModal('modalPredef'); });
 
 // ════════════════════════════════════════════
-// Itens do modal
+// Itens do modal — sem preço nem subtotal
 // ════════════════════════════════════════════
 const UNITS = ['kg','g','mg','t','m','cm','mm','km','m²','m³','l','ml','un','cx','pc'];
 
@@ -1160,9 +1253,6 @@ function itemRow(item = {}) {
         <td><input type="number" class="form-control form-control-sm item-qty"
             step="0.001" min="0.001" value="${item.quantity ?? ''}" required></td>
         <td><select class="form-select form-select-sm item-unit">${opts}</select></td>
-        <td><input type="number" class="form-control form-control-sm item-price"
-            step="0.01" min="0" value="${item.unit_price ?? ''}" required></td>
-        <td class="text-end align-middle fw-semibold item-subtotal">0,00</td>
         <td class="text-center align-middle">
             <button type="button" class="btn btn-sm btn-outline-danger btn-remove-item">
                 <i class="fas fa-trash"></i>
@@ -1171,23 +1261,9 @@ function itemRow(item = {}) {
     </tr>`;
 }
 
-function recalcTotal() {
-    let total = 0;
-    $('#itemsBody tr').each(function () {
-        const qty   = parseFloat($(this).find('.item-qty').val())   || 0;
-        const price = parseFloat($(this).find('.item-price').val()) || 0;
-        const sub   = qty * price;
-        $(this).find('.item-subtotal').text(sub.toLocaleString('pt-PT', { minimumFractionDigits: 2 }));
-        total += sub;
-    });
-    $('#totalGeral').text(total.toLocaleString('pt-PT', { minimumFractionDigits: 2 }) + ' MT');
-}
-
-$(document).on('input', '.item-qty, .item-price', recalcTotal);
 $(document).on('click', '.btn-remove-item', function () {
     if ($('#itemsBody tr').length > 1) {
         $(this).closest('tr').remove();
-        recalcTotal();
     } else {
         alert('A requisição precisa de pelo menos um item.');
     }
@@ -1206,9 +1282,8 @@ $('#btnNova').on('click', function () {
     $('#statusWrap').addClass('d-none');
     $('#predefPanel').hide();
     $('#itemsBody').html(itemRow());
-    recalcTotal();
     $('#btnSalvar').prop('disabled', false).html('<i class="fas fa-paper-plane me-1"></i> Emitir Requisição');
-    new bootstrap.Modal('#modalRequisicao').show();
+    showModal('modalRequisicao');
 });
 
 // ════════════════════════════════════════════
@@ -1216,6 +1291,7 @@ $('#btnNova').on('click', function () {
 // ════════════════════════════════════════════
 $(document).on('click', '.btn-edit', function () {
     const id = $(this).data('id');
+
     $.ajax({
         url: `/requisicoes-material/${id}`,
         method: 'GET',
@@ -1235,16 +1311,20 @@ $(document).on('click', '.btn-edit', function () {
             $('#predefPanel').hide();
             $('#itemsBody').empty();
             (data.items ?? []).forEach(item => $('#itemsBody').append(itemRow(item)));
-            recalcTotal();
             $('#btnSalvar').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Guardar Alterações');
-            new bootstrap.Modal('#modalRequisicao').show();
+            showModal('modalRequisicao');
         },
         error(xhr) {
-            alert('Erro ao carregar requisição:\n' + (xhr.responseJSON?.message ?? 'Erro desconhecido.'));
+            console.error('Editar — erro HTTP', xhr.status, xhr.responseText);
+            const msg = xhr.responseJSON?.message ?? xhr.responseJSON?.error ?? `HTTP ${xhr.status}`;
+            alert('Erro ao carregar requisição:\n' + msg);
         },
     });
 });
 
+// ════════════════════════════════════════════
+// Guardar / Emitir
+// ════════════════════════════════════════════
 // ════════════════════════════════════════════
 // Guardar / Emitir
 // ════════════════════════════════════════════
@@ -1255,14 +1335,20 @@ $('#btnSalvar').on('click', function () {
     const items = [];
     let valid = true;
     $('#itemsBody tr').each(function () {
-        const desc  = $(this).find('.item-desc').val().trim();
-        const qty   = $(this).find('.item-qty').val();
-        const unit  = $(this).find('.item-unit').val();
-        const price = $(this).find('.item-price').val();
-        if (!desc || !qty || !price) { valid = false; return false; }
-        items.push({ description: desc, quantity: qty, unit, unit_price: price });
+        const desc = $(this).find('.item-desc').val().trim();
+        const qty  = $(this).find('.item-qty').val();
+        const unit = $(this).find('.item-unit').val();
+        if (!desc || !qty) { valid = false; return false; }
+        
+        // Adicionado unit_price: 0 para satisfazer a validação do backend
+        items.push({ 
+            description: desc, 
+            quantity: qty, 
+            unit: unit,
+            unit_price: 0 
+        });
     });
-    if (!valid || !items.length) return alert('Preenche todos os campos dos itens.');
+    if (!valid || !items.length) return alert('Preenche a descrição e a quantidade de todos os itens.');
 
     const id = $('#req_id').val();
     const payload = {
@@ -1275,7 +1361,7 @@ $('#btnSalvar').on('click', function () {
         responsavel: $('#req_responsavel').val(),
         observacoes: $('#req_observacoes').val(),
         status:      $('#statusWrap').hasClass('d-none') ? 'EMITIDA' : ($('#req_status').val() || 'EMITIDA'),
-        items,
+        items:       items, // Garante o envio do array completo
     };
     if (id) payload._method = 'PUT';
 
@@ -1287,21 +1373,21 @@ $('#btnSalvar').on('click', function () {
     $.ajax({
         url, method: 'POST', data: payload,
         success() {
-            bootstrap.Modal.getInstance('#modalRequisicao').hide();
+            hideModal('modalRequisicao');
             showToast(id ? 'Requisição actualizada.' : 'Requisição emitida com sucesso.', false);
             setTimeout(() => location.reload(), 1500);
         },
         error(xhr) {
+            console.error('Guardar — erro HTTP', xhr.status, xhr.responseText);
             const errs = xhr.responseJSON?.errors;
             alert('Erro:\n' + (errs
                 ? Object.values(errs).flat().join('\n')
-                : xhr.responseJSON?.message ?? 'Erro desconhecido.'));
+                : xhr.responseJSON?.message ?? `HTTP ${xhr.status}`));
             $('#btnSalvar').prop('disabled', false)
                 .html('<i class="fas fa-paper-plane me-1"></i> Emitir Requisição');
         },
     });
 });
-
 // ════════════════════════════════════════════
 // Modal Confirmar Carga
 // ════════════════════════════════════════════
@@ -1311,30 +1397,36 @@ $(document).on('click', '.btn-confirm-carga', function () {
     $('#carga_peso, #carga_valor').val('');
     $('#btnFinalizar').prop('disabled', false)
         .html('<i class="fas fa-check-double"></i> Confirmar e Finalizar');
-    new bootstrap.Modal('#modalConfirmarCarga').show();
+    showModal('modalConfirmarCarga');
 });
 
 $('#btnFinalizar').on('click', function () {
     const peso  = $('#carga_peso').val();
     const valor = $('#carga_valor').val();
-    if (!peso || !valor) return alert('Preenche o peso e o valor da carga antes de finalizar.');
+    const guia  = $('#carga_guia').val(); // Captura o número da guia
+
+    if (!peso || !valor || !guia) return alert('Preenche o peso, o valor e o número da guia antes de finalizar.');
 
     $(this).prop('disabled', true)
         .html('<span class="spinner-border spinner-border-sm me-1"></span> A finalizar...');
 
     $.ajax({
-        url:    `/requisicoes-material/${$('#carga_req_id').val()}/confirmar-carga`,
+        url: `/requisicoes-material/${$('#carga_req_id').val()}/confirmar-carga`,
         method: 'POST',
-        data:   { _token: '{{ csrf_token() }}', peso_confirmado: peso, valor_carga: valor },
+        data: { 
+            _token: '{{ csrf_token() }}', 
+            peso_confirmado: peso, 
+            valor_carga: valor,
+            numero_guia: guia // Envia para o servidor
+        },
         success() {
-            bootstrap.Modal.getInstance('#modalConfirmarCarga').hide();
+            hideModal('modalConfirmarCarga');
             showToast('Requisição finalizada com sucesso!', false);
             setTimeout(() => location.reload(), 1500);
         },
         error(xhr) {
-            alert('Erro ao finalizar:\n' + (xhr.responseJSON?.message ?? 'Erro desconhecido.'));
-            $('#btnFinalizar').prop('disabled', false)
-                .html('<i class="fas fa-check-double"></i> Confirmar e Finalizar');
+            alert('Erro ao finalizar:\n' + (xhr.responseJSON?.message ?? `HTTP ${xhr.status}`));
+            $('#btnFinalizar').prop('disabled', false).html('<i class="fas fa-check-double"></i> Confirmar e Finalizar');
         },
     });
 });
@@ -1361,11 +1453,11 @@ $('#confirmOkBtn').on('click', function () {
         data:   { _token: '{{ csrf_token() }}', _method: 'DELETE' },
         success() {
             closeConfirm();
-            // remove a linha do DataTable sem recarregar a página
-            table.row(`[data-req-id="${_deleteId}"]`).remove().draw();
+            table.row(`tr[data-req-id="${_deleteId}"]`).remove().draw();
             showToast('Requisição eliminada com sucesso.', false);
         },
-        error() {
+        error(xhr) {
+            console.error('Eliminar — erro HTTP', xhr.status, xhr.responseText);
             closeConfirm();
             showToast('Erro ao eliminar a requisição.', true);
         },

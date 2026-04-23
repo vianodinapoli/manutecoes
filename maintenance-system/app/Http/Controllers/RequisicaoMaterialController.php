@@ -32,7 +32,7 @@ class RequisicaoMaterialController extends Controller
                 'motorista'   => $request->motorista,
                 'responsavel' => $request->responsavel,
                 'observacoes' => $request->observacoes,
-                'status'      => 'EMITIDA',   // <- era PENDENTE
+                'status'      => 'EMITIDA',
                 'created_by'  => auth()->id(),
             ]);
 
@@ -42,9 +42,31 @@ class RequisicaoMaterialController extends Controller
         return response()->json(['success' => true, 'message' => 'Requisição criada com sucesso.']);
     }
 
+    /**
+     * Retorna JSON para o modal de edição.
+     * A data é formatada como Y-m-d para compatibilidade com input[type=date].
+     */
     public function show(RequisicaoMaterial $requisicaoMaterial)
     {
-        return response()->json($requisicaoMaterial->load(['items', 'supplier']));
+        $requisicaoMaterial->load(['items', 'supplier']);
+
+        return response()->json([
+            'id'          => $requisicaoMaterial->id,
+            'date'        => $requisicaoMaterial->date->format('Y-m-d'),
+            'destino'     => $requisicaoMaterial->destino,
+            'supplier_id' => $requisicaoMaterial->supplier_id,
+            'motorista'   => $requisicaoMaterial->motorista,
+            'matricula'   => $requisicaoMaterial->matricula,
+            'responsavel' => $requisicaoMaterial->responsavel,
+            'observacoes' => $requisicaoMaterial->observacoes,
+            'status'      => $requisicaoMaterial->status,
+            'items'       => $requisicaoMaterial->items->map(fn($i) => [
+                'description' => $i->description,
+                'quantity'    => $i->quantity,
+                'unit'        => $i->unit,
+                'unit_price'  => $i->unit_price,
+            ]),
+        ]);
     }
 
     public function update(Request $request, RequisicaoMaterial $requisicaoMaterial)
@@ -72,7 +94,9 @@ class RequisicaoMaterialController extends Controller
 
     public function destroy(RequisicaoMaterial $requisicaoMaterial)
     {
+        $requisicaoMaterial->items()->delete();
         $requisicaoMaterial->delete();
+
         return response()->json(['success' => true]);
     }
 
@@ -88,7 +112,7 @@ class RequisicaoMaterialController extends Controller
 
     /**
      * Confirma o peso e valor real da carga e finaliza a requisição.
-     * POST /requisicoes-material/{id}/confirmar-carga
+     * POST /requisicoes-material/{requisicaoMaterial}/confirmar-carga
      */
     public function confirmarCarga(Request $request, RequisicaoMaterial $requisicaoMaterial)
     {
@@ -126,7 +150,6 @@ class RequisicaoMaterialController extends Controller
         ];
 
         if ($withStatus) {
-            // <- actualizado para incluir os novos estados
             $rules['status'] = 'required|in:EMITIDA,CONFIRMADA,FINALIZADA,CANCELADO';
         }
 
