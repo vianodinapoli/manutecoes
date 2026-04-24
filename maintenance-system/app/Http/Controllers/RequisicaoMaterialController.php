@@ -44,23 +44,23 @@ class RequisicaoMaterialController extends Controller
 
     /**
      * Retorna JSON para o modal de edição.
-     * A data é formatada como Y-m-d para compatibilidade com input[type=date].
      */
     public function show(RequisicaoMaterial $requisicaoMaterial)
     {
         $requisicaoMaterial->load(['items', 'supplier']);
 
         return response()->json([
-            'id'          => $requisicaoMaterial->id,
-            'date'        => $requisicaoMaterial->date->format('Y-m-d'),
-            'destino'     => $requisicaoMaterial->destino,
-            'supplier_id' => $requisicaoMaterial->supplier_id,
-            'motorista'   => $requisicaoMaterial->motorista,
-            'matricula'   => $requisicaoMaterial->matricula,
-            'responsavel' => $requisicaoMaterial->responsavel,
-            'observacoes' => $requisicaoMaterial->observacoes,
-            'status'      => $requisicaoMaterial->status,
-            'items'       => $requisicaoMaterial->items->map(fn($i) => [
+            'id'             => $requisicaoMaterial->id,
+            'date'           => $requisicaoMaterial->date->format('Y-m-d'),
+            'destino'        => $requisicaoMaterial->destino,
+            'supplier_id'    => $requisicaoMaterial->supplier_id,
+            'motorista'      => $requisicaoMaterial->motorista,
+            'matricula'      => $requisicaoMaterial->matricula,
+            'responsavel'    => $requisicaoMaterial->responsavel,
+            'observacoes'    => $requisicaoMaterial->observacoes,
+            'status'         => $requisicaoMaterial->status,
+            'local_descarga' => $requisicaoMaterial->local_descarga,
+            'items'          => $requisicaoMaterial->items->map(fn($i) => [
                 'description' => $i->description,
                 'quantity'    => $i->quantity,
                 'unit'        => $i->unit,
@@ -119,15 +119,48 @@ class RequisicaoMaterialController extends Controller
         $request->validate([
             'peso_confirmado' => 'required|numeric|min:0',
             'valor_carga'     => 'required|numeric|min:0',
+            'numero_guia'     => 'required|string|max:255',
+            'local_descarga'  => 'nullable|string|max:500',
         ]);
 
         $requisicaoMaterial->update([
             'peso_confirmado' => $request->peso_confirmado,
             'valor_carga'     => $request->valor_carga,
+            'numero_guia'     => $request->numero_guia,
+            'local_descarga'  => $request->local_descarga,
             'status'          => 'FINALIZADA',
         ]);
 
         return response()->json(['success' => true, 'message' => 'Requisição finalizada com sucesso.']);
+    }
+
+    /**
+     * Edita os dados de carga de uma requisição já finalizada.
+     * PATCH /requisicoes-material/{requisicaoMaterial}/editar-carga
+     *
+     * Permite corrigir peso, valor, número de guia e local de descarga
+     * sem alterar o estado. O PDF é regenerado automaticamente no próximo acesso.
+     */
+    public function editarCarga(Request $request, RequisicaoMaterial $requisicaoMaterial)
+    {
+        $request->validate([
+            'peso_confirmado' => 'required|numeric|min:0',
+            'valor_carga'     => 'required|numeric|min:0',
+            'numero_guia'     => 'required|string|max:255',
+            'local_descarga'  => 'nullable|string|max:500',
+        ]);
+
+        $requisicaoMaterial->update([
+            'peso_confirmado' => $request->peso_confirmado,
+            'valor_carga'     => $request->valor_carga,
+            'numero_guia'     => $request->numero_guia,
+            'local_descarga'  => $request->local_descarga,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dados de carga actualizados com sucesso.',
+        ]);
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────

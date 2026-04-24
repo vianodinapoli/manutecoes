@@ -150,6 +150,10 @@ Route::middleware('permission:requisicoes-material')->group(function () {
 
     Route::resource('requisicoes-material', RequisicaoMaterialController::class)
         ->parameters(['requisicoes-material' => 'requisicaoMaterial']); // ← esta linha
+
+        Route::patch('requisicoes-material/{requisicaoMaterial}/editar-carga',
+    [RequisicaoMaterialController::class, 'editarCarga'])
+    ->name('requisicoes-material.editar-carga');
 });
 
 });
