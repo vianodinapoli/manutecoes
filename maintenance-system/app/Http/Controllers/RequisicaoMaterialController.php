@@ -44,6 +44,7 @@ class RequisicaoMaterialController extends Controller
 
     /**
      * Retorna JSON para o modal de edição.
+     * Inclui numero_guia e local_descarga para edição de requisições finalizadas.
      */
     public function show(RequisicaoMaterial $requisicaoMaterial)
     {
@@ -59,7 +60,10 @@ class RequisicaoMaterialController extends Controller
             'responsavel'    => $requisicaoMaterial->responsavel,
             'observacoes'    => $requisicaoMaterial->observacoes,
             'status'         => $requisicaoMaterial->status,
+            'numero_guia'    => $requisicaoMaterial->numero_guia,
             'local_descarga' => $requisicaoMaterial->local_descarga,
+            'peso_confirmado'=> $requisicaoMaterial->peso_confirmado,
+            'valor_carga'    => $requisicaoMaterial->valor_carga,
             'items'          => $requisicaoMaterial->items->map(fn($i) => [
                 'description' => $i->description,
                 'quantity'    => $i->quantity,
@@ -74,16 +78,30 @@ class RequisicaoMaterialController extends Controller
         $this->validateRequisicao($request, withStatus: true);
 
         DB::transaction(function () use ($request, $requisicaoMaterial) {
-            $requisicaoMaterial->update([
-                'date'        => $request->date,
-                'destino'     => $request->destino,
-                'supplier_id' => $request->supplier_id ?: null,
-                'matricula'   => $request->matricula,
-                'motorista'   => $request->motorista,
-                'responsavel' => $request->responsavel,
-                'observacoes' => $request->observacoes,
-                'status'      => $request->status,
-            ]);
+            $data = [
+                'date'           => $request->date,
+                'destino'        => $request->destino,
+                'supplier_id'    => $request->supplier_id ?: null,
+                'matricula'      => $request->matricula,
+                'motorista'      => $request->motorista,
+                'responsavel'    => $request->responsavel,
+                'observacoes'    => $request->observacoes,
+                'status'         => $request->status,
+                'numero_guia'    => $request->numero_guia ?: null,
+                'local_descarga' => $request->local_descarga ?: null,
+            ];
+
+            // Se for FINALIZADA, permite também actualizar peso e valor
+            if ($request->status === 'FINALIZADA') {
+                if ($request->filled('peso_confirmado')) {
+                    $data['peso_confirmado'] = $request->peso_confirmado;
+                }
+                if ($request->filled('valor_carga')) {
+                    $data['valor_carga'] = $request->valor_carga;
+                }
+            }
+
+            $requisicaoMaterial->update($data);
 
             $requisicaoMaterial->items()->delete();
             $this->syncItems($requisicaoMaterial, $request->items);
@@ -112,7 +130,6 @@ class RequisicaoMaterialController extends Controller
 
     /**
      * Confirma o peso e valor real da carga e finaliza a requisição.
-     * POST /requisicoes-material/{requisicaoMaterial}/confirmar-carga
      */
     public function confirmarCarga(Request $request, RequisicaoMaterial $requisicaoMaterial)
     {
@@ -120,50 +137,19 @@ class RequisicaoMaterialController extends Controller
             'peso_confirmado' => 'required|numeric|min:0',
             'valor_carga'     => 'required|numeric|min:0',
             'numero_guia'     => 'required|string|max:255',
-            'local_descarga'  => 'nullable|string|max:500',
         ]);
 
         $requisicaoMaterial->update([
             'peso_confirmado' => $request->peso_confirmado,
             'valor_carga'     => $request->valor_carga,
             'numero_guia'     => $request->numero_guia,
-            'local_descarga'  => $request->local_descarga,
             'status'          => 'FINALIZADA',
         ]);
 
         return response()->json(['success' => true, 'message' => 'Requisição finalizada com sucesso.']);
     }
 
-    /**
-     * Edita os dados de carga de uma requisição já finalizada.
-     * PATCH /requisicoes-material/{requisicaoMaterial}/editar-carga
-     *
-     * Permite corrigir peso, valor, número de guia e local de descarga
-     * sem alterar o estado. O PDF é regenerado automaticamente no próximo acesso.
-     */
-    public function editarCarga(Request $request, RequisicaoMaterial $requisicaoMaterial)
-    {
-        $request->validate([
-            'peso_confirmado' => 'required|numeric|min:0',
-            'valor_carga'     => 'required|numeric|min:0',
-            'numero_guia'     => 'required|string|max:255',
-            'local_descarga'  => 'nullable|string|max:500',
-        ]);
-
-        $requisicaoMaterial->update([
-            'peso_confirmado' => $request->peso_confirmado,
-            'valor_carga'     => $request->valor_carga,
-            'numero_guia'     => $request->numero_guia,
-            'local_descarga'  => $request->local_descarga,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Dados de carga actualizados com sucesso.',
-        ]);
-    }
-
-    // ── Helpers ────────────────────────────────────────────────────────────
+    // ── Helpers ─────────────────────────────────────────────────────────────
 
     private function validateRequisicao(Request $request, bool $withStatus = false): void
     {
@@ -175,6 +161,10 @@ class RequisicaoMaterialController extends Controller
             'motorista'           => 'nullable|string|max:100',
             'responsavel'         => 'nullable|string|max:100',
             'observacoes'         => 'nullable|string',
+            'numero_guia'         => 'nullable|string|max:255',
+            'local_descarga'      => 'nullable|string|max:255',
+            'peso_confirmado'     => 'nullable|numeric|min:0',
+            'valor_carga'         => 'nullable|numeric|min:0',
             'items'               => 'required|array|min:1',
             'items.*.description' => 'required|string|max:255',
             'items.*.quantity'    => 'required|numeric|min:0.001',
