@@ -203,7 +203,7 @@
             <tr>
                 <td class="center">{{ $i + 1 }}</td>
                 <td>{{ $item->description }}</td>
-                <td class="right">{{ number_format($item->quantity, 3, ',', '.') }}</td>
+                <td class="right">{{ number_format($item->quantity, 2, ',', '.') }}</td>
                 <td class="center">{{ $item->unit }}</td>
             </tr>
             @endforeach
@@ -281,7 +281,7 @@
 
         </div>
     </div>
-
+<!-- 
     {{-- ASSINATURAS --}}
     <div class="sign-section">
         <div class="sign-box">
@@ -293,7 +293,7 @@
         <div class="sign-box">
             <div class="sign-label">Recebido por / Responsável de Descarga</div>
         </div>
-    </div>
+    </div> -->
 
     {{-- RODAPÉ --}}
     <div class="page-footer">
@@ -303,7 +303,7 @@
             <div style="font-size:10px;color:#555;">{{ $requisicao->creator->email ?? auth()->user()->email }}</div>
         </div>
         <div class="footer-right">
-            Documento gerado automaticamente pelo sistema BYMOZE.<br>
+            Documento gerado automaticamente pelo sistema FEM.<br>
             Não requer assinatura electrónica.
         </div>
     </div>

@@ -1064,7 +1064,7 @@
                                 <option value="kg">kg</option>
                                 <option value="g">g</option>
                                 <option value="mg">mg</option>
-                                <option value="t">t</option>
+                                <option value="t">ton</option>
                                 <option value="m">m</option>
                                 <option value="m²">m²</option>
                                 <option value="m³">m³</option>
