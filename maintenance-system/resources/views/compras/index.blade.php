@@ -864,11 +864,18 @@
                 'finalizado' => '#94a3b8',
             ];
             $stMap = [
-                'Pendente' => 'pendente',
+                'Pendente'    => 'pendente',
                 'Em processo' => 'processo',
-                'Aprovado' => 'aprovado',
-                'Rejeitado' => 'rejeitado',
-                'Finalizado' => 'finalizado',
+                'Aprovado'    => 'aprovado',
+                'Rejeitado'   => 'rejeitado',
+                'Finalizado'  => 'finalizado',
+            ];
+            $stPriority = [
+                'Pendente'    => 1,
+                'Em processo' => 2,
+                'Aprovado'    => 3,
+                'Rejeitado'   => 4,
+                'Finalizado'  => 5,
             ];
         @endphp
         <div class="row g-3 mb-4">
@@ -925,6 +932,7 @@
                             <th>Solicitante</th>
                             <th>Data Pedido</th>
                             <th class="text-center">Ações</th>
+                            <th class="d-none"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -958,9 +966,6 @@
                                                 style="font-size:.58rem;">+{{ $totalItens - 1 }}</span>
                                         @endif
                                     </div>
-                                    {{-- <div class="text-muted text-truncate" style="font-size:.72rem;max-width:160px;">
-        {{ $compra->fornecedor ?? 'Fornecedor não indicado' }}
-    </div> --}}
                                     @php
                                         $purchased = $compra->items->where('item_status', 'purchased')->count();
                                         $rejected = $compra->items->where('item_status', 'rejected')->count();
@@ -1124,6 +1129,9 @@
                                         @endif
                                     </div>
                                 </td>
+
+                                {{-- Coluna oculta: prioridade de ordenação por status --}}
+                                <td class="d-none" data-order="{{ $stPriority[$compra->status] ?? 9 }}">{{ $stPriority[$compra->status] ?? 9 }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -1340,66 +1348,59 @@
 
         /* ── Status dropdown ── */
         function toggleStatusDropdown(btn, id) {
-    var menu = document.getElementById('statusMenu-' + id);
+            var menu = document.getElementById('statusMenu-' + id);
 
-    if (_activeMenu && _activeMenu !== menu) {
-        _activeMenu.classList.remove('open');
-        _activeMenu.previousElementSibling && _activeMenu.previousElementSibling.classList.remove('open');
-    }
+            if (_activeMenu && _activeMenu !== menu) {
+                _activeMenu.classList.remove('open');
+                _activeMenu.previousElementSibling && _activeMenu.previousElementSibling.classList.remove('open');
+            }
 
-    var isOpen = menu.classList.contains('open');
-    menu.classList.toggle('open', !isOpen);
-    btn.classList.toggle('open', !isOpen);
+            var isOpen = menu.classList.contains('open');
+            menu.classList.toggle('open', !isOpen);
+            btn.classList.toggle('open', !isOpen);
 
-    if (!isOpen) {
-        var rect = btn.getBoundingClientRect();
-        var menuHeight = 220; // altura estimada do menu
-        var spaceBelow = window.innerHeight - rect.bottom;
+            if (!isOpen) {
+                var rect = btn.getBoundingClientRect();
+                var menuHeight = 220;
+                var spaceBelow = window.innerHeight - rect.bottom;
 
-        if (spaceBelow < menuHeight) {
-            // Abre para cima
-            menu.style.top = (rect.top - menuHeight - 5) + 'px';
-        } else {
-            // Abre para baixo
-            menu.style.top = (rect.bottom + 5) + 'px';
+                if (spaceBelow < menuHeight) {
+                    menu.style.top = (rect.top - menuHeight - 5) + 'px';
+                } else {
+                    menu.style.top = (rect.bottom + 5) + 'px';
+                }
+
+                var menuWidth = 165;
+                var left = rect.left;
+                if (left + menuWidth > window.innerWidth) {
+                    left = window.innerWidth - menuWidth - 8;
+                }
+                menu.style.left = left + 'px';
+
+                _activeMenu = menu;
+            } else {
+                _activeMenu = null;
+            }
         }
-
-        // Evitar sair pela direita
-        var menuWidth = 165;
-        var left = rect.left;
-        if (left + menuWidth > window.innerWidth) {
-            left = window.innerWidth - menuWidth - 8;
-        }
-        menu.style.left = left + 'px';
-
-        _activeMenu = menu;
-    } else {
-        _activeMenu = null;
-    }
-}
 
         function selectStatus(id, label, key, item) {
             var wrap = item.closest('.status-dropdown-wrap');
             var btn = wrap.querySelector('.status-dropdown-btn');
 
-            // Actualizar botão visualmente
             btn.className = 'status-dropdown-btn ' + key;
             btn.innerHTML =
                 '<span class="dot"></span>' +
                 '<span class="lbl">' + label + '</span>' +
                 '<i class="bi bi-chevron-down chevron"></i>';
 
-            // Fechar menu
             var menu = document.getElementById('statusMenu-' + id);
             menu.classList.remove('open');
             _activeMenu = null;
 
-            // Submeter
             document.getElementById('statusInput-' + id).value = label;
             document.getElementById('statusForm-' + id).submit();
         }
 
-        // Fechar ao clicar fora
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.status-dropdown-wrap') && _activeMenu) {
                 _activeMenu.classList.remove('open');
@@ -1412,22 +1413,19 @@
         /* ── DataTable + filtros ── */
         $(document).ready(function() {
 
-        var table = $('#comprasTable').DataTable({
-    language: {
-        url: 'https://cdn.datatables.net/plug-ins/2.0.8/i18n/pt-BR.json'
-    },
-    // Força a ordenação descendente na coluna 0 (ID)
-    order: [[0, 'asc']],
-    
-    // Define explicitamente que a coluna 0 é numérica para evitar erros de ordenação
-    columnDefs: [
-        { type: 'num', targets: 0 },
-        { orderable: false, targets: [3, 4, 7] }
-    ],
-    
-    // Impede que o DataTables "lembre" da ordenação anterior que você testou
-    stateSave: false 
-});
+            var table = $('#comprasTable').DataTable({
+                language: {
+                    url: 'https://cdn.datatables.net/plug-ins/2.0.8/i18n/pt-BR.json'
+                },
+                // 1º ordena por prioridade de status (col 8, asc), 2º pelo ID mais recente (col 0, desc)
+                order: [[8, 'asc'], [0, 'desc']],
+                columnDefs: [
+                    { type: 'num', targets: [0, 8] },
+                    { orderable: false, targets: [3, 4, 7, 8] },
+                    { visible: false, targets: [8] }
+                ],
+                stateSave: false
+            });
 
             $.fn.dataTable.ext.search.push(function(settings, data) {
                 var min = $('#min-date').val(),
