@@ -28,6 +28,7 @@ class RequisicaoMaterialController extends Controller
                 'date'        => $request->date,
                 'destino'     => $request->destino,
                 'supplier_id' => $request->supplier_id ?: null,
+                'transportadora' => $request->transportadora,
                 'matricula'   => $request->matricula,
                 'motorista'   => $request->motorista,
                 'responsavel' => $request->responsavel,
@@ -83,6 +84,7 @@ class RequisicaoMaterialController extends Controller
                 'destino'        => $request->destino,
                 'supplier_id'    => $request->supplier_id ?: null,
                 'matricula'      => $request->matricula,
+                'transportadora' => $request->transportadora,
                 'motorista'      => $request->motorista,
                 'responsavel'    => $request->responsavel,
                 'observacoes'    => $request->observacoes,
@@ -161,6 +163,7 @@ class RequisicaoMaterialController extends Controller
             'motorista'           => 'nullable|string|max:100',
             'responsavel'         => 'nullable|string|max:100',
             'observacoes'         => 'nullable|string',
+        
             'numero_guia'         => 'nullable|string|max:255',
             'local_descarga'      => 'nullable|string|max:255',
             'peso_confirmado'     => 'nullable|numeric|min:0',

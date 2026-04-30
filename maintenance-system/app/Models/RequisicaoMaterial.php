@@ -10,7 +10,7 @@ class RequisicaoMaterial extends Model
     protected $table = 'requisicoes_material';
 
     protected $fillable = [
-        'date', 'destino', 'supplier_id', 'matricula', 'motorista',
+        'date', 'destino', 'supplier_id', 'matricula', 'motorista', 'transportadora',
         'responsavel', 'observacoes', 'status', 'created_by', 'peso_confirmado',
     'valor_carga', 'numero_guia','local_descarga',
     ];

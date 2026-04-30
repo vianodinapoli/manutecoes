@@ -459,6 +459,10 @@
                 <input type="text" id="filtroMatricula" placeholder="Ex: MBE-1234-M" style="min-width:130px;">
             </div>
             <div class="filter-item">
+                <label>Transportadora</label>
+                <input type="text" id="filtroTransportadora" placeholder="Nome da transportadora...">
+            </div>
+            <div class="filter-item">
                 <label>Responsável</label>
                 <input type="text" id="filtroResponsavel" placeholder="Responsável...">
             </div>
@@ -519,6 +523,7 @@
                         <th>CARGA / DESTINO</th>
                         <th>MOTORISTA</th>
                         <th>MATRÍCULA</th>
+                        <th>TRANSPORTADORA</th>
                         <th>RESPONSÁVEL</th>
                         <th>ESTADO</th>
                         <th class="text-end">TOTAL (MT)</th>
@@ -537,6 +542,7 @@
                         data-fornecedor="{{ $req->supplier->name ?? '—' }}"
                         data-motorista="{{ $req->motorista ?? '—' }}"
                         data-matricula="{{ $req->matricula ?? '—' }}"
+                        data-transportadora="{{ $req->transportadora ?? '—' }}"
                         data-responsavel="{{ $req->responsavel ?? '—' }}"
                         data-total="{{ number_format($req->total_final, 2, ',', '.') }}"
                         data-peso="{{ $req->peso_confirmado ?? '' }}"
@@ -598,10 +604,13 @@
                         {{-- 6. MATRÍCULA --}}
                         <td style="font-size:.82rem;">{{ $req->matricula ?? '—' }}</td>
 
-                        {{-- 7. RESPONSÁVEL --}}
+                        {{-- 7. TRANSPORTADORA --}}
+                        <td style="font-size:.82rem;">{{ $req->transportadora ?? '—' }}</td>
+
+                        {{-- 8. RESPONSÁVEL --}}
                         <td style="font-size:.82rem;">{{ $req->responsavel ?? '—' }}</td>
 
-                        {{-- 8. ESTADO --}}
+                        {{-- 9. ESTADO --}}
                         <td>
                             @php
                                 $statusMap = [
@@ -617,7 +626,7 @@
                             </span>
                         </td>
 
-                        {{-- 9. TOTAL (MT) --}}
+                        {{-- 10. TOTAL (MT) --}}
                         <td class="text-end fw-bold" style="font-size:.82rem;">
                             @if($req->status === 'FINALIZADA')
                                 {{ number_format($req->valor_carga ?? $req->total_final, 2, ',', '.') }} MT
@@ -628,32 +637,50 @@
                                 @endif
                             @else
                                 <span class="text-muted" style="font-size:.75rem;font-style:italic;">
-                                    — aguarda confirmação
+                                    — Aguarda confirmação
                                 </span>
                             @endif
                         </td>
 
-                        {{-- 10. AÇÕES --}}
+                        {{-- 11. AÇÕES --}}
                         <td class="text-center no-print" style="white-space:nowrap;">
                             <a href="{{ route('requisicoes-material.pdf', $req) }}" target="_blank"
                                class="action-btn text-danger border-danger border-opacity-25" title="PDF">
                                 <i class="fas fa-file-pdf"></i>
                             </a>
                             @can('requisicoes-material')
-                                @if($req->status === 'EMITIDA')
-                                    <button class="action-btn btn-confirm-carga text-warning border-warning border-opacity-50"
-                                        data-id="{{ $req->id }}"
-                                        data-num="#{{ str_pad($req->id, 4, '0', STR_PAD_LEFT) }}"
-                                        data-destino="{{ $req->destino }}"
-                                        title="Confirmar Carga">
-                                        <i class="fas fa-weight-hanging"></i>
-                                        <span>Confirmar</span>
-                                    </button>
-                                    <button class="action-btn text-primary border-primary border-opacity-25 btn-edit"
-                                        data-id="{{ $req->id }}" title="Editar">
-                                        <i class="fas fa-pencil-alt"></i>
-                                    </button>
-                                @endif
+                                {{-- DEPOIS --}}
+@if($req->status === 'EMITIDA')
+    <button class="action-btn btn-confirm-carga text-warning border-warning border-opacity-50"
+        data-id="{{ $req->id }}"
+        data-num="#{{ str_pad($req->id, 4, '0', STR_PAD_LEFT) }}"
+        data-destino="{{ $req->destino }}"
+        title="Confirmar Carga">
+        <i class="fas fa-weight-hanging"></i>
+        <span>Confirmar</span>
+    </button>
+@endif
+
+{{-- Editar sempre visível --}}
+<button class="action-btn text-primary border-primary border-opacity-25 btn-edit"
+    data-id="{{ $req->id }}" title="Editar Requisição">
+    <i class="fas fa-pencil-alt"></i>
+</button>
+
+@if($req->status === 'FINALIZADA')
+    <button class="action-btn btn-edit-carga text-success border-success border-opacity-50"
+        data-id="{{ $req->id }}"
+        data-num="#{{ str_pad($req->id, 4, '0', STR_PAD_LEFT) }}"
+        data-destino="{{ $req->destino }}"
+        data-peso="{{ $req->peso_confirmado ?? '' }}"
+        data-valor="{{ $req->valor_carga ?? '' }}"
+        data-guia="{{ $req->numero_guia ?? '' }}"
+        data-local="{{ $req->local_descarga ?? '' }}"
+        title="Editar dados da carga">
+        <i class="fas fa-pen-to-square"></i>
+        <span>Editar</span>
+    </button>
+@endif
                                 @if($req->status === 'FINALIZADA')
                                     <button class="action-btn btn-edit-carga text-success border-success border-opacity-50"
                                         data-id="{{ $req->id }}"
@@ -755,15 +782,19 @@
                             Transporte e Responsabilidade
                         </div>
                         <div class="row g-3">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="fem-label">Motorista</label>
                                 <input type="text" class="fem-input" id="req_motorista" placeholder="Nome do motorista">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label class="fem-label">Matrícula</label>
                                 <input type="text" class="fem-input" id="req_matricula" placeholder="Ex: MBE-1234-M">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
+                                <label class="fem-label">Transportadora</label>
+                                <input type="text" class="fem-input" id="req_transportadora" placeholder="Ex: Transportes Alfa">
+                            </div>
+                            <div class="col-md-3">
                                 <label class="fem-label">Responsável / Aprovador</label>
                                 <input type="text" class="fem-input" id="req_responsavel">
                             </div>
@@ -1172,26 +1203,28 @@ aplicarFiltros();
 $.fn.dataTable.ext.search.push(function (settings, _data, dataIndex) {
     if (settings.nTable.id !== 'tblRequisicoes') return true;
 
-    const node = $(table.row(dataIndex).node());
-    const di   = $('#filtroDataInicio').val();
-    const df   = $('#filtroDataFim').val();
-    const dest = $('#filtroDestino').val().toLowerCase().trim();
-    const st   = $('#filtroStatus').val();
-    const num  = $('#filtroNumero').val().trim().replace(/^#/, '').replace(/^0+/, '');
-    const mot  = $('#filtroMotorista').val().toLowerCase().trim();
-    const mat  = $('#filtroMatricula').val().toLowerCase().trim();
-    const resp = $('#filtroResponsavel').val().toLowerCase().trim();
-    const forn = $('#filtroFornecedor').val().toLowerCase().trim();
+    const node  = $(table.row(dataIndex).node());
+    const di    = $('#filtroDataInicio').val();
+    const df    = $('#filtroDataFim').val();
+    const dest  = $('#filtroDestino').val().toLowerCase().trim();
+    const st    = $('#filtroStatus').val();
+    const num   = $('#filtroNumero').val().trim().replace(/^#/, '').replace(/^0+/, '');
+    const mot   = $('#filtroMotorista').val().toLowerCase().trim();
+    const mat   = $('#filtroMatricula').val().toLowerCase().trim();
+    const transp= $('#filtroTransportadora').val().toLowerCase().trim();
+    const resp  = $('#filtroResponsavel').val().toLowerCase().trim();
+    const forn  = $('#filtroFornecedor').val().toLowerCase().trim();
 
-    if (di   && String(node.data('date'))                               < di)  return false;
-    if (df   && String(node.data('date'))                               > df)  return false;
-    if (st   && node.data('status')                                    !== st)  return false;
-    if (num  && !String(node.data('req-id')).includes(num))                     return false;
-    if (dest && !String(node.data('destino')).toLowerCase().includes(dest))     return false;
-    if (forn && !String(node.data('fornecedor')).toLowerCase().includes(forn))  return false;
-    if (mot  && !String(node.data('motorista')).toLowerCase().includes(mot))    return false;
-    if (mat  && !String(node.data('matricula')).toLowerCase().includes(mat))    return false;
-    if (resp && !String(node.data('responsavel')).toLowerCase().includes(resp)) return false;
+    if (di    && String(node.data('date'))                                    < di)   return false;
+    if (df    && String(node.data('date'))                                    > df)   return false;
+    if (st    && node.data('status')                                         !== st)  return false;
+    if (num   && !String(node.data('req-id')).includes(num))                          return false;
+    if (dest  && !String(node.data('destino')).toLowerCase().includes(dest))          return false;
+    if (forn  && !String(node.data('fornecedor')).toLowerCase().includes(forn))       return false;
+    if (mot   && !String(node.data('motorista')).toLowerCase().includes(mot))         return false;
+    if (mat   && !String(node.data('matricula')).toLowerCase().includes(mat))         return false;
+    if (transp&& !String(node.data('transportadora')).toLowerCase().includes(transp)) return false;
+    if (resp  && !String(node.data('responsavel')).toLowerCase().includes(resp))      return false;
 
     return true;
 });
@@ -1214,42 +1247,46 @@ function aplicarFiltros() {
     );
 
     const f = {
-        di:   $('#filtroDataInicio').val(),
-        df:   $('#filtroDataFim').val(),
-        dest: $('#filtroDestino').val().trim(),
-        st:   $('#filtroStatus').val(),
-        num:  $('#filtroNumero').val().trim(),
-        mot:  $('#filtroMotorista').val().trim(),
-        mat:  $('#filtroMatricula').val().trim(),
-        resp: $('#filtroResponsavel').val().trim(),
-        forn: $('#filtroFornecedor').val(),
+        di:     $('#filtroDataInicio').val(),
+        df:     $('#filtroDataFim').val(),
+        dest:   $('#filtroDestino').val().trim(),
+        st:     $('#filtroStatus').val(),
+        num:    $('#filtroNumero').val().trim(),
+        mot:    $('#filtroMotorista').val().trim(),
+        mat:    $('#filtroMatricula').val().trim(),
+        transp: $('#filtroTransportadora').val().trim(),
+        resp:   $('#filtroResponsavel').val().trim(),
+        forn:   $('#filtroFornecedor').val(),
     };
 
     const algumActivo = Object.values(f).some(v => v !== '');
     $('#extractCount').text(count);
 
     const partes = [];
-    if (f.num)  partes.push('Nº: ' + f.num);
-    if (f.di)   partes.push('De ' + f.di.split('-').reverse().join('/'));
-    if (f.df)   partes.push('até ' + f.df.split('-').reverse().join('/'));
-    if (f.dest) partes.push('Destino: "' + f.dest + '"');
-    if (f.forn) partes.push('Fornecedor: "' + f.forn + '"');
-    if (f.mot)  partes.push('Motorista: "' + f.mot + '"');
-    if (f.mat)  partes.push('Matrícula: "' + f.mat + '"');
-    if (f.resp) partes.push('Responsável: "' + f.resp + '"');
-    if (f.st)   partes.push('Estado: ' + f.st);
+    if (f.num)    partes.push('Nº: ' + f.num);
+    if (f.di)     partes.push('De ' + f.di.split('-').reverse().join('/'));
+    if (f.df)     partes.push('até ' + f.df.split('-').reverse().join('/'));
+    if (f.dest)   partes.push('Destino: "' + f.dest + '"');
+    if (f.forn)   partes.push('Fornecedor: "' + f.forn + '"');
+    if (f.mot)    partes.push('Motorista: "' + f.mot + '"');
+    if (f.mat)    partes.push('Matrícula: "' + f.mat + '"');
+    if (f.transp) partes.push('Transportadora: "' + f.transp + '"');
+    if (f.resp)   partes.push('Responsável: "' + f.resp + '"');
+    if (f.st)     partes.push('Estado: ' + f.st);
 
     $('#extractLabel').text(partes.length ? ' — ' + partes.join(' | ') : '');
     $('#extractBar').toggleClass('visible', algumActivo && count > 0);
 }
 
 $('#filtroDataInicio, #filtroDataFim, #filtroDestino, #filtroStatus, ' +
-  '#filtroNumero, #filtroMotorista, #filtroMatricula, #filtroResponsavel, #filtroFornecedor')
+  '#filtroNumero, #filtroMotorista, #filtroMatricula, #filtroTransportadora, ' +
+  '#filtroResponsavel, #filtroFornecedor')
     .on('input change', aplicarFiltros);
 
 $('#btnLimparFiltros').on('click', function () {
     $('#filtroDataInicio, #filtroDataFim, #filtroDestino, ' +
-      '#filtroNumero, #filtroMotorista, #filtroMatricula, #filtroResponsavel').val('');
+      '#filtroNumero, #filtroMotorista, #filtroMatricula, ' +
+      '#filtroTransportadora, #filtroResponsavel').val('');
     $('#filtroStatus, #filtroFornecedor').val('');
     table.draw();
     $('#extractBar').removeClass('visible');
@@ -1264,46 +1301,49 @@ function gerarExtratoPDF() {
         const r = $(this.node());
         const descFirstItem = r.find('td:eq(3) .fw-bold').text().trim();
         rows.push({
-            id:           r.data('req-id'),
-            data:         r.data('date-fmt'),
-            destino:      r.data('destino-fmt'),
-            descricao:    descFirstItem || '—',
-            fornecedor:   r.data('fornecedor'),
-            guia:         r.data('guia') || '—',
-            motorista:    r.data('motorista'),
-            matricula:    r.data('matricula'),
-            responsavel:  r.data('responsavel'),
-            status:       r.data('status'),
-            valorCarga:   r.data('valor-carga') || '',
-            peso:         r.data('peso') || '—',
-            localDescarga: r.data('local-descarga') || '—',
+            id:              r.data('req-id'),
+            data:            r.data('date-fmt'),
+            destino:         r.data('destino-fmt'),
+            descricao:       descFirstItem || '—',
+            fornecedor:      r.data('fornecedor'),
+            guia:            r.data('guia') || '—',
+            motorista:       r.data('motorista'),
+            matricula:       r.data('matricula'),
+            transportadora:  r.data('transportadora') || '—',
+            responsavel:     r.data('responsavel'),
+            status:          r.data('status'),
+            valorCarga:      r.data('valor-carga') || '',
+            peso:            r.data('peso') || '—',
+            localDescarga:   r.data('local-descarga') || '—',
         });
     });
 
     if (!rows.length) return;
 
-    const di   = $('#filtroDataInicio').val();
-    const df   = $('#filtroDataFim').val();
-    const dest = $('#filtroDestino').val();
-    const st   = $('#filtroStatus').val();
-    const num  = $('#filtroNumero').val();
-    const mot  = $('#filtroMotorista').val();
-    const mat  = $('#filtroMatricula').val();
-    const resp = $('#filtroResponsavel').val();
-    const forn = $('#filtroFornecedor').val();
+    const di    = $('#filtroDataInicio').val();
+    const df    = $('#filtroDataFim').val();
+    const dest  = $('#filtroDestino').val();
+    const st    = $('#filtroStatus').val();
+    const num   = $('#filtroNumero').val();
+    const mot   = $('#filtroMotorista').val();
+    const mat   = $('#filtroMatricula').val();
+    const transp= $('#filtroTransportadora').val();
+    const resp  = $('#filtroResponsavel').val();
+    const forn  = $('#filtroFornecedor').val();
 
     const periodoStr = (di || df)
         ? (di ? di.split('-').reverse().join('/') : '—') + ' a ' + (df ? df.split('-').reverse().join('/') : '—')
         : 'Todo o período';
 
     const filtrosTexto = [
-        num  ? 'Nº: '           + num  : null,
-        dest ? 'Destino: "'     + dest + '"' : null,
-        forn ? 'Fornecedor: "'  + forn + '"' : null,
-        mot  ? 'Motorista: "'   + mot  + '"' : null,
-        mat  ? 'Matrícula: "'   + mat  + '"' : null,
-        resp ? 'Responsável: "' + resp + '"' : null,
-        st   ? 'Estado: '       + st   : null,
+        num    ? 'Nº: '              + num    : null,
+        dest   ? 'Destino: "'        + dest   + '"' : null,
+        forn   ? 'Fornecedor: "'     + forn   + '"' : null,
+        mot    ? 'Motorista: "'      + mot    + '"' : null,
+        mat    ? 'Matrícula: "'      + mat    + '"' : null,
+        transp ? 'Transportadora: "' + transp + '"' : null,
+        resp   ? 'Responsável: "'    + resp   + '"' : null,
+        st     ? 'Estado: '          + st     : null,
         (di || df) ? 'Período: ' + periodoStr : null,
     ].filter(Boolean).join(' | ') || 'Todos os registos';
 
@@ -1342,6 +1382,7 @@ function gerarExtratoPDF() {
             <td style="color:#1e293b;font-weight:600;">${r.guia}</td>
             <td>${r.motorista}</td>
             <td>${r.matricula}</td>
+            <td>${r.transportadora}</td>
             <td>${r.responsavel}</td>
             <td class="center">${statusBadge(r.status)}</td>
             <td class="right">${r.peso !== '—' ? r.peso + ' kg' : '—'}</td>
@@ -1400,17 +1441,18 @@ tbody td{padding:7px 9px;font-size:10px;vertical-align:middle}
 <table>
     <thead><tr>
         <th class="center" style="width:3%">#</th>
-        <th style="width:5%">Nº</th>
+        <th style="width:4%">Nº</th>
         <th style="width:6%">Data</th>
-        <th style="width:14%">Carga / Destino</th>
-        <th style="width:11%">Fornecedor</th>
-        <th style="width:8%">Nº Guia</th>
-        <th style="width:9%">Motorista</th>
+        <th style="width:13%">Carga / Destino</th>
+        <th style="width:10%">Fornecedor</th>
+        <th style="width:7%">Nº Guia</th>
+        <th style="width:8%">Motorista</th>
         <th style="width:7%">Matrícula</th>
-        <th style="width:9%">Responsável</th>
-        <th class="center" style="width:9%">Estado</th>
-        <th class="right" style="width:7%">Peso (kg)</th>
-        <th class="right" style="width:12%">Total (MT)</th>
+        <th style="width:9%">Transportadora</th>
+        <th style="width:8%">Responsável</th>
+        <th class="center" style="width:8%">Estado</th>
+        <th class="right" style="width:6%">Peso (kg)</th>
+        <th class="right" style="width:11%">Total (MT)</th>
     </tr></thead>
     <tbody>${linhas}</tbody>
 </table>
@@ -1578,6 +1620,7 @@ $(document).on('click', '.btn-edit', function () {
             $('#req_supplier_id').val(data.supplier_id ?? '');
             $('#req_motorista').val(data.motorista ?? '');
             $('#req_matricula').val(data.matricula ?? '');
+            $('#req_transportadora').val(data.transportadora ?? '');
             $('#req_responsavel').val(data.responsavel ?? '');
             $('#req_observacoes').val(data.observacoes ?? '');
             $('#req_status').val(data.status);
@@ -1615,16 +1658,17 @@ $('#btnSalvar').on('click', function () {
 
     const id = $('#req_id').val();
     const payload = {
-        _token:      '{{ csrf_token() }}',
-        date:        $('#req_date').val(),
-        destino:     $('#req_destino').val().trim(),
-        supplier_id: $('#req_supplier_id').val() || null,
-        motorista:   $('#req_motorista').val(),
-        matricula:   $('#req_matricula').val(),
-        responsavel: $('#req_responsavel').val(),
-        observacoes: $('#req_observacoes').val(),
-        status:      $('#statusWrap').hasClass('d-none') ? 'EMITIDA' : ($('#req_status').val() || 'EMITIDA'),
-        items:       items,
+        _token:          '{{ csrf_token() }}',
+        date:            $('#req_date').val(),
+        destino:         $('#req_destino').val().trim(),
+        supplier_id:     $('#req_supplier_id').val() || null,
+        motorista:       $('#req_motorista').val(),
+        matricula:       $('#req_matricula').val(),
+        transportadora:  $('#req_transportadora').val(),
+        responsavel:     $('#req_responsavel').val(),
+        observacoes:     $('#req_observacoes').val(),
+        status:          $('#statusWrap').hasClass('d-none') ? 'EMITIDA' : ($('#req_status').val() || 'EMITIDA'),
+        items:           items,
     };
     if (id) payload._method = 'PUT';
 
