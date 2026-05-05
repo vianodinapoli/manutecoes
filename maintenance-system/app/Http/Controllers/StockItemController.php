@@ -83,10 +83,11 @@ class StockItemController extends Controller
         // 3. Criar o item
         $stockItem = StockItem::create($data);
 
-        // 4. Registar Atividade
+        // 4. Registar Actividade
         Activity::create([
             'type'        => 'stock',
-            'description' => "Entrada inicial: {$stockItem->quantidade} unidades de {$stockItem->nome} (Ref: {$stockItem->referencia})",
+            'description' => "Entrada inicial de {$stockItem->quantidade} unidades",
+            'reference'   => 'ART-' . str_pad($stockItem->id, 4, '0', STR_PAD_LEFT) . ' · ' . $stockItem->nome,
             'user_name'   => auth()->user()->name,
             'status'      => 'concluido',
         ]);
@@ -115,43 +116,47 @@ class StockItemController extends Controller
             'referencia.unique' => 'Esta referência já existe para esta marca.',
         ]);
 
-        // 2. Guardar valores antigos para a descrição da atividade
+        // 2. Guardar valores antigos para a descrição da actividade
         $qtdAnterior = $stockItem->quantidade;
 
-        // 3. Processar e Atualizar
+        // 3. Processar e Actualizar
         $data             = $request->except(['metadata_key', 'metadata_value']);
         $data['metadata'] = $this->processMetadata($request);
 
         $stockItem->update($data);
 
         // 4. Gerar descrição baseada na mudança de quantidade
-        $mensagem = "Editou o item {$stockItem->nome}";
+        $mensagem = "Item editado";
         if ($qtdAnterior != $stockItem->quantidade) {
             $diferenca = $stockItem->quantidade - $qtdAnterior;
             $acao      = $diferenca > 0 ? 'Entrada' : 'Saída';
-            $mensagem  = "{$acao} de " . abs($diferenca) . " unidades de {$stockItem->nome} (Stock atual: {$stockItem->quantidade})";
+            $mensagem  = "{$acao} de " . abs($diferenca) . " unidades (Stock actual: {$stockItem->quantidade})";
         }
 
-        // 5. Registar Atividade
+        // 5. Registar Actividade
         Activity::create([
             'type'        => 'stock',
             'description' => $mensagem,
+            'reference'   => 'ART-' . str_pad($stockItem->id, 4, '0', STR_PAD_LEFT) . ' · ' . $stockItem->nome,
             'user_name'   => auth()->user()->name,
             'status'      => $stockItem->quantidade <= 5 ? 'alerta' : 'concluido',
         ]);
 
         return redirect()->route('stock-items.show', $stockItem->id)
-                         ->with('success', 'Item atualizado com sucesso!');
+                         ->with('success', 'Item actualizado com sucesso!');
     }
 
     public function destroy(StockItem $stockItem)
     {
         $nomeRemovido = $stockItem->nome;
+        $itemId       = $stockItem->id;
+
         $stockItem->delete();
 
         Activity::create([
             'type'        => 'stock',
-            'description' => "Eliminou o item {$nomeRemovido} do sistema",
+            'description' => "Item eliminado do sistema",
+            'reference'   => 'ART-' . str_pad($itemId, 4, '0', STR_PAD_LEFT) . ' · ' . $nomeRemovido,
             'user_name'   => auth()->user()->name,
             'status'      => 'alerta',
         ]);

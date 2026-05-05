@@ -1,7 +1,9 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\RequisicaoMaterial;
+use App\Models\Activity;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -25,19 +27,28 @@ class RequisicaoMaterialController extends Controller
 
         DB::transaction(function () use ($request) {
             $req = RequisicaoMaterial::create([
-                'date'        => $request->date,
-                'destino'     => $request->destino,
-                'supplier_id' => $request->supplier_id ?: null,
+                'date'           => $request->date,
+                'destino'        => $request->destino,
+                'supplier_id'    => $request->supplier_id ?: null,
                 'transportadora' => $request->transportadora,
-                'matricula'   => $request->matricula,
-                'motorista'   => $request->motorista,
-                'responsavel' => $request->responsavel,
-                'observacoes' => $request->observacoes,
-                'status'      => 'EMITIDA',
-                'created_by'  => auth()->id(),
+                'matricula'      => $request->matricula,
+                'motorista'      => $request->motorista,
+                'responsavel'    => $request->responsavel,
+                'observacoes'    => $request->observacoes,
+                'status'         => 'EMITIDA',
+                'created_by'     => auth()->id(),
             ]);
 
             $this->syncItems($req, $request->items);
+
+            // Registar Actividade
+            Activity::create([
+                'type'        => 'requisition',
+                'description' => 'Requisição emitida para ' . $req->destino,
+                'reference'   => 'REQ-' . str_pad($req->id, 4, '0', STR_PAD_LEFT),
+                'user_name'   => auth()->user()->name,
+                'status'      => 'pendente',
+            ]);
         });
 
         return response()->json(['success' => true, 'message' => 'Requisição criada com sucesso.']);
@@ -45,27 +56,26 @@ class RequisicaoMaterialController extends Controller
 
     /**
      * Retorna JSON para o modal de edição.
-     * Inclui numero_guia e local_descarga para edição de requisições finalizadas.
      */
     public function show(RequisicaoMaterial $requisicaoMaterial)
     {
         $requisicaoMaterial->load(['items', 'supplier']);
 
         return response()->json([
-            'id'             => $requisicaoMaterial->id,
-            'date'           => $requisicaoMaterial->date->format('Y-m-d'),
-            'destino'        => $requisicaoMaterial->destino,
-            'supplier_id'    => $requisicaoMaterial->supplier_id,
-            'motorista'      => $requisicaoMaterial->motorista,
-            'matricula'      => $requisicaoMaterial->matricula,
-            'responsavel'    => $requisicaoMaterial->responsavel,
-            'observacoes'    => $requisicaoMaterial->observacoes,
-            'status'         => $requisicaoMaterial->status,
-            'numero_guia'    => $requisicaoMaterial->numero_guia,
-            'local_descarga' => $requisicaoMaterial->local_descarga,
-            'peso_confirmado'=> $requisicaoMaterial->peso_confirmado,
-            'valor_carga'    => $requisicaoMaterial->valor_carga,
-            'items'          => $requisicaoMaterial->items->map(fn($i) => [
+            'id'              => $requisicaoMaterial->id,
+            'date'            => $requisicaoMaterial->date->format('Y-m-d'),
+            'destino'         => $requisicaoMaterial->destino,
+            'supplier_id'     => $requisicaoMaterial->supplier_id,
+            'motorista'       => $requisicaoMaterial->motorista,
+            'matricula'       => $requisicaoMaterial->matricula,
+            'responsavel'     => $requisicaoMaterial->responsavel,
+            'observacoes'     => $requisicaoMaterial->observacoes,
+            'status'          => $requisicaoMaterial->status,
+            'numero_guia'     => $requisicaoMaterial->numero_guia,
+            'local_descarga'  => $requisicaoMaterial->local_descarga,
+            'peso_confirmado' => $requisicaoMaterial->peso_confirmado,
+            'valor_carga'     => $requisicaoMaterial->valor_carga,
+            'items'           => $requisicaoMaterial->items->map(fn($i) => [
                 'description' => $i->description,
                 'quantity'    => $i->quantity,
                 'unit'        => $i->unit,
@@ -93,7 +103,6 @@ class RequisicaoMaterialController extends Controller
                 'local_descarga' => $request->local_descarga ?: null,
             ];
 
-            // Se for FINALIZADA, permite também actualizar peso e valor
             if ($request->status === 'FINALIZADA') {
                 if ($request->filled('peso_confirmado')) {
                     $data['peso_confirmado'] = $request->peso_confirmado;
@@ -107,6 +116,15 @@ class RequisicaoMaterialController extends Controller
 
             $requisicaoMaterial->items()->delete();
             $this->syncItems($requisicaoMaterial, $request->items);
+
+            // Registar Actividade
+            Activity::create([
+                'type'        => 'requisition',
+                'description' => 'Requisição actualizada · Estado: ' . $request->status,
+                'reference'   => 'REQ-' . str_pad($requisicaoMaterial->id, 4, '0', STR_PAD_LEFT),
+                'user_name'   => auth()->user()->name,
+                'status'      => 'concluido',
+            ]);
         });
 
         return response()->json(['success' => true, 'message' => 'Requisição actualizada com sucesso.']);
@@ -114,8 +132,18 @@ class RequisicaoMaterialController extends Controller
 
     public function destroy(RequisicaoMaterial $requisicaoMaterial)
     {
+        $reqId = $requisicaoMaterial->id;
+
         $requisicaoMaterial->items()->delete();
         $requisicaoMaterial->delete();
+
+        Activity::create([
+            'type'        => 'requisition',
+            'description' => 'Requisição eliminada do sistema',
+            'reference'   => 'REQ-' . str_pad($reqId, 4, '0', STR_PAD_LEFT),
+            'user_name'   => auth()->user()->name,
+            'status'      => 'alerta',
+        ]);
 
         return response()->json(['success' => true]);
     }
@@ -148,6 +176,15 @@ class RequisicaoMaterialController extends Controller
             'status'          => 'FINALIZADA',
         ]);
 
+        // Registar Actividade
+        Activity::create([
+            'type'        => 'requisition',
+            'description' => 'Carga confirmada e requisição finalizada',
+            'reference'   => 'REQ-' . str_pad($requisicaoMaterial->id, 4, '0', STR_PAD_LEFT) . ' · Guia: ' . $request->numero_guia,
+            'user_name'   => auth()->user()->name,
+            'status'      => 'concluido',
+        ]);
+
         return response()->json(['success' => true, 'message' => 'Requisição finalizada com sucesso.']);
     }
 
@@ -163,7 +200,6 @@ class RequisicaoMaterialController extends Controller
             'motorista'           => 'nullable|string|max:100',
             'responsavel'         => 'nullable|string|max:100',
             'observacoes'         => 'nullable|string',
-        
             'numero_guia'         => 'nullable|string|max:255',
             'local_descarga'      => 'nullable|string|max:255',
             'peso_confirmado'     => 'nullable|numeric|min:0',

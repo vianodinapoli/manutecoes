@@ -1558,7 +1558,7 @@ $('#btnGerir').on('click', function () { renderPredefManage(); showModal('modalP
 // ════════════════════════════════════════════
 // Itens do modal
 // ════════════════════════════════════════════
-const UNITS = ['kg','g','mg','t','m','cm','mm','km','m²','m³','l','ml','un','cx','pc'];
+const UNITS = ['kg','g','mg','tons','m','cm','mm','km','m²','m³','l','ml','un','cx','pc'];
 
 function itemRow(item = {}) {
     const opts = UNITS.map(u =>

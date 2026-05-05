@@ -7,5 +7,5 @@ use Illuminate\Database\Eloquent\Model;
 class Activity extends Model
 {
     // Adicione esta linha para permitir gravar os dados
-    protected $fillable = ['type', 'description', 'user_name', 'status'];
+    protected $fillable = ['type', 'description', 'reference', 'user_name', 'status'];
 }

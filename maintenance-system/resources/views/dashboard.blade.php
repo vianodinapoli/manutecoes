@@ -160,13 +160,25 @@
                     @endphp
                     <tr>
                         <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="act-dot {{ $dotClass }}">
-                                    <i class="bi bi-circle-fill" style="font-size:.45rem;"></i>
-                                </div>
-                                <span class="fw-semibold">{{ $activity->description }}</span>
-                            </div>
-                        </td>
+    <div class="d-flex align-items-center gap-2">
+        <div class="act-dot {{ $dotClass }}">
+            <i class="bi bi-circle-fill" style="font-size:.45rem;"></i>
+        </div>
+        <div>
+            <span class="fw-semibold" style="font-size:.8rem;color:#1e293b;">
+                {{ $activity->description }}
+            </span>
+            @if($activity->reference)
+            <div style="font-size:.7rem;color:#94a3b8;margin-top:1px;">
+                <i class="bi bi-link-45deg"></i>
+                <span style="font-family:monospace;background:#f1f5f9;padding:1px 6px;border-radius:4px;color:#475569;">
+                    {{ $activity->reference }}
+                </span>
+            </div>
+            @endif
+        </div>
+    </div>
+</td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 <div class="avatar">{{ strtoupper(substr($activity->user_name, 0, 1)) }}</div>

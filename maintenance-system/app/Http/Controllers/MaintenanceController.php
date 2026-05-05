@@ -61,32 +61,30 @@ class MaintenanceController extends Controller
      */
     public function store(Request $request)
 {
-    // Removi as duas linhas de Maintenance::create que estavam aqui em cima!
-
     return DB::transaction(function () use ($request) {
-        // 1. Criar a Manutenção (Apenas uma vez aqui dentro)
+        // 1. Criar a Manutenção
         $maintenance = Maintenance::create($request->except(['items', 'maintenance_files']));
 
-        // 2. Registra a Atividade (Apenas uma vez também)
-        $maquina = \App\Models\Machine::find($request->machine_id);
-        \App\Models\Activity::create([
-            'type' => 'maintenance',
-            'description' => "Manutenção registada para o {$maquina->numero_interno}" . ($request->nome ? " (Peça: {$request->peca_nome})" : ""),
-            'user_name' => auth()->user()->name,
-            'status' => 'pendente'
+        // 2. Registar Actividade (apenas UMA vez, com referência)
+        Activity::create([
+            'type'        => 'maintenance',
+            'description' => 'Manutenção registada para ' . $maintenance->machine->nome,
+            'reference'   => 'MNT-' . str_pad($maintenance->id, 4, '0', STR_PAD_LEFT) . ' · ' . $maintenance->machine->numero_interno,
+            'user_name'   => auth()->user()->name,
+            'status'      => 'pendente',
         ]);
 
         // 3. Processar itens de stock
         if ($request->has('items') && is_array($request->items)) {
             foreach ($request->items as $itemData) {
-                $itemId = $itemData['id'] ?? $itemData['stock_item_id'] ?? null;
+                $itemId   = $itemData['id'] ?? $itemData['stock_item_id'] ?? null;
                 $quantity = $itemData['quantity'] ?? 0;
 
                 if ($itemId && $quantity > 0) {
                     StockMovement::create([
                         'maintenance_id' => $maintenance->id,
                         'machine_id'     => $maintenance->machine_id,
-                        'stock_item_id'  => $itemId, 
+                        'stock_item_id'  => $itemId,
                         'quantity'       => $quantity,
                     ]);
 
@@ -106,8 +104,8 @@ class MaintenanceController extends Controller
         $this->updateMachineStatus($maintenance);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Manutenção e stock processados com sucesso!',
+            'success'      => true,
+            'message'      => 'Manutenção e stock processados com sucesso!',
             'redirect_url' => route('maintenances.index')
         ]);
     });
