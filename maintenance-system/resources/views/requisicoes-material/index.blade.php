@@ -678,23 +678,10 @@
         data-local="{{ $req->local_descarga ?? '' }}"
         title="Editar dados da carga">
         <i class="fas fa-pen-to-square"></i>
-        <span>Editar</span>
+        <!-- <span>Editar</span> -->
     </button>
 @endif
-                                @if($req->status === 'FINALIZADA')
-                                    <button class="action-btn btn-edit-carga text-success border-success border-opacity-50"
-                                        data-id="{{ $req->id }}"
-                                        data-num="#{{ str_pad($req->id, 4, '0', STR_PAD_LEFT) }}"
-                                        data-destino="{{ $req->destino }}"
-                                        data-peso="{{ $req->peso_confirmado ?? '' }}"
-                                        data-valor="{{ $req->valor_carga ?? '' }}"
-                                        data-guia="{{ $req->numero_guia ?? '' }}"
-                                        data-local="{{ $req->local_descarga ?? '' }}"
-                                        title="Editar dados da carga">
-                                        <i class="fas fa-pen-to-square"></i>
-                                        <span>Editar</span>
-                                    </button>
-                                @endif
+                               
                                 <button class="action-btn text-danger border-danger border-opacity-25 btn-delete"
                                     data-id="{{ $req->id }}"
                                     data-num="#{{ str_pad($req->id, 4, '0', STR_PAD_LEFT) }}"
