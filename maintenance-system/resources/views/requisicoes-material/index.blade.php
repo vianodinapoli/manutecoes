@@ -722,10 +722,10 @@
         <div class="modal-content border-0" style="border-radius:var(--fem-radius);overflow:hidden;">
             <div class="fem-modal-header">
                 <div>
-                    <h5 class="modal-title" id="modalTitle">
-                        <span class="title-icon"><i class="fas fa-dolly"></i></span>
-                        Nova Requisição de Material
-                    </h5>
+                  <h4 class="modal-title" id="reqModalTitle">
+    <span class="title-icon"><i class="fas fa-dolly"></i></span>
+    <span class="title-text">Nova Requisição de Material</span>
+</h4>
                     <div class="fem-modal-subtitle">Preencha os dados e adicione os itens a expedir</div>
                 </div>
                 <button type="button" class="btn-close-fem" data-bs-dismiss="modal">
@@ -1578,7 +1578,7 @@ $('#btnAddItem').on('click', function () { $('#itemsBody').append(itemRow()); $(
 // Modal Nova Requisição
 // ════════════════════════════════════════════
 $('#btnNova').on('click', function () {
-    $('#modalTitle span:last-child').text('Nova Requisição de Material');
+   $('#reqModalTitle .title-text').text('Nova Requisição de Material');
     $('#formRequisicao')[0].reset();
     $('#req_id').val('');
     $('#req_supplier_id').val('');
@@ -1600,7 +1600,7 @@ $(document).on('click', '.btn-edit', function () {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
         success(data) {
-            $('#modalTitle span:last-child').text('Editar Requisição #' + String(data.id).padStart(4, '0'));
+            $('#reqModalTitle .title-text').text('Editar Requisição #' + String(data.id).padStart(4, '0'));
             $('#req_id').val(data.id);
             $('#req_date').val(data.date);
             $('#req_destino').val(data.destino);
