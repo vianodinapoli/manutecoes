@@ -69,14 +69,19 @@ class RequisitionController extends Controller
                 // Remove itens antigos e recria
                 $requisicao->items()->delete();
 
-                foreach ($request->items as $item) {
-                    $requisicao->items()->create([
-                        'description' => $item['desc'],
-                        'quantity'    => $item['qty'],
-                        'unit_price'  => $item['price'],
-                        'subtotal'    => $item['qty'] * $item['price'],
-                    ]);
-                }
+               foreach ($request->items as $item) {
+    $disc    = floatval($item['disc'] ?? 0);
+    $bruto   = floatval($item['qty']) * floatval($item['price']);
+    $liquido = $bruto * (1 - $disc / 100);
+
+    $requisicao->items()->create([
+        'description' => $item['desc'],
+        'quantity'    => $item['qty'],
+        'unit_price'  => $item['price'],
+        'discount'    => $disc,
+        'subtotal'    => $liquido,
+    ]);
+}
             });
 
             // Regenera o PDF
@@ -126,6 +131,7 @@ class RequisitionController extends Controller
                         'description' => $item['desc'],
                         'quantity'    => $item['qty'],
                         'unit_price'  => $item['price'],
+                        'discount'    => $item['disc'] ?? 0,
                         'subtotal'    => $item['qty'] * $item['price'],
                     ]);
                 }

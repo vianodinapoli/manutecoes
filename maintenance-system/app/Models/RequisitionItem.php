@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class RequisitionItem extends Model
 {
-    protected $fillable = ['requisition_id', 'description', 'quantity', 'unit_price', 'subtotal'];
+    protected $fillable = ['requisition_id', 'description', 'quantity', 'discount', 'unit_price', 'subtotal'];
 }

@@ -21,6 +21,11 @@
     #tabela_itens tbody tr:last-child td{border-bottom:none}
     #tabela_itens tbody tr:hover{background:#fdf5f5}
 
+    /* ── Desconto badge na coluna ── */
+    .disc-wrap{position:relative}
+    .disc-wrap input{padding-right:22px}
+    .disc-wrap::after{content:'%';position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:.7rem;font-weight:700;color:#94a3b8;pointer-events:none}
+
     /* ── Totais ── */
     .totais-box{background:#f8f9fa;border-radius:12px;padding:18px 20px;border:1px solid #e9ecef}
     .totais-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:.82rem}
@@ -32,7 +37,7 @@
     .btn-guardar:hover{background:#a30816}
     .btn-guardar:disabled{background:#f87171;cursor:not-allowed}
 
-    /* ── Linha de IVA toggle ── */
+    /* ── Toggle IVA ── */
     .form-check-input:checked{background-color:#c60a1a;border-color:#c60a1a}
 
     /* ── Impressão ── */
@@ -131,10 +136,11 @@
             <table class="table align-middle mb-0" id="tabela_itens">
                 <thead>
                     <tr>
-                        <th style="width:45%">Descrição</th>
-                        <th style="width:12%" class="text-center">Qtd</th>
-                        <th style="width:20%" class="text-end">Preço Unit. (MT)</th>
-                        <th style="width:18%" class="text-end">Subtotal</th>
+                        <th style="width:40%">Descrição</th>
+                        <th style="width:10%" class="text-center">Qtd</th>
+                        <th style="width:17%" class="text-end">Preço Unit. (MT)</th>
+                        <th style="width:8%" class="text-center">Desc. %</th>
+                        <th style="width:15%" class="text-end">Subtotal</th>
                         <th style="width:5%"></th>
                     </tr>
                 </thead>
@@ -148,11 +154,25 @@
                 <div class="col-md-4">
                     <div class="totais-box">
 
+                        {{-- Subtotal Bruto --}}
+                        <div class="totais-row">
+                            <span class="totais-label">Subtotal Bruto</span>
+                            <span class="fw-bold"><span id="total_bruto">0,00</span> MT</span>
+                        </div>
+
+                        {{-- Desconto Comercial (só aparece se houver) --}}
+                        <div class="totais-row" id="area_desconto" style="display:none;">
+                            <span class="totais-label" style="color:#d97706;">Desconto Comercial</span>
+                            <span class="fw-bold" style="color:#d97706;">− <span id="valor_desconto">0,00</span> MT</span>
+                        </div>
+
+                        {{-- Subtotal Líquido (após desconto) --}}
                         <div class="totais-row">
                             <span class="totais-label">Subtotal Líquido</span>
                             <span class="fw-bold"><span id="total_liquido">0,00</span> MT</span>
                         </div>
 
+                        {{-- IVA toggle --}}
                         <div class="totais-row align-items-center">
                             <label class="totais-label mb-0" for="aplicar_iva" style="cursor:pointer;">
                                 Aplicar IVA (16%)
@@ -163,11 +183,13 @@
                             </div>
                         </div>
 
+                        {{-- Valor IVA --}}
                         <div id="area_iva" class="totais-row d-none" style="color:#c60a1a;">
-                            <span class="totais-label" style="color:#c60a1a;">Valor do IVA</span>
+                            <span class="totais-label" style="color:#c60a1a;">Valor do IVA (16%)</span>
                             <span class="fw-bold"><span id="valor_iva">0,00</span> MT</span>
                         </div>
 
+                        {{-- Total Geral --}}
                         <div class="totais-row final">
                             <span style="color:#c60a1a;">Total Geral</span>
                             <span style="color:#c60a1a;font-size:1.15rem;"><span id="total_final">0,00</span> MT</span>
@@ -183,7 +205,7 @@
     </div>
 </div>
 
-{{-- ÁREA DE IMPRESSÃO (gerada pelo PDF server-side, não usada directamente) --}}
+{{-- ÁREA DE IMPRESSÃO --}}
 <div id="area_impressao" class="p-5">
     <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-4">
         <div>
@@ -212,23 +234,32 @@
         <thead style="background:#c60a1a;color:#fff;">
             <tr class="text-center">
                 <th>DESCRIÇÃO DO ITEM</th>
-                <th style="width:80px;">QTD</th>
-                <th style="width:130px;">P. UNIT (MT)</th>
+                <th style="width:60px;">QTD</th>
+                <th style="width:120px;">P. UNIT (MT)</th>
+                <th style="width:70px;">DESC. %</th>
                 <th style="width:130px;">TOTAL (MT)</th>
             </tr>
         </thead>
         <tbody id="print_table_body"></tbody>
         <tfoot>
             <tr>
-                <td colspan="3" class="text-end fw-bold">Subtotal Líquido:</td>
+                <td colspan="4" class="text-end fw-bold">Subtotal Bruto:</td>
+                <td class="text-end fw-bold" id="print_subtotal_bruto">0,00</td>
+            </tr>
+            <tr id="print_linha_desconto" style="display:none;">
+                <td colspan="4" class="text-end fw-bold" style="color:#d97706;">Desconto Comercial:</td>
+                <td class="text-end fw-bold" style="color:#d97706;" id="print_valor_desconto">0,00</td>
+            </tr>
+            <tr>
+                <td colspan="4" class="text-end fw-bold">Subtotal Líquido:</td>
                 <td class="text-end fw-bold" id="print_subtotal">0,00</td>
             </tr>
             <tr id="print_linha_iva" class="d-none">
-                <td colspan="3" class="text-end fw-bold">IVA (16%):</td>
+                <td colspan="4" class="text-end fw-bold">IVA (16%):</td>
                 <td class="text-end fw-bold" id="print_valor_iva">0,00</td>
             </tr>
             <tr style="font-size:1.1rem;background:#fdf2f2;">
-                <td colspan="3" class="text-end fw-bold" style="color:#c60a1a;">VALOR TOTAL:</td>
+                <td colspan="4" class="text-end fw-bold" style="color:#c60a1a;">VALOR TOTAL:</td>
                 <td class="text-end fw-bold" style="color:#c60a1a;" id="print_total_geral">0,00</td>
             </tr>
         </tfoot>
@@ -269,10 +300,30 @@ function addLinha(desc, qty) {
     const isImported = desc !== '';
     const html =
         '<tr id="linha_' + id + '">' +
-            '<td><input type="text" class="form-control form-control-sm desc" value="' + desc + '" placeholder="Descrição do item" required style="border-radius:7px;font-size:.82rem;"></td>' +
-            '<td><input type="number" class="form-control form-control-sm text-center qty" value="' + qty + '" min="1" oninput="calcularLinha(' + id + ')" required style="border-radius:7px;font-size:.82rem;"></td>' +
-            '<td><input type="number" class="form-control form-control-sm text-end price ' + (isImported ? 'border-warning' : '') + '" ' + (isImported ? 'placeholder="Inserir preço"' : '') + ' step="0.01" min="0" oninput="calcularLinha(' + id + ')" required style="border-radius:7px;font-size:.82rem;"></td>' +
-            '<td class="text-end fw-bold" style="color:#c60a1a;"><span id="subtotal_' + id + '">0,00</span> MT</td>' +
+            '<td>' +
+                '<input type="text" class="form-control form-control-sm desc" value="' + desc + '" ' +
+                'placeholder="Descrição do item" required style="border-radius:7px;font-size:.82rem;">' +
+            '</td>' +
+            '<td>' +
+                '<input type="number" class="form-control form-control-sm text-center qty" value="' + qty + '" ' +
+                'min="1" oninput="calcularLinha(' + id + ')" required style="border-radius:7px;font-size:.82rem;">' +
+            '</td>' +
+            '<td>' +
+                '<input type="number" class="form-control form-control-sm text-end price ' + (isImported ? 'border-warning' : '') + '" ' +
+                (isImported ? 'placeholder="Inserir preço"' : '') +
+                ' step="0.01" min="0" oninput="calcularLinha(' + id + ')" required style="border-radius:7px;font-size:.82rem;">' +
+            '</td>' +
+            '<td>' +
+                '<div class="disc-wrap">' +
+                    '<input type="number" class="form-control form-control-sm text-center disc" value="0" ' +
+                    'min="0" max="100" step="0.01" oninput="calcularLinha(' + id + ')" ' +
+                    'style="border-radius:7px;font-size:.82rem;" title="Desconto comercial (%)">' +
+                '</div>' +
+            '</td>' +
+            '<td class="text-end fw-bold" style="color:#c60a1a;">' +
+                '<span id="subtotal_' + id + '">0,00</span> MT' +
+                '<div id="desc_badge_' + id + '" style="display:none;font-size:.65rem;color:#d97706;font-weight:600;"></div>' +
+            '</td>' +
             '<td class="text-center">' +
                 '<button type="button" class="btn btn-link p-0" onclick="removerLinha(' + id + ')" style="color:#c60a1a;font-size:.85rem;">' +
                     '<i class="bi bi-trash3"></i>' +
@@ -285,8 +336,22 @@ function addLinha(desc, qty) {
 function calcularLinha(id) {
     const qty      = parseFloat($('tr#linha_' + id + ' .qty').val())   || 0;
     const price    = parseFloat($('tr#linha_' + id + ' .price').val()) || 0;
-    const subtotal = qty * price;
-    $('#subtotal_' + id).text(subtotal.toLocaleString('pt-MZ', { minimumFractionDigits: 2 }));
+    const disc     = parseFloat($('tr#linha_' + id + ' .disc').val())  || 0;
+    const bruto    = qty * price;
+    const desconto = bruto * (disc / 100);
+    const liquido  = bruto - desconto;
+
+    $('#subtotal_' + id).text(liquido.toLocaleString('pt-MZ', { minimumFractionDigits: 2 }));
+
+    // Mostra pequeno badge de desconto na linha se houver
+    if (disc > 0) {
+        $('#desc_badge_' + id)
+            .text('− ' + desconto.toLocaleString('pt-MZ', { minimumFractionDigits: 2 }) + ' MT (' + disc + '%)')
+            .show();
+    } else {
+        $('#desc_badge_' + id).hide();
+    }
+
     calcularTotalGeral();
 }
 
@@ -296,16 +361,37 @@ function removerLinha(id) {
 }
 
 function calcularTotalGeral() {
-    let soma = 0;
-    $('span[id^="subtotal_"]').each(function() {
-        soma += parseFloat($(this).text().replace(/\s/g,'').replace(',','.')) || 0;
+    let brutoTotal   = 0;
+    let liquidoTotal = 0;
+
+    $('tr[id^="linha_"]').each(function() {
+        const qty   = parseFloat($(this).find('.qty').val())   || 0;
+        const price = parseFloat($(this).find('.price').val()) || 0;
+        const disc  = parseFloat($(this).find('.disc').val())  || 0;
+        const bruto = qty * price;
+        brutoTotal   += bruto;
+        liquidoTotal += bruto * (1 - disc / 100);
     });
-    const comIva = $('#aplicar_iva').is(':checked');
-    const iva    = comIva ? soma * 0.16 : 0;
+
+    const desconto = brutoTotal - liquidoTotal;
+    const comIva   = $('#aplicar_iva').is(':checked');
+    const iva      = comIva ? liquidoTotal * 0.16 : 0;
+    const total    = liquidoTotal + iva;
+
+    // Desconto comercial — só mostra se houver
+    if (desconto > 0.001) {
+        $('#area_desconto').show();
+        $('#valor_desconto').text(desconto.toLocaleString('pt-MZ', { minimumFractionDigits: 2 }));
+    } else {
+        $('#area_desconto').hide();
+    }
+
     $('#area_iva').toggleClass('d-none', !comIva);
-    $('#total_liquido').text(soma.toLocaleString('pt-MZ', { minimumFractionDigits: 2 }));
-    $('#valor_iva').text(iva.toLocaleString('pt-MZ', { minimumFractionDigits: 2 }));
-    $('#total_final').text((soma + iva).toLocaleString('pt-MZ', { minimumFractionDigits: 2 }));
+
+    $('#total_bruto').text(brutoTotal.toLocaleString('pt-MZ',   { minimumFractionDigits: 2 }));
+    $('#total_liquido').text(liquidoTotal.toLocaleString('pt-MZ', { minimumFractionDigits: 2 }));
+    $('#valor_iva').text(iva.toLocaleString('pt-MZ',             { minimumFractionDigits: 2 }));
+    $('#total_final').text(total.toLocaleString('pt-MZ',         { minimumFractionDigits: 2 }));
 }
 
 function finalizarRequisicao() {
@@ -315,29 +401,39 @@ function finalizarRequisicao() {
     const btn = $('#btn_finalizar');
     btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>A gravar...');
 
+    const brutoVal   = parseFloat($('#total_bruto').text().replace(/\s/g,'').replace(',','.'))   || 0;
+    const liquidoVal = parseFloat($('#total_liquido').text().replace(/\s/g,'').replace(',','.')) || 0;
+    const descontoV  = brutoVal - liquidoVal;
+
     const dados = {
-        supplier_id:  supplierId,
-        total_liquid: parseFloat($('#total_liquido').text().replace(/\s/g,'').replace(',','.')),
-        tax_amount:   parseFloat($('#valor_iva').text().replace(/\s/g,'').replace(',','.')),
-        total_final:  parseFloat($('#total_final').text().replace(/\s/g,'').replace(',','.')),
-        has_tax:      $('#aplicar_iva').is(':checked') ? 'true' : 'false',
-        items:        [],
+        supplier_id:      supplierId,
+        total_bruto:      brutoVal,
+        discount_amount:  descontoV,
+        total_liquid:     liquidoVal,
+        tax_amount:       parseFloat($('#valor_iva').text().replace(/\s/g,'').replace(',','.')) || 0,
+        total_final:      parseFloat($('#total_final').text().replace(/\s/g,'').replace(',','.')) || 0,
+        has_tax:          $('#aplicar_iva').is(':checked') ? 'true' : 'false',
+        items:            [],
     };
 
     $('#print_table_body').empty();
+
     $('tr[id^="linha_"]').each(function() {
         const desc  = $(this).find('.desc').val();
         const qty   = $(this).find('.qty').val();
         const price = $(this).find('.price').val();
+        const disc  = $(this).find('.disc').val() || '0';
         const sub   = $(this).find('span[id^="subtotal_"]').text();
+
         if (desc) {
-            dados.items.push({ desc, qty, price });
+            dados.items.push({ desc, qty, price, disc });
             $('#print_table_body').append(
                 '<tr class="text-center">' +
                     '<td class="text-start">' + desc + '</td>' +
                     '<td>' + qty + '</td>' +
-                    '<td class="text-end">' + parseFloat(price).toLocaleString('pt-MZ',{minimumFractionDigits:2}) + '</td>' +
-                    '<td class="text-end fw-bold">' + sub + '</td>' +
+                    '<td class="text-end">' + parseFloat(price||0).toLocaleString('pt-MZ',{minimumFractionDigits:2}) + '</td>' +
+                    '<td>' + (parseFloat(disc) > 0 ? parseFloat(disc).toFixed(2) + '%' : '—') + '</td>' +
+                    '<td class="text-end fw-bold">' + sub + ' MT</td>' +
                 '</tr>'
             );
         }
@@ -349,6 +445,20 @@ function finalizarRequisicao() {
         return;
     }
 
+    // Preenche área de impressão
+    $('#print_subtotal_bruto').text($('#total_bruto').text());
+    $('#print_subtotal').text($('#total_liquido').text());
+    $('#print_valor_iva').text($('#valor_iva').text());
+    $('#print_total_geral').text($('#total_final').text());
+
+    if (descontoV > 0.001) {
+        $('#print_linha_desconto').show();
+        $('#print_valor_desconto').text(descontoV.toLocaleString('pt-MZ', { minimumFractionDigits: 2 }));
+    } else {
+        $('#print_linha_desconto').hide();
+    }
+    $('#print_linha_iva').toggleClass('d-none', dados.has_tax !== 'true');
+
     $.ajax({
         url:         "{{ route('requisicoes.store') }}",
         method:      'POST',
@@ -358,10 +468,6 @@ function finalizarRequisicao() {
         success: function(res) {
             if (res.success) {
                 $('#print_id_gerado').text('#' + String(res.id).padStart(4, '0'));
-                $('#print_subtotal').text($('#total_liquido').text());
-                $('#print_valor_iva').text($('#valor_iva').text());
-                $('#print_total_geral').text($('#total_final').text());
-                $('#print_linha_iva').toggleClass('d-none', dados.has_tax !== 'true');
                 setTimeout(function(){ window.location.href = '/requisicoes'; }, 1000);
             } else {
                 alert(res.message || 'Erro ao gravar.');

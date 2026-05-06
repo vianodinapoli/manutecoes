@@ -33,53 +33,50 @@
         table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
         thead tr { background: #c60a1a; color: white; }
         thead th { padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; }
-        thead th.right { text-align: right; }
+        thead th.right  { text-align: right; }
+        thead th.center { text-align: center; }
         tbody tr { border-bottom: 1px solid #e8edf2; }
         tbody tr:nth-child(even) { background: #fdf5f5; }
         tbody td { padding: 8px 10px; font-size: 11px; }
-        tbody td.right { text-align: right; }
+        tbody td.right  { text-align: right; }
         tbody td.center { text-align: center; }
 
+        /* ── Desconto na linha ── */
+        .disc-val { color: #d97706; font-size: 9px; font-weight: bold; margin-top: 2px; }
+
         /* ── Totais ── */
-        .totals { width: 260px; margin-left: auto; margin-bottom: 24px; }
+        .totals { width: 300px; margin-left: auto; margin-bottom: 24px; }
         .totals table { margin-bottom: 0; }
         .totals td { padding: 5px 10px; font-size: 11px; }
         .totals td.label { color: #666; }
         .totals td.value { text-align: right; font-weight: bold; }
-        .totals tr.total-final { background: #c60a1a; color: white; border-radius: 3px; }
-        .totals tr.total-final td { padding: 8px 10px; font-size: 13px; }
+        .totals tr.disc-row td { color: #d97706; }
+        .totals tr.iva-row td  { color: #c60a1a; }
+        .totals tr.sep td { border-top: 1px solid #dee2e6; padding-top: 8px; }
+        .totals tr.total-final { background: #c60a1a; color: white; }
+        .totals tr.total-final td { padding: 8px 10px; font-size: 13px; font-weight: bold; color: white; }
 
         /* ── Rodapé ── */
-        .footer { margin-top: 40px; border-top: 1px solid #ddd; padding-top: 16px; display: flex; justify-content: space-between; }
-        .assinatura { text-align: center; width: 200px; }
-        .assinatura .linha { border-top: 1px solid #333; margin-bottom: 6px; }
-        .assinatura .nome { font-size: 10px; color: #555; }
-
-        /* ── Status badge ── */
-        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; }
-        .status-PENDENTE  { background: #fff3cd; color: #856404; }
-        .status-APROVADO  { background: #d1e7dd; color: #0f5132; }
-        .status-CANCELADO { background: #f8d7da; color: #c60a1a; }
-
-        /* ── Linha vermelha decorativa ── */
-        .red-stripe { height: 4px; background: #c60a1a; margin-bottom: 20px; border-radius: 2px; }
-
-  .page-footer {
+        .page-footer {
             margin-top: 32px;
             border-top: 2px solid #c60a1a;
             padding-top: 14px;
             display: table;
             width: 100%;
         }
-
-          .footer-user-label {
+        .footer-user-label {
             font-size: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #64748b;
             margin-bottom: 2px;
         }
-        
+
+        /* ── Status badge ── */
+        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; }
+        .status-PENDENTE  { background: #fff3cd; color: #856404; }
+        .status-APROVADO  { background: #d1e7dd; color: #0f5132; }
+        .status-CANCELADO { background: #f8d7da; color: #c60a1a; }
     </style>
 </head>
 <body>
@@ -117,12 +114,6 @@
             @endif
         </div>
         <div class="info-card">
-            <!-- <div class="label">Estado</div>
-            <div class="value">
-                <span class="status-badge status-{{ $requisicao->status }}">
-                    {{ $requisicao->status }}
-                </span>
-            </div> -->
             <div class="sub">Criado em {{ $requisicao->created_at->format('d/m/Y H:i') }}</div>
         </div>
     </div>
@@ -131,35 +122,93 @@
     <table>
         <thead>
             <tr>
-                <th>#</th>
-                <th>Descrição</th>
-                <th class="right">Qtd</th>
-                <th class="right">Preço Unit.</th>
-                <th class="right">Subtotal</th>
+                <th style="width:4%">#</th>
+                <th style="width:44%">Descrição</th>
+                <th class="right" style="width:9%">Qtd</th>
+                <th class="right" style="width:16%">Preço Unit.</th>
+                <th class="center" style="width:9%">Desc %</th>
+                <th class="right" style="width:18%">Subtotal</th>
             </tr>
         </thead>
         <tbody>
             @foreach($requisicao->items as $i => $item)
+           @php
+    $disc      = $item->discount ?? 0;               // percentagem de desconto
+    $bruto     = $item->quantity * $item->unit_price;
+    $desconto  = $bruto * ($disc / 100);
+    $liquido   = $bruto - $desconto;
+@endphp
             <tr>
                 <td class="center">{{ $i + 1 }}</td>
                 <td>{{ $item->description }}</td>
                 <td class="right">{{ $item->quantity }}</td>
                 <td class="right">{{ number_format($item->unit_price, 2, ',', '.') }} MT</td>
-                <td class="right">{{ number_format($item->subtotal, 2, ',', '.') }} MT</td>
+                <td class="center">
+                    @if($disc > 0)
+                        <strong style="color:#d97706;">{{ number_format($disc, 2, ',', '.') }}%</strong>
+                    @else
+                        —
+                    @endif
+                </td>
+                <td class="right">
+                    {{ number_format($liquido, 2, ',', '.') }} MT
+                    @if($disc > 0)
+                        <div class="disc-val">− {{ number_format($desconto, 2, ',', '.') }} MT</div>
+                    @endif
+                </td>
             </tr>
             @endforeach
         </tbody>
     </table>
 
     {{-- TOTAIS --}}
-<div class="totals">
-    <table>
-        <tr class="total-final">
-            <td class="label" style="color:white;">TOTAL GERAL</td>
-            <td class="value">{{ number_format($requisicao->total_final, 2, ',', '.') }} MT</td>
-        </tr>
-    </table>
-</div>
+    @php
+        $totalBruto    = $requisicao->items->sum(fn($it) => $it->quantity * $it->unit_price);
+        $totalDesconto = $requisicao->discount_amount ?? ($totalBruto - $requisicao->total_liquid);
+        $totalLiquido  = $requisicao->total_liquid  ?? ($totalBruto - $totalDesconto);
+        $temDesconto   = $totalDesconto > 0.001;
+        $temIva        = $requisicao->has_tax && $requisicao->tax_amount > 0;
+        $totalIva      = $requisicao->tax_amount ?? 0;
+        $totalFinal    = $requisicao->total_final;
+    @endphp
+
+    <div class="totals">
+        <table>
+            {{-- Subtotal Bruto --}}
+            <tr>
+                <td class="label">Subtotal Bruto</td>
+                <td class="value">{{ number_format($totalBruto, 2, ',', '.') }} MT</td>
+            </tr>
+
+            {{-- Desconto comercial — só se houver --}}
+            @if($temDesconto)
+            <tr class="disc-row">
+                <td class="label" style="color:#d97706;">Desconto Comercial</td>
+                <td class="value" style="color:#d97706;">− {{ number_format($totalDesconto, 2, ',', '.') }} MT</td>
+            </tr>
+            @endif
+
+            {{-- Subtotal Líquido --}}
+            <tr>
+                <td class="label">Subtotal Líquido</td>
+                <td class="value">{{ number_format($totalLiquido, 2, ',', '.') }} MT</td>
+            </tr>
+
+            {{-- IVA — só se aplicado --}}
+            @if($temIva)
+            <tr class="iva-row">
+                <td class="label" style="color:#c60a1a;">IVA (16%)</td>
+                <td class="value" style="color:#c60a1a;">{{ number_format($totalIva, 2, ',', '.') }} MT</td>
+            </tr>
+            @endif
+
+            {{-- Total Geral --}}
+            <tr class="total-final">
+                <td class="label">TOTAL GERAL</td>
+                <td class="value">{{ number_format($totalFinal, 2, ',', '.') }} MT</td>
+            </tr>
+        </table>
+    </div>
 
     {{-- RODAPÉ --}}
     <div class="page-footer">
@@ -167,24 +216,7 @@
             <div class="footer-user-label">Emitido por</div>
             <div class="footer-user-name">{{ auth()->user()->name }}</div>
             <div class="footer-user-email">{{ auth()->user()->email }}</div>
-<!-- 
-            <div class="signature-block">
-                <div class="signature-line"></div>
-                <div class="signature-caption">Assinatura do Responsável</div>
-            </div> -->
         </div>
-        <!-- <div class="footer-right">
-            <div class="footer-doc-info">
-                <div class="doc-ref">Ref. Documento</div>
-                INV-{{ date('Ymd') }}-{{ str_pad(auth()->id(), 4, '0', STR_PAD_LEFT) }}<br>
-                <br>
-                Data de emissão<br>
-                <strong>{{ date('d/m/Y \à\s H:i') }}</strong><br>
-                <br>
-                Este documento é gerado automaticamente<br>
-                pelo sistema de gestão de inventário.
-            </div>
-        </div> -->
     </div>
 
 </body>
