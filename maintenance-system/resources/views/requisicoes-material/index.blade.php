@@ -355,7 +355,7 @@
         $emitidas    = $requisicoes->where('status','EMITIDA')->count();
         $confirmadas = $requisicoes->where('status','CONFIRMADA')->count();
         $finalizadas = $requisicoes->where('status','FINALIZADA')->count();
-        $valorTotal  = $requisicoes->where('status','FINALIZADA')->sum('total_final');
+        $valorTotal = $requisicoes->sum('total_final');
     @endphp
     <div class="row g-3 mb-4 no-print">
         <div class="col-6 col-md-2">
@@ -396,7 +396,7 @@
                 <div class="kpi-value-sm" id="kpiValorTotal" style="color:#c60a1a;">
                     {{ number_format($valorTotal, 2, ',', '.') }} MT
                 </div>
-                <div class="kpi-sub">total das requisições finalizadas</div>
+               <div class="kpi-sub">Total geral de todas as requisições</div>
                 <i class="fas fa-coins kpi-icon" style="color:#c60a1a;opacity:.08"></i>
             </div>
         </div>
@@ -1221,13 +1221,16 @@ function aplicarFiltros() {
     const filteredRows = table.rows({ filter: 'applied' });
     const count = filteredRows.count();
 
-    let somaFiltrada = 0;
-    filteredRows.every(function () {
-        const node = $(this.node());
-        if (node.data('status') === 'FINALIZADA') {
-            somaFiltrada += parseFloat(node.data('valor-carga')) || 0;
-        }
-    });
+   let somaFiltrada = 0;
+filteredRows.every(function () {
+    const node = $(this.node());
+    // valor_carga para finalizadas, total_final para as restantes
+    const valorCarga = parseFloat(node.data('valor-carga')) || 0;
+    const totalFinal = parseFloat(
+        String(node.data('total')).replace(/\./g, '').replace(',', '.')
+    ) || 0;
+    somaFiltrada += valorCarga > 0 ? valorCarga : totalFinal;
+});
 
     $('#kpiValorTotal').text(
         somaFiltrada.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MT'
