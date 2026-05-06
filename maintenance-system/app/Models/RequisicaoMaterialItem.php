@@ -7,6 +7,6 @@ class RequisicaoMaterialItem extends Model
 {
     protected $fillable = [
         'requisicao_material_id', 'description',
-        'quantity', 'unit', 'unit_price', 'subtotal',
+        'quantity', 'unit', 'unit_price', 'subtotal', 
     ];
 }

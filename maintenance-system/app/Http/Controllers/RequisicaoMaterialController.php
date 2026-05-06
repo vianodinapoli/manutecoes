@@ -68,6 +68,7 @@ class RequisicaoMaterialController extends Controller
             'supplier_id'     => $requisicaoMaterial->supplier_id,
             'motorista'       => $requisicaoMaterial->motorista,
             'matricula'       => $requisicaoMaterial->matricula,
+            'transportadora'  => $requisicaoMaterial->transportadora, 
             'responsavel'     => $requisicaoMaterial->responsavel,
             'observacoes'     => $requisicaoMaterial->observacoes,
             'status'          => $requisicaoMaterial->status,
@@ -85,50 +86,81 @@ class RequisicaoMaterialController extends Controller
     }
 
     public function update(Request $request, RequisicaoMaterial $requisicaoMaterial)
-    {
-        $this->validateRequisicao($request, withStatus: true);
+{
+    $this->validateRequisicao($request, withStatus: true);
 
-        DB::transaction(function () use ($request, $requisicaoMaterial) {
-            $data = [
-                'date'           => $request->date,
-                'destino'        => $request->destino,
-                'supplier_id'    => $request->supplier_id ?: null,
-                'matricula'      => $request->matricula,
-                'transportadora' => $request->transportadora,
-                'motorista'      => $request->motorista,
-                'responsavel'    => $request->responsavel,
-                'observacoes'    => $request->observacoes,
-                'status'         => $request->status,
-                'numero_guia'    => $request->numero_guia ?: null,
-                'local_descarga' => $request->local_descarga ?: null,
-            ];
+    DB::transaction(function () use ($request, $requisicaoMaterial) {
+        $data = [
+            'date'            => $request->date,
+            'destino'         => $request->destino,
+            'supplier_id'     => $request->supplier_id ?: null,
+            'matricula'       => $request->matricula,
+            'transportadora'  => $request->transportadora,
+            'motorista'       => $request->motorista,
+            'responsavel'     => $request->responsavel,
+            'observacoes'     => $request->observacoes,
+            'status'          => $request->status,
 
-            if ($request->status === 'FINALIZADA') {
-                if ($request->filled('peso_confirmado')) {
-                    $data['peso_confirmado'] = $request->peso_confirmado;
-                }
-                if ($request->filled('valor_carga')) {
-                    $data['valor_carga'] = $request->valor_carga;
-                }
-            }
+            // Nunca apaga valores existentes se o form não os enviou
+            'numero_guia'     => $request->filled('numero_guia')
+                                    ? $request->numero_guia
+                                    : $requisicaoMaterial->numero_guia,
+            'local_descarga'  => $request->filled('local_descarga')
+                                    ? $request->local_descarga
+                                    : $requisicaoMaterial->local_descarga,
+            'peso_confirmado' => $request->filled('peso_confirmado')
+                                    ? $request->peso_confirmado
+                                    : $requisicaoMaterial->peso_confirmado,
+            'valor_carga'     => $request->filled('valor_carga')
+                                    ? $request->valor_carga
+                                    : $requisicaoMaterial->valor_carga,
+        ];
 
-            $requisicaoMaterial->update($data);
+        $requisicaoMaterial->update($data);
 
-            $requisicaoMaterial->items()->delete();
-            $this->syncItems($requisicaoMaterial, $request->items);
+        $requisicaoMaterial->items()->delete();
+        $this->syncItems($requisicaoMaterial, $request->items);
 
-            // Registar Actividade
-            Activity::create([
-                'type'        => 'requisition',
-                'description' => 'Requisição actualizada · Estado: ' . $request->status,
-                'reference'   => 'REQ-' . str_pad($requisicaoMaterial->id, 4, '0', STR_PAD_LEFT),
-                'user_name'   => auth()->user()->name,
-                'status'      => 'concluido',
-            ]);
-        });
+        Activity::create([
+            'type'        => 'requisition',
+            'description' => 'Requisição actualizada · Estado: ' . $request->status,
+            'reference'   => 'REQ-' . str_pad($requisicaoMaterial->id, 4, '0', STR_PAD_LEFT),
+            'user_name'   => auth()->user()->name,
+            'status'      => 'concluido',
+        ]);
+    });
 
-        return response()->json(['success' => true, 'message' => 'Requisição actualizada com sucesso.']);
-    }
+    return response()->json(['success' => true, 'message' => 'Requisição actualizada com sucesso.']);
+}
+
+public function editarCarga(Request $request, RequisicaoMaterial $requisicaoMaterial)
+{
+    $request->validate([
+        'peso_confirmado' => 'required|numeric|min:0',
+        'valor_carga'     => 'required|numeric|min:0',
+        'numero_guia'     => 'required|string|max:255',
+        'local_descarga'  => 'nullable|string|max:255',
+    ]);
+
+    $requisicaoMaterial->update([
+        'peso_confirmado' => $request->peso_confirmado,
+        'valor_carga'     => $request->valor_carga,
+        'numero_guia'     => $request->numero_guia,
+        'local_descarga'  => $request->local_descarga ?: $requisicaoMaterial->local_descarga,
+    ]);
+
+    Activity::create([
+        'type'        => 'requisition',
+        'description' => 'Dados de carga editados · Guia: ' . $request->numero_guia,
+        'reference'   => 'REQ-' . str_pad($requisicaoMaterial->id, 4, '0', STR_PAD_LEFT),
+        'user_name'   => auth()->user()->name,
+        'status'      => 'concluido',
+    ]);
+
+    return response()->json(['success' => true, 'message' => 'Dados de carga actualizados.']);
+}
+
+
 
     public function destroy(RequisicaoMaterial $requisicaoMaterial)
     {
