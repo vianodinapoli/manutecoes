@@ -162,14 +162,14 @@
         }
 
         .urg-critica {
-            background: #fce8e6;
-            color: #c60a1a;
+            background: #d32d2d;
+            color: #fcfcfc;
             border: 1px solid #f8b8b8
         }
 
         .urg-alta {
-            background: #fef7e0;
-            color: #b06000;
+            background: #d3a200;
+            color: #ffffff;
             border: 1px solid #ffe082
         }
 

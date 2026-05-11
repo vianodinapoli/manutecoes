@@ -3,71 +3,113 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
 <style>
-    .filter-panel{background:#fff;border-radius:14px;border:1px solid #e9ecef;padding:20px 24px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-    .filter-title{font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#adb5bd;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-    .filter-group{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
-    .filter-item{display:flex;flex-direction:column;gap:5px}
-    .filter-item label{font-size:.7rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:#6c757d}
-    .filter-item select,.filter-item input{border:1px solid #dee2e6;border-radius:8px;padding:7px 12px;font-size:.82rem;color:#343a40;background:#f8f9fa;outline:none;transition:border-color .2s,box-shadow .2s;min-width:130px}
-    .filter-item select:focus,.filter-item input:focus{border-color:#0d6efd;box-shadow:0 0 0 3px rgba(13,110,253,.1);background:#fff}
-    .btn-filter{padding:8px 18px;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:all .2s}
-    .btn-filter-apply{background:#0d6efd;color:#fff}.btn-filter-apply:hover{background:#0b5ed7}
-    .btn-filter-clear{background:#f1f3f5;color:#495057;border:1px solid #dee2e6}.btn-filter-clear:hover{background:#e9ecef}
-    .active-filters{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-    .filter-tag{display:inline-flex;align-items:center;gap:5px;background:#e7f1ff;color:#0d6efd;border:1px solid #b6d0ff;border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:500}
-    .filter-tag .remove-tag{cursor:pointer;opacity:.6;font-size:.8rem}.filter-tag .remove-tag:hover{opacity:1}
-    .table-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-    #dischargesTable thead tr{background:#f8f9fa}
-    #dischargesTable thead th{font-size:.67rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#868e96;border-bottom:1px solid #e9ecef;padding:8px 12px;white-space:nowrap}
-    #dischargesTable tbody td{padding:7px 12px;vertical-align:middle;border-bottom:1px solid #f1f3f5;font-size:.82rem}
-    #dischargesTable tbody tr:hover{background:#f8f9ff}
-    #dischargesTable tbody tr:last-child td{border-bottom:none}
-    .sacos-wrap{display:flex;flex-direction:column;gap:3px}
-    .saco-pill{display:inline-flex;align-items:center;gap:4px;border-radius:5px;padding:2px 7px;font-size:.7rem;font-weight:700;width:fit-content;line-height:1.4}
-    .saco-pill.alta{background:#e8f0fe;color:#1a56db;border:1px solid #b8d4f8}
-    .saco-pill.baixa{background:#fde8e8;color:#dc3545;border:1px solid #f8b8b8}
-    .saco-pill .pill-ref{font-size:.58rem;font-weight:700;letter-spacing:.6px;text-transform:uppercase;opacity:.65}
-    .saco-pill .pill-n{font-size:.8rem;font-weight:800}
-    .sacos-footer{display:flex;align-items:center;gap:5px;margin-top:1px}
-    .sacos-total-badge{font-size:.62rem;font-weight:600;color:#6c757d;background:#f1f3f5;border-radius:4px;padding:1px 6px}
-    .divergence-badge{display:inline-flex;align-items:center;gap:3px;background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:4px;padding:1px 6px;font-size:.6rem;font-weight:600}
-    .kpi-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:transform .15s,box-shadow .15s;height:100%;position:relative;overflow:hidden}
-    .kpi-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.08)}
-    .kpi-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:14px 0 0 14px}
-    .kpi-card.teal::before{background:#0dcaf0}.kpi-card.green::before{background:#198754}.kpi-card.blue::before{background:#1a56db}
-    .kpi-card.red::before{background:#dc3545}.kpi-card.purple::before{background:#6f42c1}.kpi-card.gold::before{background:#fd7e14}
-    .kpi-label{font-size:.65rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#adb5bd;margin-bottom:6px}
-    .kpi-value{font-size:1.7rem;font-weight:800;line-height:1;margin-bottom:2px}
-    .kpi-sub{font-size:.72rem;color:#adb5bd}
-    .kpi-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:2rem;opacity:.1}
-    .status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:.68rem;font-weight:600;white-space:nowrap}
-    .action-btn{width:28px;height:28px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;border:1px solid;transition:all .15s;text-decoration:none;cursor:pointer;background:transparent}
-    div.dataTables_wrapper div.dataTables_filter input{border-radius:8px;border:1px solid #dee2e6;padding:6px 12px;font-size:.82rem}
-    div.dataTables_wrapper div.dataTables_length select{border-radius:8px;border:1px solid #dee2e6;padding:4px 8px;font-size:.82rem}
-    .modal-loading{display:flex;align-items:center;justify-content:center;height:300px;flex-direction:column;gap:12px;color:#adb5bd;}
+    /* ── Layout ── */
+    .page-header-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+    .page-title{font-size:1.05rem;font-weight:700;color:#1e293b;margin:0}
+    .page-sub{font-size:.72rem;color:#94a3b8;margin:2px 0 0}
+
+    /* ── KPIs ── */
+    .kpi-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+    .kpi{flex:1;min-width:100px;background:#fff;border:1px solid #e9ecef;border-radius:10px;
+         padding:10px 14px;position:relative;overflow:hidden}
+    .kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:10px 0 0 10px}
+    .kpi.teal::before{background:#0dcaf0}.kpi.green::before{background:#198754}
+    .kpi.blue::before{background:#1a56db}.kpi.red::before{background:#dc3545}
+    .kpi.purple::before{background:#6f42c1}.kpi.gold::before{background:#fd7e14}
+    .kpi-lbl{font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#adb5bd;margin-bottom:2px}
+    .kpi-val{font-size:1.35rem;font-weight:800;line-height:1.1;color:#1e293b}
+    .kpi-sub{font-size:.62rem;color:#adb5bd;margin-top:1px}
+
+    /* ── Filter panel ── */
+    .filter-panel{background:#fff;border:1px solid #e9ecef;border-radius:10px;
+                  padding:14px 18px;margin-bottom:14px}
+    .filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+    .fi{display:flex;flex-direction:column;gap:3px}
+    .fi label{font-size:.62rem;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#94a3b8}
+    .fi select,.fi input{border:1px solid #dee2e6;border-radius:6px;padding:5px 10px;
+                          font-size:.78rem;color:#343a40;background:#f8f9fa;min-width:120px;outline:none}
+    .fi select:focus,.fi input:focus{border-color:#0d6efd;background:#fff}
+    .btn-f{padding:6px 14px;border-radius:6px;font-size:.75rem;font-weight:600;
+           cursor:pointer;border:1px solid #dee2e6;display:inline-flex;align-items:center;gap:5px}
+    .btn-fa{background:#0d6efd;color:#fff;border-color:#0d6efd}.btn-fa:hover{background:#0b5ed7}
+    .btn-fc{background:#f8f9fa;color:#495057}.btn-fc:hover{background:#e9ecef}
+    .active-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+    .ftag{display:inline-flex;align-items:center;gap:4px;background:#e7f1ff;color:#0d6efd;
+          border:1px solid #b6d0ff;border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:500}
+    .ftag .rm{cursor:pointer;opacity:.6}.ftag .rm:hover{opacity:1}
+
+    /* ── Table ── */
+    .table-card{background:#fff;border:1px solid #e9ecef;border-radius:10px;overflow:hidden}
+    #dTable thead tr{background:#f8f9fa}
+    #dTable thead th{font-size:.6rem;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
+                      color:#868e96;border-bottom:1px solid #e9ecef;padding:7px 10px;white-space:nowrap}
+    #dTable tbody td{padding:5px 10px;vertical-align:middle;border-bottom:1px solid #f1f3f5;font-size:.78rem}
+    #dTable tbody tr:hover{background:#fafbff}
+    #dTable tbody tr:last-child td{border-bottom:none}
+
+    /* ── Sacos pills ── */
+    .sp{display:inline-flex;align-items:center;gap:3px;border-radius:4px;
+        padding:1px 6px;font-size:.65rem;font-weight:700;line-height:1.5}
+    .sp.alta{background:#e8f0fe;color:#1a56db;border:1px solid #c3d9fa}
+    .sp.baixa{background:#fde8e8;color:#dc3545;border:1px solid #f8c4c4}
+    .sp-ref{font-size:.55rem;letter-spacing:.5px;text-transform:uppercase;opacity:.65}
+    .sp-n{font-size:.75rem;font-weight:800}
+    .sp-total{font-size:.6rem;color:#94a3b8;background:#f1f3f5;border-radius:3px;padding:0 4px}
+    .div-badge{display:inline-flex;align-items:center;gap:2px;background:#fff3cd;color:#856404;
+               border:1px solid #ffc107;border-radius:3px;padding:0 5px;font-size:.58rem;font-weight:600}
+
+    /* ── Status badge ── */
+    .sbadge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;
+            border-radius:20px;font-size:.63rem;font-weight:600;white-space:nowrap}
+
+    /* ── Action btns ── */
+    .ab{width:24px;height:24px;border-radius:5px;display:inline-flex;align-items:center;
+        justify-content:center;font-size:.68rem;border:1px solid;transition:all .12s;
+        text-decoration:none;cursor:pointer;background:transparent}
+    .btn-balanca{font-size:.62rem;padding:2px 8px;border-radius:20px;font-weight:700;
+                 background:#198754;color:#fff;border:none;white-space:nowrap;
+                 display:inline-flex;align-items:center;gap:3px}
+    .btn-balanca:hover{background:#146c43;color:#fff}
+
+    /* ── Motorista block ── */
+    .motorista-name{font-size:.78rem;font-weight:600;color:#1e293b;line-height:1.2}
+    .mat-badge{display:inline-block;background:#1e293b;color:#fff;border-radius:3px;
+               font-size:.55rem;letter-spacing:1px;padding:1px 5px;margin-top:2px;font-weight:600}
+
+    /* ── DataTable overrides ── */
+    div.dataTables_wrapper div.dataTables_filter input{border-radius:6px;border:1px solid #dee2e6;
+        padding:4px 10px;font-size:.78rem}
+    div.dataTables_wrapper div.dataTables_length select{border-radius:6px;border:1px solid #dee2e6;
+        padding:3px 6px;font-size:.78rem}
+    div.dataTables_wrapper div.dataTables_info{font-size:.72rem;color:#94a3b8;padding-top:6px}
+    div.dataTables_wrapper div.dataTables_paginate .paginate_button{font-size:.72rem;border-radius:5px!important}
+
+    .modal-loading{display:flex;align-items:center;justify-content:center;
+                   height:260px;flex-direction:column;gap:10px;color:#adb5bd}
+
     @media print{
         .no-print{display:none!important}
         body *{visibility:hidden}
         #reportArea,#reportArea *{visibility:visible}
-        #reportArea{position:absolute;left:0;top:0;width:100%;padding:30px}
+        #reportArea{position:absolute;left:0;top:0;width:100%;padding:28px}
     }
 </style>
 
-<div class="container-fluid py-4 px-4">
+<div class="container-fluid py-3 px-4">
 
     {{-- HEADER --}}
-    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <div class="page-header-bar no-print">
         <div>
-            <h4 class="fw-bold text-dark mb-1"><i class="bi bi-ship text-primary me-2"></i>Controlo de Descargas</h4>
-            <p class="text-muted small mb-0">Nitrato de Amónio — Gestão e rastreio de camiões</p>
+            <div class="page-title"><i class="bi bi-ship me-2" style="color:#0d6efd;"></i>Controlo de Descargas</div>
+            <div class="page-sub">Nitrato de Amónio — Gestão e rastreio de camiões</div>
         </div>
         <div class="d-flex gap-2">
-            <button onclick="imprimirRelatorio()" class="btn btn-outline-dark btn-sm fw-bold px-3">
-                <i class="bi bi-printer me-1"></i> Imprimir Relatório
+            <button onclick="imprimirRelatorio()" class="btn btn-outline-secondary btn-sm fw-bold" style="border-radius:7px;font-size:.75rem;">
+                <i class="bi bi-printer me-1"></i>Relatório
             </button>
-            <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm"
+            <button class="btn btn-primary btn-sm fw-bold shadow-sm" style="border-radius:7px;font-size:.75rem;"
                     onclick="abrirModal('{{ route('discharges.create') }}', 'Registar Nova Descarga', 'primary')">
-                <i class="bi bi-plus-lg me-1"></i> Registar Descarga
+                <i class="bi bi-plus-lg me-1"></i>Nova Descarga
             </button>
         </div>
     </div>
@@ -76,241 +118,238 @@
     @if(session('success'))
     <div class="position-fixed top-0 end-0 p-3 no-print" style="z-index:9999;">
         <div id="successToast" class="toast show border-0"
-             style="border-radius:10px;min-width:260px;overflow:hidden;
-                    background:linear-gradient(135deg,rgba(25,135,84,.92),rgba(32,201,151,.92));
-                    backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.25)!important;
-                    box-shadow:0 8px 32px rgba(25,135,84,.3);">
-            <div class="d-flex align-items-center gap-3 px-3 py-3">
-                <i class="bi bi-check-circle-fill text-white" style="font-size:1.4rem;"></i>
-                <div style="font-size:.78rem;color:rgba(255,255,255,.95);line-height:1.4;">{{ session('success') }}</div>
-                <button type="button" class="btn-close btn-close-white opacity-75 ms-auto" data-bs-dismiss="toast" style="font-size:.55rem;"></button>
+             style="border-radius:10px;min-width:240px;overflow:hidden;
+                    background:rgba(25,135,84,.95);backdrop-filter:blur(12px);
+                    box-shadow:0 8px 24px rgba(25,135,84,.3);">
+            <div class="d-flex align-items-center gap-2 px-3 py-2">
+                <i class="bi bi-check-circle-fill text-white" style="font-size:1.1rem;"></i>
+                <div style="font-size:.75rem;color:rgba(255,255,255,.95);">{{ session('success') }}</div>
+                <button type="button" class="btn-close btn-close-white opacity-75 ms-auto"
+                        data-bs-dismiss="toast" style="font-size:.5rem;"></button>
             </div>
-            <div style="height:2px;background:rgba(255,255,255,.15);overflow:hidden;">
-                <div id="toastProgress" style="height:100%;width:100%;background:rgba(255,255,255,.6);transition:width 3.5s linear;"></div>
+            <div style="height:2px;background:rgba(255,255,255,.15);">
+                <div id="toastProg" style="height:100%;width:100%;background:rgba(255,255,255,.5);transition:width 3.5s linear;"></div>
             </div>
         </div>
     </div>
     @endif
 
-    {{-- KPI CARDS --}}
-    <div class="row g-3 mb-3 no-print">
-        <div class="col-6 col-md-2">
-            <div class="kpi-card teal">
-                <div class="kpi-label">Em Trânsito</div>
-                <div class="kpi-value" style="color:#0dcaf0;">{{ $discharges->where('status','in_transit')->count() }}</div>
-                <div class="kpi-sub">camiões activos</div>
-                <i class="bi bi-truck kpi-icon" style="color:#0dcaf0;"></i>
-            </div>
+    {{-- KPIs --}}
+    <div class="kpi-row no-print">
+        <div class="kpi teal">
+            <div class="kpi-lbl">Em Trânsito</div>
+            <div class="kpi-val" style="color:#0dcaf0;">{{ $discharges->where('status','in_transit')->count() }}</div>
+            <div class="kpi-sub">camiões</div>
         </div>
-        <div class="col-6 col-md-2">
-            <div class="kpi-card green">
-                <div class="kpi-label">Confirmados</div>
-                <div class="kpi-value" style="color:#198754;">{{ $discharges->where('status','confirmed')->count() }}</div>
-                <div class="kpi-sub">na balança</div>
-                <i class="bi bi-check-circle-fill kpi-icon" style="color:#198754;"></i>
-            </div>
+        <div class="kpi green">
+            <div class="kpi-lbl">Confirmados</div>
+            <div class="kpi-val" style="color:#198754;">{{ $discharges->where('status','confirmed')->count() }}</div>
+            <div class="kpi-sub">na balança</div>
         </div>
-        <div class="col-6 col-md-2">
-            <div class="kpi-card purple">
-                <div class="kpi-label">Total Registos</div>
-                <div class="kpi-value" style="color:#6f42c1;">{{ $discharges->count() }}</div>
-                <div class="kpi-sub">nesta listagem</div>
-                <i class="bi bi-clipboard-data kpi-icon" style="color:#6f42c1;"></i>
-            </div>
+        <div class="kpi purple">
+            <div class="kpi-lbl">Total</div>
+            <div class="kpi-val" style="color:#6f42c1;">{{ $discharges->count() }}</div>
+            <div class="kpi-sub">registos</div>
         </div>
-        <div class="col-6 col-md-2">
-            <div class="kpi-card blue">
-                <div class="kpi-label">Total Alta</div>
-                <div class="kpi-value" style="color:#1a56db;">{{ number_format($discharges->sum('sacos_alta'),0,',','.') }}</div>
-                <div class="kpi-sub">sacos × 50 kg</div>
-                <i class="bi bi-arrow-up-circle-fill kpi-icon" style="color:#1a56db;"></i>
-            </div>
+        <div class="kpi blue">
+            <div class="kpi-lbl">Alta</div>
+            <div class="kpi-val" style="color:#1a56db;">{{ number_format($discharges->sum('sacos_alta'),0,',','.') }}</div>
+            <div class="kpi-sub">sacos × 50 kg</div>
         </div>
-        <div class="col-6 col-md-2">
-            <div class="kpi-card red">
-                <div class="kpi-label">Total Baixa</div>
-                <div class="kpi-value" style="color:#dc3545;">{{ number_format($discharges->sum('sacos_baixa'),0,',','.') }}</div>
-                <div class="kpi-sub">sacos × 25 kg</div>
-                <i class="bi bi-arrow-down-circle-fill kpi-icon" style="color:#dc3545;"></i>
-            </div>
+        <div class="kpi red">
+            <div class="kpi-lbl">Baixa</div>
+            <div class="kpi-val" style="color:#dc3545;">{{ number_format($discharges->sum('sacos_baixa'),0,',','.') }}</div>
+            <div class="kpi-sub">sacos × 25 kg</div>
         </div>
-        <div class="col-6 col-md-2">
-            <div class="kpi-card gold">
-                <div class="kpi-label">Peso Líquido</div>
-                <div class="kpi-value" style="color:#fd7e14;font-size:1.1rem;padding-top:4px;">
-                    {{ number_format($discharges->whereNotNull('peso_liquido')->sum('peso_liquido')/1000,1,',','.') }}t
-                </div>
-                <div class="kpi-sub">total confirmado</div>
-                <i class="bi bi-speedometer2 kpi-icon" style="color:#fd7e14;"></i>
+        <div class="kpi gold">
+            <div class="kpi-lbl">Peso Liq.</div>
+            <div class="kpi-val" style="color:#fd7e14;font-size:1.1rem;padding-top:3px;">
+                {{ number_format($discharges->whereNotNull('peso_liquido')->sum('peso_liquido')/1000,1,',','.') }}t
             </div>
+            <div class="kpi-sub">confirmado</div>
         </div>
     </div>
 
     {{-- FILTROS --}}
     <div class="filter-panel no-print">
-        <div class="filter-title"><i class="bi bi-funnel-fill"></i> Filtros de Pesquisa</div>
-        <div class="filter-group">
-            <div class="filter-item"><label>Data Início</label><input type="date" id="filterDateFrom"></div>
-            <div class="filter-item"><label>Data Fim</label><input type="date" id="filterDateTo"></div>
-            <div class="filter-item">
+        <div class="filter-row">
+            <div class="fi"><label>De</label><input type="date" id="fDe"></div>
+            <div class="fi"><label>Até</label><input type="date" id="fAte"></div>
+            <div class="fi">
                 <label>Transportadora</label>
-                <select id="filterTransportadora">
+                <select id="fTrans">
                     <option value="">Todas</option>
                     @foreach($discharges->pluck('transportadora')->unique()->sort() as $t)
                     <option value="{{ $t }}">{{ $t }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="filter-item">
+            <div class="fi">
                 <label>Estado</label>
-                <select id="filterStatus">
+                <select id="fStatus">
                     <option value="">Todos</option>
                     <option value="in_transit">Em Trânsito</option>
                     <option value="confirmed">Confirmado</option>
                     <option value="pending">Pendente</option>
                 </select>
             </div>
-            <div class="filter-item">
-                <label>Tipo Carga</label>
-                <select id="filterTipoCarga">
+            <div class="fi">
+                <label>Carga</label>
+                <select id="fCarga">
                     <option value="">Todos</option>
                     <option value="alta">Só Alta</option>
                     <option value="baixa">Só Baixa</option>
                     <option value="misto">Misto</option>
                 </select>
             </div>
-            <div class="filter-item">
+            <div class="fi">
                 <label>Divergência</label>
-                <select id="filterDivergencia">
+                <select id="fDiv">
                     <option value="">Todos</option>
                     <option value="sim">Com divergência</option>
                     <option value="nao">Sem divergência</option>
                 </select>
             </div>
-            <div class="d-flex gap-2 align-items-end">
-                <button class="btn-filter btn-filter-apply" onclick="applyFilters()"><i class="bi bi-search"></i> Filtrar</button>
-                <button class="btn-filter btn-filter-clear" onclick="clearFilters()"><i class="bi bi-x-lg"></i> Limpar</button>
+            <div class="d-flex gap-1 align-items-end">
+                <button class="btn-f btn-fa" onclick="applyFilters()"><i class="bi bi-search"></i>Filtrar</button>
+                <button class="btn-f btn-fc" onclick="clearFilters()"><i class="bi bi-x"></i>Limpar</button>
             </div>
         </div>
-        <div class="active-filters" id="activeTags"></div>
+        <div class="active-tags" id="activeTags"></div>
     </div>
 
     {{-- TABELA --}}
     <div class="table-card no-print">
-        <div class="p-3">
-            <table class="table table-hover align-middle mb-0" id="dischargesTable" style="width:100%">
+        <div class="p-2 pt-3">
+            <table class="table table-hover align-middle mb-0" id="dTable" style="width:100%">
                 <thead>
                     <tr>
-                        <th>Nº / DATA</th>
-                        <th>GUIA</th>
-                        <th>MOTORISTA / MATRÍCULA</th>
+                        <th style="width:70px">#&nbsp;/&nbsp;DATA</th>
+                        <th style="width:90px">GUIA</th>
+                        <th>MOTORISTA</th>
                         <th>TRANSPORTADORA</th>
                         <th>SACOS</th>
-                        <th class="text-center">PESO</th>
-                        <th class="text-center">TEMPO</th>
-                        <th class="text-center">ESTADO</th>
-                        <th class="text-center">AÇÕES</th>
+                        <th class="text-center" style="width:100px">PESO</th>
+                        <th class="text-center" style="width:70px">TEMPO</th>
+                        <th class="text-center" style="width:100px">ESTADO</th>
+                        <th class="text-center" style="width:120px">AÇÕES</th>
                     </tr>
                 </thead>
                 <tbody>
-                @foreach($discharges as $discharge)
+                @foreach($discharges as $d)
                 @php
-                    $statusClass = match($discharge->status) {
+                    $stClass = match($d->status){
                         'confirmed'  => 'bg-success bg-opacity-10 text-success',
                         'in_transit' => 'bg-info bg-opacity-10 text-info',
                         default      => 'bg-warning bg-opacity-10 text-warning',
                     };
-                    $statusIcon = match($discharge->status) {
+                    $stIcon = match($d->status){
                         'confirmed'  => 'check-circle-fill',
                         'in_transit' => 'truck',
                         default      => 'hourglass-split',
                     };
-                    $sacosAlta     = $discharge->sacos_alta ?? 0;
-                    $sacosBaixa    = $discharge->sacos_baixa ?? 0;
-                    $totalSacos    = $sacosAlta + $sacosBaixa;
-                    $hasDivergence = $discharge->sacos_confirmados
-                        && $discharge->sacos_confirmados != $discharge->numero_sacos;
+                    $sA = $d->sacos_alta ?? 0;
+                    $sB = $d->sacos_baixa ?? 0;
+                    $tot = $sA + $sB;
+                    $div = $d->sacos_confirmados && $d->sacos_confirmados != $d->numero_sacos;
                 @endphp
-                <tr data-status="{{ $discharge->status }}"
-                    data-transportadora="{{ strtolower($discharge->transportadora) }}"
-                    data-data="{{ $discharge->data->format('Y-m-d') }}"
-                    data-sacos-alta="{{ $sacosAlta }}"
-                    data-sacos-baixa="{{ $sacosBaixa }}"
-                    data-divergencia="{{ $hasDivergence ? 'sim' : 'nao' }}">
+                <tr data-status="{{ $d->status }}"
+                    data-transportadora="{{ strtolower($d->transportadora) }}"
+                    data-data="{{ $d->data->format('Y-m-d') }}"
+                    data-sacos-alta="{{ $sA }}" data-sacos-baixa="{{ $sB }}"
+                    data-divergencia="{{ $div ? 'sim' : 'nao' }}">
+
+                    {{-- Nº / Data --}}
                     <td>
-                        <span class="fw-bold text-dark" style="font-size:.8rem;">#{{ $discharge->id }}</span><br>
-                        <span class="text-muted" style="font-size:.72rem;">{{ $discharge->data->format('d/m/Y') }}</span>
+                        <span class="fw-bold" style="font-size:.75rem;color:#64748b;">#{{ $d->id }}</span>
+                        <div style="font-size:.68rem;color:#94a3b8;">{{ $d->data->format('d/m/Y') }}</div>
                     </td>
-                    <td><span class="fw-bold text-primary" style="font-size:.78rem;">{{ $discharge->numero_guia }}</span></td>
+
+                    {{-- Guia --}}
                     <td>
-                        <span style="font-size:.78rem;font-weight:600;">{{ $discharge->motorista }}</span><br>
-                        <span class="badge bg-dark bg-opacity-75" style="font-size:.6rem;letter-spacing:1px;margin-top:2px;">{{ $discharge->matricula }}</span>
+                        <span class="fw-bold" style="font-size:.75rem;color:#1a56db;">{{ $d->numero_guia }}</span>
                     </td>
-                    <td><span class="text-secondary" style="font-size:.78rem;">{{ $discharge->transportadora }}</span></td>
+
+                    {{-- Motorista --}}
                     <td>
-                        <div class="sacos-wrap">
-                            @if($sacosAlta > 0)
-                            <span class="saco-pill alta"><span class="pill-ref">Alta</span><span class="pill-n">{{ $sacosAlta }}</span></span>
+                        <div class="motorista-name">{{ $d->motorista }}</div>
+                        <span class="mat-badge">{{ $d->matricula }}</span>
+                    </td>
+
+                    {{-- Transportadora --}}
+                    <td>
+                        <span style="font-size:.75rem;color:#64748b;">{{ $d->transportadora }}</span>
+                    </td>
+
+                    {{-- Sacos --}}
+                    <td>
+                        <div class="d-flex flex-wrap gap-1 align-items-center">
+                            @if($sA > 0)
+                            <span class="sp alta"><span class="sp-ref">↑</span><span class="sp-n">{{ $sA }}</span></span>
                             @endif
-                            @if($sacosBaixa > 0)
-                            <span class="saco-pill baixa"><span class="pill-ref">Baixa</span><span class="pill-n">{{ $sacosBaixa }}</span></span>
+                            @if($sB > 0)
+                            <span class="sp baixa"><span class="sp-ref">↓</span><span class="sp-n">{{ $sB }}</span></span>
                             @endif
-                            @if($totalSacos > 0)
-                            <div class="sacos-footer">
-                                <span class="sacos-total-badge">Total {{ $totalSacos }}</span>
-                                @if($hasDivergence)
-                                <span class="divergence-badge"><i class="bi bi-exclamation-triangle-fill"></i> Conf. {{ $discharge->sacos_confirmados }}</span>
-                                @endif
-                            </div>
+                            @if($tot > 0)
+                            <span class="sp-total">{{ $tot }}</span>
+                            @endif
+                            @if($div)
+                            <span class="div-badge"><i class="bi bi-exclamation-triangle-fill" style="font-size:.55rem;"></i>{{ $d->sacos_confirmados }}</span>
                             @endif
                         </div>
                     </td>
+
+                    {{-- Peso --}}
                     <td class="text-center">
-                        <div class="fw-bold" style="font-size:.78rem;">{{ number_format($discharge->peso_total_porto,0,',','.') }} kg</div>
-                        @if($discharge->peso_liquido)
-                        <div class="text-success" style="font-size:.68rem;">Líq: {{ number_format($discharge->peso_liquido,0,',','.') }} kg</div>
+                        <div class="fw-bold" style="font-size:.75rem;">{{ number_format($d->peso_total_porto,0,',','.') }} kg</div>
+                        @if($d->peso_liquido)
+                        <div style="font-size:.65rem;color:#198754;">Líq: {{ number_format($d->peso_liquido,0,',','.') }}</div>
                         @endif
                     </td>
+
+                    {{-- Tempo --}}
                     <td class="text-center">
-                        @if($discharge->tempo_transporte)
-                        <span class="badge bg-opacity-15 text-dark fw-semibold" style="font-size:.68rem;"><i class="bi bi-clock me-1"></i>{{ $discharge->tempo_transporte }}min</span>
+                        @if($d->tempo_transporte)
+                        <span style="font-size:.7rem;color:#64748b;"><i class="bi bi-clock" style="font-size:.6rem;"></i> {{ $d->tempo_transporte }}m</span>
                         @else
-                        <span class="text-muted" style="font-size:.78rem;">—</span>
+                        <span class="text-muted">—</span>
                         @endif
                     </td>
+
+                    {{-- Estado --}}
                     <td class="text-center">
-                        <span class="status-badge {{ $statusClass }}">
-                            <i class="bi bi-{{ $statusIcon }}"></i> {{ $discharge->status_label }}
+                        <span class="sbadge {{ $stClass }}">
+                            <i class="bi bi-{{ $stIcon }}" style="font-size:.55rem;"></i>
+                            {{ $d->status_label }}
                         </span>
                     </td>
+
+                    {{-- Ações --}}
                     <td class="text-center">
-                        <div class="d-flex justify-content-center gap-1">
-                            @if($discharge->status === 'pending' || $discharge->status === 'in_transit')
-                            <button class="btn btn-success btn-sm fw-bold"
-                                    style="font-size:.65rem;border-radius:20px;padding:2px 9px;"
+                        <div class="d-flex justify-content-center align-items-center gap-1">
+                            @if(in_array($d->status, ['pending','in_transit']))
+                            <button class="btn-balanca"
                                     data-bs-toggle="modal" data-bs-target="#modalConfirm"
-                                    data-id="{{ $discharge->id }}"
-                                    data-guia="{{ $discharge->numero_guia }}"
-                                    data-sacos="{{ $discharge->numero_sacos }}"
-                                    data-saida="{{ $discharge->hora_saida_porto }}">
-                                <i class="bi bi-speedometer2 me-1"></i>Balança
+                                    data-id="{{ $d->id }}" data-guia="{{ $d->numero_guia }}"
+                                    data-sacos="{{ $d->numero_sacos }}" data-saida="{{ $d->hora_saida_porto }}">
+                                <i class="bi bi-speedometer2"></i>Balança
                             </button>
                             @endif
                             <button type="button"
-                                onclick="abrirModal('{{ route('discharges.show', $discharge->id) }}', 'Descarga #{{ $discharge->id }} — {{ $discharge->numero_guia }}', 'dark')"
-                                class="action-btn text-primary border-primary border-opacity-25" title="Ver">
+                                onclick="abrirModal('{{ route('discharges.show', $d->id) }}', 'Descarga #{{ $d->id }}', 'dark')"
+                                class="ab text-primary border-primary border-opacity-25" title="Ver">
                                 <i class="bi bi-eye"></i>
                             </button>
                             <button type="button"
-                                onclick="abrirModal('{{ route('discharges.edit', $discharge->id) }}', 'Editar Descarga #{{ $discharge->id }}', 'warning')"
-                                class="action-btn text-warning border-warning border-opacity-25" title="Editar">
+                                onclick="abrirModal('{{ route('discharges.edit', $d->id) }}', 'Editar #{{ $d->id }}', 'warning')"
+                                class="ab text-warning border-warning border-opacity-25" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             @if(auth()->user()->hasRole('super-admin'))
-                            <form action="{{ route('discharges.destroy', $discharge->id) }}" method="POST" class="m-0">
+                            <form action="{{ route('discharges.destroy', $d->id) }}" method="POST" class="m-0">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="action-btn text-danger border-danger border-opacity-25"
-                                        onclick="return confirm('Eliminar este registo?')" title="Eliminar">
+                                <button type="submit" class="ab text-danger border-danger border-opacity-25"
+                                        onclick="return confirm('Eliminar?')" title="Eliminar">
                                     <i class="bi bi-trash3"></i>
                                 </button>
                             </form>
@@ -323,86 +362,102 @@
             </table>
         </div>
     </div>
+
 </div>
 
-{{-- ═══ MODAL UNIVERSAL (fetch) ═══ --}}
+{{-- MODAL UNIVERSAL --}}
 <div class="modal fade" id="modalPrincipal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
-            <div class="modal-header border-0 text-white" id="modalHeader" style="background:linear-gradient(135deg,#1a56db,#0dcaf0);">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
+            <div class="modal-header border-0 text-white" id="modalHeader"
+                 style="background:linear-gradient(135deg,#1a56db,#0dcaf0);padding:12px 20px;">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-file-text" id="modalIcon" style="font-size:1.1rem;"></i>
-                    <h5 class="modal-title fw-bold mb-0" id="modalTitulo">A carregar...</h5>
+                    <i class="bi bi-file-text" id="modalIcon" style="font-size:1rem;"></i>
+                    <h5 class="modal-title fw-bold mb-0" style="font-size:.9rem;" id="modalTitulo">A carregar...</h5>
                 </div>
                 <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-0" style="min-height:400px;">
+            <div class="modal-body p-0" style="min-height:360px;">
                 <div id="modalLoading" class="modal-loading">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <span style="font-size:.82rem;">A carregar...</span>
+                    <div class="spinner-border text-primary" role="status" style="width:1.5rem;height:1.5rem;"></div>
+                    <span style="font-size:.78rem;">A carregar...</span>
                 </div>
-                <div id="modalConteudo" style="display:none;padding:24px;"></div>
+                <div id="modalConteudo" style="display:none;padding:20px;"></div>
             </div>
         </div>
     </div>
 </div>
 
-{{-- ═══ MODAL BALANÇA ═══ --}}
+{{-- MODAL BALANÇA --}}
 <div class="modal fade" id="modalConfirm" tabindex="-1">
     <div class="modal-dialog modal-md modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
-            <div class="modal-header bg-success text-white border-0">
-                <h5 class="modal-title fw-bold"><i class="bi bi-speedometer2 me-2"></i>Confirmação na Balança</h5>
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
+            <div class="modal-header bg-success text-white border-0" style="padding:12px 20px;">
+                <h5 class="modal-title fw-bold" style="font-size:.88rem;">
+                    <i class="bi bi-speedometer2 me-2"></i>Confirmação na Balança
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="formConfirm" method="POST">
                 @csrf @method('PATCH')
                 <div class="modal-body p-4">
-                    <div class="alert alert-info py-2 small mb-3 border-0" style="border-radius:10px;background:#e8f4fd;color:#1a56db;">
+                    <div class="alert py-2 mb-3 border-0" style="border-radius:8px;background:#e8f4fd;color:#1a56db;font-size:.78rem;">
                         <i class="bi bi-info-circle me-1"></i>
-                        Guia <strong id="confirm_guia"></strong> — <strong id="confirm_sacos"></strong> sacos registados no porto
+                        Guia <strong id="confirm_guia"></strong> — <strong id="confirm_sacos"></strong> sacos no porto
                     </div>
-                    <div class="row g-3">
+                    <div class="row g-2">
                         <div class="col-md-6">
-                            <label class="small fw-bold text-muted mb-1">Hora de Chegada</label>
-                            <input type="time" name="hora_chegada_balanca" id="hora_chegada_balanca" class="form-control" style="border-radius:8px;" required>
+                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Hora de Chegada</label>
+                            <input type="time" name="hora_chegada_balanca" id="hora_chegada_balanca"
+                                   class="form-control form-control-sm" style="border-radius:7px;" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="small fw-bold text-muted mb-1">Tempo de Transporte</label>
-                            <div class="input-group">
-                                <input type="text" id="transport_time_calc" class="form-control bg-light" style="border-radius:8px 0 0 8px;" readonly placeholder="Auto">
+                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Tempo Transporte</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="transport_time_calc" class="form-control bg-light"
+                                       style="border-radius:7px 0 0 7px;" readonly placeholder="Auto">
                                 <span class="input-group-text small">min</span>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="small fw-bold text-muted mb-1">Peso Bruto (kg)</label>
-                            <input type="number" name="peso_bruto" id="peso_bruto" class="form-control" style="border-radius:8px;" step="0.01" min="0" oninput="calcNetWeight()" required>
+                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Peso Bruto (kg)</label>
+                            <input type="number" name="peso_bruto" id="peso_bruto"
+                                   class="form-control form-control-sm" style="border-radius:7px;"
+                                   step="0.01" min="0" oninput="calcNetWeight()" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="small fw-bold text-muted mb-1">Tara (kg)</label>
-                            <input type="number" name="tara" id="tara" class="form-control" style="border-radius:8px;" step="0.01" min="0" oninput="calcNetWeight()" >
+                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Tara (kg)</label>
+                            <input type="number" name="tara" id="tara"
+                                   class="form-control form-control-sm" style="border-radius:7px;"
+                                   step="0.01" min="0" oninput="calcNetWeight()">
                         </div>
                         <div class="col-12">
-                            <label class="small fw-bold text-muted mb-1">Peso Líquido (kg)</label>
-                            <input type="text" id="net_weight_calc" class="form-control bg-light fw-bold text-success" style="border-radius:8px;" readonly placeholder="Calculado automaticamente">
+                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Peso Líquido (kg)</label>
+                            <input type="text" id="net_weight_calc"
+                                   class="form-control form-control-sm bg-light fw-bold text-success"
+                                   style="border-radius:7px;" readonly placeholder="Calculado automaticamente">
                         </div>
                         <div class="col-md-6">
-                            <label class="small fw-bold text-muted mb-1">Sacos Confirmados</label>
-                            <input type="number" name="sacos_confirmados" id="sacos_confirmados" class="form-control" style="border-radius:8px;" min="1" required>
-                            <div id="divergence_alert" class="text-danger small mt-1 d-none">
+                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Sacos Confirmados</label>
+                            <input type="number" name="sacos_confirmados" id="sacos_confirmados"
+                                   class="form-control form-control-sm" style="border-radius:7px;" min="1" required>
+                            <div id="divergence_alert" class="text-danger d-none" style="font-size:.68rem;margin-top:3px;">
                                 <i class="bi bi-exclamation-triangle-fill me-1"></i>Divergência detectada!
                             </div>
                         </div>
                         <div class="col-12">
-                            <label class="small fw-bold text-muted mb-1">Observações</label>
-                            <textarea name="observacoes" class="form-control" style="border-radius:8px;" rows="2" placeholder="Ex: saco rasgado, diferença de peso..."></textarea>
+                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Observações</label>
+                            <textarea name="observacoes" class="form-control form-control-sm"
+                                      style="border-radius:7px;" rows="2"
+                                      placeholder="Ex: saco rasgado, diferença de peso..."></textarea>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light btn-sm px-4" style="border-radius:8px;" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success btn-sm px-4 fw-bold" style="border-radius:8px;">
-                        <i class="bi bi-check-circle me-1"></i>Confirmar e Guardar
+                <div class="modal-footer border-0 pt-0" style="padding:0 20px 16px;">
+                    <button type="button" class="btn btn-light btn-sm px-3" style="border-radius:7px;"
+                            data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success btn-sm px-4 fw-bold" style="border-radius:7px;">
+                        <i class="bi bi-check-circle me-1"></i>Confirmar
                     </button>
                 </div>
             </form>
@@ -410,51 +465,52 @@
     </div>
 </div>
 
-{{-- ÁREA IMPRESSÃO --}}
+{{-- RELATÓRIO IMPRESSÃO --}}
 <div id="reportArea" style="display:none;">
     <div style="font-family:Arial,sans-serif;padding:20px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #198754;padding-bottom:16px;margin-bottom:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;
+                    border-bottom:3px solid #198754;padding-bottom:14px;margin-bottom:20px;">
             <div>
-                <h2 style="margin:0;color:#198754;">RELATÓRIO DE DESCARGAS</h2>
-                <p style="margin:4px 0 0;color:#666;font-size:.85rem;">Nitrato de Amónio — Controlo de Camiões</p>
+                <h2 style="margin:0;color:#198754;font-size:1.1rem;">RELATÓRIO DE DESCARGAS</h2>
+                <p style="margin:3px 0 0;color:#666;font-size:.78rem;">Nitrato de Amónio</p>
             </div>
-            <div style="text-align:right;color:#666;font-size:.8rem;">
-                <div><strong>Emitido:</strong> {{ now()->format('d/m/Y H:i') }}</div>
-                <div><strong>Total:</strong> {{ $discharges->count() }} registos</div>
+            <div style="text-align:right;color:#666;font-size:.75rem;">
+                <div>Emitido: {{ now()->format('d/m/Y H:i') }}</div>
+                <div>Total: {{ $discharges->count() }} registos</div>
             </div>
         </div>
-        <table style="width:100%;border-collapse:collapse;font-size:.75rem;">
+        <table style="width:100%;border-collapse:collapse;font-size:.72rem;">
             <thead>
                 <tr style="background:#1a56db;color:white;">
-                    <th style="padding:7px 10px;">Nº</th><th style="padding:7px 10px;">Data</th>
-                    <th style="padding:7px 10px;">Guia</th><th style="padding:7px 10px;">Motorista</th>
-                    <th style="padding:7px 10px;">Transportadora</th>
-                    <th style="padding:7px 10px;text-align:center;">▲ Alta</th>
-                    <th style="padding:7px 10px;text-align:center;">▼ Baixa</th>
-                    <th style="padding:7px 10px;text-align:center;">Total</th>
-                    <th style="padding:7px 10px;text-align:right;">Peso Líq.</th>
-                    <th style="padding:7px 10px;text-align:center;">Estado</th>
+                    <th style="padding:6px 8px;">Nº</th><th style="padding:6px 8px;">Data</th>
+                    <th style="padding:6px 8px;">Guia</th><th style="padding:6px 8px;">Motorista</th>
+                    <th style="padding:6px 8px;">Transportadora</th>
+                    <th style="padding:6px 8px;text-align:center;">Alta</th>
+                    <th style="padding:6px 8px;text-align:center;">Baixa</th>
+                    <th style="padding:6px 8px;text-align:center;">Total</th>
+                    <th style="padding:6px 8px;text-align:right;">Peso Líq.</th>
+                    <th style="padding:6px 8px;text-align:center;">Estado</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($discharges as $d)
                 @php $dA=$d->sacos_alta??0; $dB=$d->sacos_baixa??0; @endphp
                 <tr style="border-bottom:1px solid #eee;{{ $loop->even ? 'background:#f9f9f9;' : '' }}">
-                    <td style="padding:6px 10px;color:#666;">#{{ $d->id }}</td>
-                    <td style="padding:6px 10px;">{{ $d->data->format('d/m/Y') }}</td>
-                    <td style="padding:6px 10px;font-weight:bold;color:#1a56db;">{{ $d->numero_guia }}</td>
-                    <td style="padding:6px 10px;">{{ $d->motorista }}</td>
-                    <td style="padding:6px 10px;">{{ $d->transportadora }}</td>
-                    <td style="padding:6px 10px;text-align:center;color:#1a56db;font-weight:bold;">{{ $dA }}</td>
-                    <td style="padding:6px 10px;text-align:center;color:#dc3545;font-weight:bold;">{{ $dB }}</td>
-                    <td style="padding:6px 10px;text-align:center;font-weight:bold;">{{ $dA+$dB }}</td>
-                    <td style="padding:6px 10px;text-align:right;">{{ $d->peso_liquido ? number_format($d->peso_liquido,0,',','.').' kg' : '---' }}</td>
-                    <td style="padding:6px 10px;text-align:center;">{{ $d->status_label }}</td>
+                    <td style="padding:5px 8px;color:#666;">#{{ $d->id }}</td>
+                    <td style="padding:5px 8px;">{{ $d->data->format('d/m/Y') }}</td>
+                    <td style="padding:5px 8px;font-weight:bold;color:#1a56db;">{{ $d->numero_guia }}</td>
+                    <td style="padding:5px 8px;">{{ $d->motorista }}</td>
+                    <td style="padding:5px 8px;">{{ $d->transportadora }}</td>
+                    <td style="padding:5px 8px;text-align:center;color:#1a56db;font-weight:bold;">{{ $dA }}</td>
+                    <td style="padding:5px 8px;text-align:center;color:#dc3545;font-weight:bold;">{{ $dB }}</td>
+                    <td style="padding:5px 8px;text-align:center;font-weight:bold;">{{ $dA+$dB }}</td>
+                    <td style="padding:5px 8px;text-align:right;">{{ $d->peso_liquido ? number_format($d->peso_liquido,0,',','.').' kg' : '—' }}</td>
+                    <td style="padding:5px 8px;text-align:center;">{{ $d->status_label }}</td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
-        <div style="margin-top:30px;text-align:center;color:#999;font-size:.7rem;">
+        <div style="margin-top:24px;text-align:center;color:#aaa;font-size:.65rem;">
             Documento gerado automaticamente · {{ now()->format('d/m/Y H:i') }}
         </div>
     </div>
@@ -465,230 +521,155 @@
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
-let dtTable;
-let _modalUrl = null;
+let dtTable, _activeMenu = null;
 
 $(document).ready(function(){
-    dtTable = $('#dischargesTable').DataTable({
-        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json' },
-        order: [[0,'desc']],
-        columnDefs: [{ orderable: false, targets: [7,8] }],
-        pageLength: 15,
+    dtTable = $('#dTable').DataTable({
+        language:{ url:'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json' },
+        order:[[0,'desc']],
+        columnDefs:[{ orderable:false, targets:[7,8] }],
+        pageLength:15,
     });
 
     @if(session('success'))
-    const toastEl = document.getElementById('successToast');
-    new bootstrap.Toast(toastEl, { delay: 3500 }).show();
-    setTimeout(()=>{ document.getElementById('toastProgress').style.width='0%'; }, 50);
-    toastEl.style.opacity='0'; toastEl.style.transform='translateX(60px) scale(0.95)';
-    toastEl.style.transition='all 0.5s cubic-bezier(0.34,1.56,0.64,1)';
-    setTimeout(()=>{ toastEl.style.opacity='1'; toastEl.style.transform='translateX(0) scale(1)'; }, 50);
+    const t = document.getElementById('successToast');
+    new bootstrap.Toast(t,{delay:3500}).show();
+    setTimeout(()=>{ document.getElementById('toastProg').style.width='0%'; },50);
     @endif
 
-    // Balança
     $(document).on('click','[data-bs-target="#modalConfirm"]',function(){
-        const id=$(this).data('id');
-        $('#confirm_guia').text($(this).data('guia'));
-        $('#confirm_sacos').text($(this).data('sacos'));
-        $('#sacos_confirmados').val($(this).data('sacos'));
-        window._bagsFromPort  = $(this).data('sacos');
-        window._departureTime = $(this).data('saida');
-        $('#formConfirm').attr('action',`/discharges/${id}/confirm`);
+        const b=$(this);
+        $('#confirm_guia').text(b.data('guia'));
+        $('#confirm_sacos').text(b.data('sacos'));
+        $('#sacos_confirmados').val(b.data('sacos'));
+        window._bagsFromPort = b.data('sacos');
+        window._departureTime = b.data('saida');
+        $('#formConfirm').attr('action',`/discharges/${b.data('id')}/confirm`);
         $('#hora_chegada_balanca,#peso_bruto,#tara,#net_weight_calc,#transport_time_calc').val('');
         $('#divergence_alert').addClass('d-none');
     });
+
     $('#hora_chegada_balanca').on('change', calcTransportTime);
     $(document).on('input','#sacos_confirmados',function(){
         const c=parseInt($(this).val())||0, p=parseInt(window._bagsFromPort)||0;
         $('#divergence_alert').toggleClass('d-none', !(c!==p&&c>0));
     });
 
-    // Limpar modal ao fechar
-    document.getElementById('modalPrincipal').addEventListener('hidden.bs.modal', function(){
-        document.getElementById('modalConteudo').innerHTML = '';
-        document.getElementById('modalConteudo').style.display = 'none';
-        document.getElementById('modalLoading').style.display = 'flex';
-        _modalUrl = null;
+    document.getElementById('modalPrincipal').addEventListener('hidden.bs.modal',function(){
+        document.getElementById('modalConteudo').innerHTML='';
+        document.getElementById('modalConteudo').style.display='none';
+        document.getElementById('modalLoading').style.display='flex';
     });
 });
 
-// ── Abrir modal com fetch ──
 function abrirModal(url, titulo, cor) {
-    const gradients = {
-        primary: 'linear-gradient(135deg,#1a56db,#0dcaf0)',
-        warning: 'linear-gradient(135deg,#fd7e14,#ffc107)',
-        dark:    'linear-gradient(135deg,#1a1a2e,#0d3b2e)',
-        success: 'linear-gradient(135deg,#198754,#20c997)',
+    const grads = {
+        primary:'linear-gradient(135deg,#1a56db,#0dcaf0)',
+        warning:'linear-gradient(135deg,#fd7e14,#ffc107)',
+        dark:'linear-gradient(135deg,#1a1a2e,#0d3b2e)',
+        success:'linear-gradient(135deg,#198754,#20c997)',
     };
-    const icons = {
-        primary: 'plus-circle',
-        warning: 'pencil-square',
-        dark:    'file-text',
-        success: 'check-circle',
-    };
-
-    _modalUrl = url;
-    document.getElementById('modalHeader').style.background = gradients[cor] || gradients.primary;
+    const icons = { primary:'plus-circle', warning:'pencil-square', dark:'file-text', success:'check-circle' };
+    document.getElementById('modalHeader').style.background = grads[cor]||grads.primary;
     document.getElementById('modalIcon').className = `bi bi-${icons[cor]||'file-text'}`;
     document.getElementById('modalTitulo').textContent = titulo;
-    document.getElementById('modalLoading').style.display = 'flex';
-    document.getElementById('modalConteudo').style.display = 'none';
-    document.getElementById('modalConteudo').innerHTML = '';
+    document.getElementById('modalLoading').style.display='flex';
+    document.getElementById('modalConteudo').style.display='none';
+    document.getElementById('modalConteudo').innerHTML='';
+    document.activeElement.blur();
+    new bootstrap.Modal(document.getElementById('modalPrincipal')).show();
 
-  // Tirar o foco do botão antes de abrir o modal
-document.activeElement.blur();
-const modal = new bootstrap.Modal(document.getElementById('modalPrincipal'));
-modal.show();
-
-    // fetch do HTML da página
-    fetch(url + '?modal=1', {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'text/html',
-        }
+    fetch(url+'?modal=1',{ headers:{'X-Requested-With':'XMLHttpRequest','Accept':'text/html'} })
+    .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+    .then(html=>{
+        const doc=new DOMParser().parseFromString(html,'text/html');
+        const div=document.getElementById('modalConteudo');
+        div.innerHTML=doc.body?doc.body.innerHTML:html;
+        div.style.display='block';
+        document.getElementById('modalLoading').style.display='none';
+        div.querySelectorAll('script').forEach(s=>{ const n=document.createElement('script'); n.textContent=s.textContent; s.parentNode.replaceChild(n,s); });
+        div.querySelectorAll('form').forEach(f=>{ f.addEventListener('submit',function(e){ e.preventDefault(); submeterFormModal(this); }); });
     })
-    .then(res => {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.text();
-    })
-    .then(html => {
-        // Extrair só o conteúdo útil (o que está dentro do body ou o HTML todo)
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-
-        // Tentar extrair o conteúdo do body, excluindo scripts do layout
-        let conteudo = doc.body ? doc.body.innerHTML : html;
-
-        // Injectar no modal
-        const div = document.getElementById('modalConteudo');
-        div.innerHTML = conteudo;
-        div.style.display = 'block';
-        document.getElementById('modalLoading').style.display = 'none';
-
-        // Re-executar scripts inline do conteúdo injectado
-        div.querySelectorAll('script').forEach(oldScript => {
-            const newScript = document.createElement('script');
-            newScript.textContent = oldScript.textContent;
-            oldScript.parentNode.replaceChild(newScript, oldScript);
-        });
-
-        // Interceptar submit dos forms para fazer via fetch
-        div.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                submeterFormModal(this);
-            });
-        });
-    })
-    .catch(err => {
-        document.getElementById('modalConteudo').innerHTML =
-            `<div class="alert alert-danger m-3">Erro ao carregar: ${err.message}</div>`;
-        document.getElementById('modalConteudo').style.display = 'block';
-        document.getElementById('modalLoading').style.display = 'none';
+    .catch(err=>{
+        document.getElementById('modalConteudo').innerHTML=`<div class="alert alert-danger m-3">Erro: ${err.message}</div>`;
+        document.getElementById('modalConteudo').style.display='block';
+        document.getElementById('modalLoading').style.display='none';
     });
 }
 
-// ── Submeter form dentro do modal ──
 function submeterFormModal(form) {
-    const data = new FormData(form);
-    const btn = form.querySelector('[type=submit]');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A guardar...'; }
-
-    fetch(form.action, {
-        method: 'POST',
-        body: data,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(res => res.text())
-    .then(html => {
-        // Verificar se houve redirect (sucesso) ou se voltou HTML com erros
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const hasErrors = doc.querySelector('.alert-danger');
-
-        if (hasErrors) {
-            // Mostrar erros de validação
-            const div = document.getElementById('modalConteudo');
-            div.innerHTML = doc.body ? doc.body.innerHTML : html;
-            div.querySelectorAll('script').forEach(oldScript => {
-                const newScript = document.createElement('script');
-                newScript.textContent = oldScript.textContent;
-                oldScript.parentNode.replaceChild(newScript, oldScript);
-            });
-            div.querySelectorAll('form').forEach(f => {
-                f.addEventListener('submit', function(e) { e.preventDefault(); submeterFormModal(this); });
-            });
+    const btn=form.querySelector('[type=submit]');
+    if(btn){ btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>A guardar...'; }
+    fetch(form.action,{ method:'POST', body:new FormData(form), headers:{'X-Requested-With':'XMLHttpRequest'} })
+    .then(r=>r.text())
+    .then(html=>{
+        const doc=new DOMParser().parseFromString(html,'text/html');
+        if(doc.querySelector('.alert-danger')){
+            const div=document.getElementById('modalConteudo');
+            div.innerHTML=doc.body?doc.body.innerHTML:html;
+            div.querySelectorAll('script').forEach(s=>{ const n=document.createElement('script'); n.textContent=s.textContent; s.parentNode.replaceChild(n,s); });
+            div.querySelectorAll('form').forEach(f=>{ f.addEventListener('submit',function(e){ e.preventDefault(); submeterFormModal(this); }); });
         } else {
-            // Sucesso — fechar modal e recarregar
             bootstrap.Modal.getInstance(document.getElementById('modalPrincipal')).hide();
             window.location.reload();
         }
     })
-    .catch(() => {
-        bootstrap.Modal.getInstance(document.getElementById('modalPrincipal')).hide();
-        window.location.reload();
-    });
+    .catch(()=>{ bootstrap.Modal.getInstance(document.getElementById('modalPrincipal')).hide(); window.location.reload(); });
 }
 
-// ── Impressão relatório geral ──
-function imprimirRelatorio() {
-    document.getElementById('reportArea').style.display = 'block';
+function imprimirRelatorio(){
+    document.getElementById('reportArea').style.display='block';
     window.print();
-    document.getElementById('reportArea').style.display = 'none';
+    document.getElementById('reportArea').style.display='none';
 }
 
-// ── Balança ──
 function calcTransportTime(){
     const dep=window._departureTime, arr=$('#hora_chegada_balanca').val();
     if(!dep||!arr) return;
     const [hD,mD]=dep.split(':').map(Number),[hA,mA]=arr.split(':').map(Number);
     const diff=(hA*60+mA)-(hD*60+mD);
-    $('#transport_time_calc').val(diff>=0?diff:'---');
+    $('#transport_time_calc').val(diff>=0?diff:'—');
 }
 function calcNetWeight(){
     const net=(parseFloat($('#peso_bruto').val())||0)-(parseFloat($('#tara').val())||0);
-    $('#net_weight_calc').val(net>0?net.toFixed(2):'---');
+    $('#net_weight_calc').val(net>0?net.toFixed(2):'—');
 }
 
-// ── Filtros ──
 function applyFilters(){
-    const df=$('#filterDateFrom').val(), dt=$('#filterDateTo').val(),
-          tr=$('#filterTransportadora').val().toLowerCase(), st=$('#filterStatus').val(),
-          tc=$('#filterTipoCarga').val(), div=$('#filterDivergencia').val();
-    $('#dischargesTable tbody tr').each(function(){
+    const df=$('#fDe').val(), dt=$('#fAte').val(),
+          tr=$('#fTrans').val().toLowerCase(), st=$('#fStatus').val(),
+          tc=$('#fCarga').val(), dv=$('#fDiv').val();
+    $('#dTable tbody tr').each(function(){
         const r=$(this), rA=parseInt(r.data('sacos-alta'))||0, rB=parseInt(r.data('sacos-baixa'))||0;
         let show=true;
         if(df && r.data('data')<df) show=false;
         if(dt && r.data('data')>dt) show=false;
         if(tr && !r.data('transportadora').includes(tr)) show=false;
         if(st && r.data('status')!==st) show=false;
-        if(tc==='alta'  && !(rA>0&&rB===0)) show=false;
+        if(tc==='alta' && !(rA>0&&rB===0)) show=false;
         if(tc==='baixa' && !(rB>0&&rA===0)) show=false;
-        if(tc==='misto' && !(rA>0&&rB>0))   show=false;
-        if(div && r.data('divergencia')!==div) show=false;
+        if(tc==='misto' && !(rA>0&&rB>0)) show=false;
+        if(dv && r.data('divergencia')!==dv) show=false;
         r.toggle(show);
     });
-    renderTags(df,dt,tr,st,tc,div); dtTable.draw();
+    renderTags(df,dt,tr,st,tc,dv); dtTable.draw();
 }
 function clearFilters(){
-    $('#filterDateFrom,#filterDateTo').val('');
-    $('#filterTransportadora,#filterStatus,#filterTipoCarga,#filterDivergencia').val('');
-    $('#dischargesTable tbody tr').show(); $('#activeTags').html(''); dtTable.draw();
+    $('#fDe,#fAte').val('');
+    $('#fTrans,#fStatus,#fCarga,#fDiv').val('');
+    $('#dTable tbody tr').show(); $('#activeTags').html(''); dtTable.draw();
 }
-function renderTags(df,dt,tr,st,tc,div){
-    const m={df,dt,tr,st,tc,div};
-    const l={df:`De: ${df}`,dt:`Até: ${dt}`,tr:`Transportadora: ${tr}`,st:`Estado: ${st}`,tc:`Carga: ${tc}`,div:`Divergência: ${div}`};
+function renderTags(df,dt,tr,st,tc,dv){
+    const m={df,dt,tr,st,tc,dv};
+    const l={df:`De: ${df}`,dt:`Até: ${dt}`,tr:`Transportadora: ${tr}`,st:`Estado: ${st}`,tc:`Carga: ${tc}`,dv:`Divergência: ${dv}`};
     let html='';
-    for(const [k,v] of Object.entries(m)){ if(v) html+=`<span class="filter-tag">${l[k]} <span class="remove-tag" onclick="removeTag('${k}')">✕</span></span>`; }
+    for(const [k,v] of Object.entries(m)){ if(v) html+=`<span class="ftag">${l[k]} <span class="rm" onclick="removeTag('${k}')">✕</span></span>`; }
     $('#activeTags').html(html);
 }
-function removeTag(key){
-    const m={df:'filterDateFrom',dt:'filterDateTo',tr:'filterTransportadora',st:'filterStatus',tc:'filterTipoCarga',div:'filterDivergencia'};
-    $(`#${m[key]}`).val(''); applyFilters();
+function removeTag(k){
+    const m={df:'fDe',dt:'fAte',tr:'fTrans',st:'fStatus',tc:'fCarga',dv:'fDiv'};
+    $(`#${m[k]}`).val(''); applyFilters();
 }
-
-
-
 </script>
 
 </x-app-layout>
