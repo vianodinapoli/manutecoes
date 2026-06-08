@@ -417,7 +417,6 @@
         .toast-progress-bar.info    { background: #2563eb; }
     </style>
 </head>
-
 <body class="font-sans antialiased">
 <div class="layout-wrap">
 
@@ -738,5 +737,6 @@
 </script>
 
 @stack('scripts')
+<script src="{{ asset('js/balanca.js') }}"></script>
 </body>
 </html>

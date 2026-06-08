@@ -401,63 +401,158 @@
             <form id="formConfirm" method="POST">
                 @csrf @method('PATCH')
                 <div class="modal-body p-4">
-                    <div class="alert py-2 mb-3 border-0" style="border-radius:8px;background:#e8f4fd;color:#1a56db;font-size:.78rem;">
+
+                    {{-- Info da guia --}}
+                    <div class="alert py-2 mb-3 border-0"
+                         style="border-radius:8px;background:#e8f4fd;color:#1a56db;font-size:.78rem;">
                         <i class="bi bi-info-circle me-1"></i>
-                        Guia <strong id="confirm_guia"></strong> — <strong id="confirm_sacos"></strong> sacos no porto
+                        Guia <strong id="confirm_guia"></strong>
+                        — <strong id="confirm_sacos"></strong> sacos registados no porto
                     </div>
+
                     <div class="row g-2">
+
+                        {{-- Hora chegada + tempo --}}
                         <div class="col-md-6">
-                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Hora de Chegada</label>
+                            <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
+                                Hora de Chegada
+                            </label>
                             <input type="time" name="hora_chegada_balanca" id="hora_chegada_balanca"
                                    class="form-control form-control-sm" style="border-radius:7px;" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Tempo Transporte</label>
+                            <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
+                                Tempo Transporte
+                            </label>
                             <div class="input-group input-group-sm">
                                 <input type="text" id="transport_time_calc" class="form-control bg-light"
                                        style="border-radius:7px 0 0 7px;" readonly placeholder="Auto">
                                 <span class="input-group-text small">min</span>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Peso Bruto (kg)</label>
-                            <input type="number" name="peso_bruto" id="peso_bruto"
-                                   class="form-control form-control-sm" style="border-radius:7px;"
-                                   step="0.01" min="0" oninput="calcNetWeight()" required>
+
+                        {{-- Peso Bruto com botão de leitura --}}
+                        <div class="col-12">
+                            <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
+                                Peso Bruto (kg)
+                            </label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="peso_bruto" id="peso_bruto"
+                                       class="form-control" style="border-radius:7px 0 0 7px;"
+                                       step="0.01" min="0" placeholder="0.00"
+                                       oninput="calcNetWeight()" required>
+                                <button type="button" id="btnLerBalanca"
+                                        onclick="lerBalancaUI()"
+                                        class="btn btn-sm btn-outline-success fw-bold"
+                                        style="border-radius:0 7px 7px 0;font-size:.72rem;white-space:nowrap;padding:0 12px;">
+                                    <i class="bi bi-usb-symbol me-1"></i>Ler Balança
+                                </button>
+                            </div>
+                            {{-- Status da leitura --}}
+                            <div id="balanca-status" class="mt-1" style="font-size:.68rem;min-height:16px;"></div>
                         </div>
+
+                        {{-- Tara --}}
                         <div class="col-md-6">
-                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Tara (kg)</label>
+                            <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
+                                Tara (kg)
+                            </label>
                             <input type="number" name="tara" id="tara"
                                    class="form-control form-control-sm" style="border-radius:7px;"
                                    step="0.01" min="0" oninput="calcNetWeight()">
                         </div>
-                        <div class="col-12">
-                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Peso Líquido (kg)</label>
+
+                        {{-- Peso líquido calculado --}}
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
+                                Peso Líquido (kg)
+                            </label>
                             <input type="text" id="net_weight_calc"
                                    class="form-control form-control-sm bg-light fw-bold text-success"
-                                   style="border-radius:7px;" readonly placeholder="Calculado automaticamente">
+                                   style="border-radius:7px;" readonly placeholder="Calculado auto.">
                         </div>
+
+                        {{-- Sacos confirmados --}}
                         <div class="col-md-6">
-                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Sacos Confirmados</label>
+                            <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
+                                Sacos Confirmados
+                            </label>
                             <input type="number" name="sacos_confirmados" id="sacos_confirmados"
-                                   class="form-control form-control-sm" style="border-radius:7px;" min="1" required>
-                            <div id="divergence_alert" class="text-danger d-none" style="font-size:.68rem;margin-top:3px;">
+                                   class="form-control form-control-sm" style="border-radius:7px;"
+                                   min="1" required>
+                            <div id="divergence_alert" class="text-danger d-none"
+                                 style="font-size:.68rem;margin-top:3px;">
                                 <i class="bi bi-exclamation-triangle-fill me-1"></i>Divergência detectada!
                             </div>
                         </div>
+
+                        {{-- Config porta (colapsável) --}}
+                        <div class="col-12 mt-1">
+                            <a class="text-muted" style="font-size:.68rem;cursor:pointer;text-decoration:none;"
+                               data-bs-toggle="collapse" href="#configSerial">
+                                <i class="bi bi-gear me-1"></i>Configurações da porta serial
+                            </a>
+                            <div class="collapse" id="configSerial">
+                                <div class="row g-2 mt-1 p-2 rounded"
+                                     style="background:#f8f9fa;border:1px solid #e9ecef;">
+                                    <div class="col-6">
+                                        <label style="font-size:.65rem;color:#94a3b8;font-weight:600;">
+                                            Baud Rate
+                                        </label>
+                                        <select id="cfg_baud" class="form-select form-select-sm"
+                                                style="border-radius:6px;font-size:.75rem;">
+                                            <option value="1200">1200</option>
+                                            <option value="2400">2400</option>
+                                            <option value="4800">4800</option>
+                                            <option value="9600" selected>9600</option>
+                                            <option value="19200">19200</option>
+                                            <option value="38400">38400</option>
+                                            <option value="57600">57600</option>
+                                            <option value="115200">115200</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label style="font-size:.65rem;color:#94a3b8;font-weight:600;">
+                                            Paridade
+                                        </label>
+                                        <select id="cfg_parity" class="form-select form-select-sm"
+                                                style="border-radius:6px;font-size:.75rem;">
+                                            <option value="none" selected>None</option>
+                                            <option value="even">Even</option>
+                                            <option value="odd">Odd</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-center gap-2"
+                                             style="font-size:.68rem;color:#94a3b8;">
+                                            <i class="bi bi-info-circle"></i>
+                                            Consulta o manual da balança se não souberes os valores.
+                                            O mais comum é 9600/8N1.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Observações --}}
                         <div class="col-12">
-                            <label class="small fw-bold text-muted mb-1" style="font-size:.72rem;">Observações</label>
+                            <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
+                                Observações
+                            </label>
                             <textarea name="observacoes" class="form-control form-control-sm"
                                       style="border-radius:7px;" rows="2"
                                       placeholder="Ex: saco rasgado, diferença de peso..."></textarea>
                         </div>
+
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0" style="padding:0 20px 16px;">
-                    <button type="button" class="btn btn-light btn-sm px-3" style="border-radius:7px;"
-                            data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success btn-sm px-4 fw-bold" style="border-radius:7px;">
-                        <i class="bi bi-check-circle me-1"></i>Confirmar
+                    <button type="button" class="btn btn-light btn-sm px-3"
+                            style="border-radius:7px;" data-bs-dismiss="modal"
+                            onclick="Balanca.cancelar()">Cancelar</button>
+                    <button type="submit" class="btn btn-success btn-sm px-4 fw-bold"
+                            style="border-radius:7px;">
+                        <i class="bi bi-check-circle me-1"></i>Confirmar e Guardar
                     </button>
                 </div>
             </form>
@@ -669,6 +764,38 @@ function renderTags(df,dt,tr,st,tc,dv){
 function removeTag(k){
     const m={df:'fDe',dt:'fAte',tr:'fTrans',st:'fStatus',tc:'fCarga',dv:'fDiv'};
     $(`#${m[k]}`).val(''); applyFilters();
+}
+
+async function lerBalancaUI() {
+    const btn = document.getElementById('btnLerBalanca');
+    const status = document.getElementById('balanca-status');
+
+    const setStatus = (msg, cor = '#64748b') => {
+        status.innerHTML = `<span style="color:${cor};">${msg}</span>`;
+    };
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A ler...';
+
+    try {
+        const peso = await Balanca.lerPeso({
+            baudRate : parseInt(document.getElementById('cfg_baud').value)   || 9600,
+            parity   : document.getElementById('cfg_parity').value           || 'none',
+            dataBits : 8,
+            stopBits : 1,
+            onStatus : msg => setStatus('⏳ ' + msg),
+        });
+
+        document.getElementById('peso_bruto').value = peso.toFixed(2);
+        calcNetWeight();
+        setStatus(`✓ Peso lido: ${peso.toFixed(2)} kg`, '#198754');
+
+    } catch (err) {
+        setStatus('✗ ' + err.message, '#dc3545');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-usb-symbol me-1"></i>Ler Balança';
+    }
 }
 </script>
 
