@@ -49,9 +49,10 @@ class RequisitionController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'supplier_id' => 'required|exists:suppliers,id',
-            'items'       => 'required|array|min:1',
-            'total_final' => 'required|numeric',
+            'supplier_id'    => 'required|exists:suppliers,id',
+            'numero_cotacao' => 'nullable|string|max:255',
+            'items'          => 'required|array|min:1',
+            'total_final'    => 'required|numeric',
         ]);
 
         try {
@@ -59,29 +60,30 @@ class RequisitionController extends Controller
 
             DB::transaction(function () use ($request, $requisicao) {
                 $requisicao->update([
-                    'supplier_id'  => $request->supplier_id,
-                    'total_liquid' => $request->total_liquid,
-                    'tax_amount'   => $request->tax_amount,
-                    'total_final'  => $request->total_final,
-                    'has_tax'      => $request->has_tax == 'true',
+                    'supplier_id'     => $request->supplier_id,
+                    'numero_cotacao'  => $request->numero_cotacao,
+                    'total_liquid'    => $request->total_liquid,
+                    'tax_amount'      => $request->tax_amount,
+                    'total_final'     => $request->total_final,
+                    'has_tax'         => $request->has_tax == 'true',
                 ]);
 
                 // Remove itens antigos e recria
                 $requisicao->items()->delete();
 
-               foreach ($request->items as $item) {
-    $disc    = floatval($item['disc'] ?? 0);
-    $bruto   = floatval($item['qty']) * floatval($item['price']);
-    $liquido = $bruto * (1 - $disc / 100);
+                foreach ($request->items as $item) {
+                    $disc    = floatval($item['disc'] ?? 0);
+                    $bruto   = floatval($item['qty']) * floatval($item['price']);
+                    $liquido = $bruto * (1 - $disc / 100);
 
-    $requisicao->items()->create([
-        'description' => $item['desc'],
-        'quantity'    => $item['qty'],
-        'unit_price'  => $item['price'],
-        'discount'    => $disc,
-        'subtotal'    => $liquido,
-    ]);
-}
+                    $requisicao->items()->create([
+                        'description' => $item['desc'],
+                        'quantity'    => $item['qty'],
+                        'unit_price'  => $item['price'],
+                        'discount'    => $disc,
+                        'subtotal'    => $liquido,
+                    ]);
+                }
             });
 
             // Regenera o PDF
@@ -109,21 +111,23 @@ class RequisitionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'supplier_id' => 'required|exists:suppliers,id',
-            'items'       => 'required|array|min:1',
-            'total_final' => 'required|numeric',
+            'supplier_id'    => 'required|exists:suppliers,id',
+            'numero_cotacao' => 'nullable|string|max:255',
+            'items'          => 'required|array|min:1',
+            'total_final'    => 'required|numeric',
         ]);
 
         try {
             $requisicao = DB::transaction(function () use ($request) {
                 $requisicao = Requisition::create([
-                    'supplier_id'  => $request->supplier_id,
-                    'date'         => now(),
-                    'total_liquid' => $request->total_liquid,
-                    'tax_amount'   => $request->tax_amount,
-                    'total_final'  => $request->total_final,
-                    'has_tax'      => $request->has_tax == 'true',
-                    'status'       => 'PENDENTE',
+                    'supplier_id'     => $request->supplier_id,
+                    'numero_cotacao'  => $request->numero_cotacao,
+                    'date'            => now(),
+                    'total_liquid'    => $request->total_liquid,
+                    'tax_amount'      => $request->tax_amount,
+                    'total_final'     => $request->total_final,
+                    'has_tax'         => $request->has_tax == 'true',
+                    'status'          => 'PENDENTE',
                 ]);
 
                 foreach ($request->items as $item) {

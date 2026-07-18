@@ -8,6 +8,7 @@ use App\Models\StockItem;
 use App\Models\Machine;
 use App\Models\Maintenance;
 use App\Models\MaintenanceFile;
+use App\Models\Activity;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 

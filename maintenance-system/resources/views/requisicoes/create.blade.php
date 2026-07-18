@@ -116,6 +116,12 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-7">
+                    <label class="small fw-bold text-muted mb-1" style="font-size:.68rem;letter-spacing:.8px;text-transform:uppercase;">Nº Cotação / Referência (opcional)</label>
+                    <input type="text" id="numero_cotacao" name="numero_cotacao" class="form-control"
+                           placeholder="Ex: COT N.º 159846"
+                           style="border-radius:8px;border:1px solid #dee2e6;font-size:.85rem;background:#f8f9fa;">
+                </div>
             </div>
         </div>
     </div>
@@ -212,6 +218,7 @@
             <h2 class="fw-bold mb-0">REQUISIÇÃO DE COMPRA</h2>
             <p class="mb-0">Data: {{ date('d/m/Y') }}</p>
             <p class="mb-0">Nº da Requisição: <strong id="print_id_gerado">#---</strong></p>
+            <p class="mb-0" id="print_linha_cotacao" style="display:none;">Cotação / Referência: <strong id="print_numero_cotacao">---</strong></p>
         </div>
         <div class="text-end">
             <h4 class="fw-bold text-uppercase" style="color:#c60a1a;">Fábrica de Explosivos de Moçambique</h4>
@@ -343,7 +350,6 @@ function calcularLinha(id) {
 
     $('#subtotal_' + id).text(liquido.toLocaleString('pt-MZ', { minimumFractionDigits: 2 }));
 
-    // Mostra pequeno badge de desconto na linha se houver
     if (disc > 0) {
         $('#desc_badge_' + id)
             .text('− ' + desconto.toLocaleString('pt-MZ', { minimumFractionDigits: 2 }) + ' MT (' + disc + '%)')
@@ -378,7 +384,6 @@ function calcularTotalGeral() {
     const iva      = comIva ? liquidoTotal * 0.16 : 0;
     const total    = liquidoTotal + iva;
 
-    // Desconto comercial — só mostra se houver
     if (desconto > 0.001) {
         $('#area_desconto').show();
         $('#valor_desconto').text(desconto.toLocaleString('pt-MZ', { minimumFractionDigits: 2 }));
@@ -404,9 +409,11 @@ function finalizarRequisicao() {
     const brutoVal   = parseFloat($('#total_bruto').text().replace(/\s/g,'').replace(',','.'))   || 0;
     const liquidoVal = parseFloat($('#total_liquido').text().replace(/\s/g,'').replace(',','.')) || 0;
     const descontoV  = brutoVal - liquidoVal;
+    const numeroCotacao = $('#numero_cotacao').val().trim() || null;
 
     const dados = {
         supplier_id:      supplierId,
+        numero_cotacao:   numeroCotacao,
         total_bruto:      brutoVal,
         discount_amount:  descontoV,
         total_liquid:     liquidoVal,
@@ -450,6 +457,13 @@ function finalizarRequisicao() {
     $('#print_subtotal').text($('#total_liquido').text());
     $('#print_valor_iva').text($('#valor_iva').text());
     $('#print_total_geral').text($('#total_final').text());
+
+    if (numeroCotacao) {
+        $('#print_numero_cotacao').text(numeroCotacao);
+        $('#print_linha_cotacao').show();
+    } else {
+        $('#print_linha_cotacao').hide();
+    }
 
     if (descontoV > 0.001) {
         $('#print_linha_desconto').show();

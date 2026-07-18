@@ -8,7 +8,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #222; padding: 30px; }
 
-        /* ── Cabeçalho ── */
         .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; border-bottom: 3px solid #c60a1a; padding-bottom: 16px; }
 
         .company-block { display: flex; align-items: flex-start; gap: 14px; }
@@ -22,14 +21,12 @@
         .doc-title .doc-num { font-size: 13px; color: #444; margin-top: 4px; }
         .doc-title .doc-date { font-size: 11px; color: #888; margin-top: 2px; }
 
-        /* ── Info cards ── */
         .info-box { display: flex; gap: 20px; margin-bottom: 20px; }
         .info-card { flex: 1; background: #fdf2f2; border-left: 3px solid #c60a1a; padding: 10px 14px; border-radius: 3px; }
         .info-card .label { font-size: 9px; text-transform: uppercase; color: #888; font-weight: bold; margin-bottom: 4px; }
         .info-card .value { font-size: 12px; font-weight: bold; color: #222; }
         .info-card .sub { font-size: 10px; color: #555; margin-top: 2px; }
 
-        /* ── Tabela ── */
         table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
         thead tr { background: #c60a1a; color: white; }
         thead th { padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; }
@@ -41,10 +38,8 @@
         tbody td.right  { text-align: right; }
         tbody td.center { text-align: center; }
 
-        /* ── Desconto na linha ── */
         .disc-val { color: #d97706; font-size: 9px; font-weight: bold; margin-top: 2px; }
 
-        /* ── Totais ── */
         .totals { width: 300px; margin-left: auto; margin-bottom: 24px; }
         .totals table { margin-bottom: 0; }
         .totals td { padding: 5px 10px; font-size: 11px; }
@@ -56,7 +51,6 @@
         .totals tr.total-final { background: #c60a1a; color: white; }
         .totals tr.total-final td { padding: 8px 10px; font-size: 13px; font-weight: bold; color: white; }
 
-        /* ── Rodapé ── */
         .page-footer {
             margin-top: 32px;
             border-top: 2px solid #c60a1a;
@@ -72,7 +66,6 @@
             margin-bottom: 2px;
         }
 
-        /* ── Status badge ── */
         .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: bold; }
         .status-PENDENTE  { background: #fff3cd; color: #856404; }
         .status-APROVADO  { background: #d1e7dd; color: #0f5132; }
@@ -101,7 +94,7 @@
         </div>
     </div>
 
-    {{-- INFO FORNECEDOR + ESTADO --}}
+    {{-- INFO FORNECEDOR + COTAÇÃO --}}
     <div class="info-box">
         <div class="info-card">
             <div class="label">Fornecedor</div>
@@ -114,7 +107,13 @@
             @endif
         </div>
         <div class="info-card">
-            <div class="sub">Criado em {{ $requisicao->created_at->format('d/m/Y H:i') }}</div>
+            @if($requisicao->numero_cotacao)
+                <div class="label">Cotação / Referência</div>
+                <div class="value">{{ $requisicao->numero_cotacao }}</div>
+                <div class="sub">Criado em {{ $requisicao->created_at->format('d/m/Y H:i') }}</div>
+            @else
+                <div class="sub">Criado em {{ $requisicao->created_at->format('d/m/Y H:i') }}</div>
+            @endif
         </div>
     </div>
 
@@ -133,7 +132,7 @@
         <tbody>
             @foreach($requisicao->items as $i => $item)
            @php
-    $disc      = $item->discount ?? 0;               // percentagem de desconto
+    $disc      = $item->discount ?? 0;
     $bruto     = $item->quantity * $item->unit_price;
     $desconto  = $bruto * ($disc / 100);
     $liquido   = $bruto - $desconto;
@@ -174,13 +173,11 @@
 
     <div class="totals">
         <table>
-            {{-- Subtotal Bruto --}}
             <tr>
                 <td class="label">Subtotal Bruto</td>
                 <td class="value">{{ number_format($totalBruto, 2, ',', '.') }} MT</td>
             </tr>
 
-            {{-- Desconto comercial — só se houver --}}
             @if($temDesconto)
             <tr class="disc-row">
                 <td class="label" style="color:#d97706;">Desconto Comercial</td>
@@ -188,13 +185,11 @@
             </tr>
             @endif
 
-            {{-- Subtotal Líquido --}}
             <tr>
                 <td class="label">Subtotal Líquido</td>
                 <td class="value">{{ number_format($totalLiquido, 2, ',', '.') }} MT</td>
             </tr>
 
-            {{-- IVA — só se aplicado --}}
             @if($temIva)
             <tr class="iva-row">
                 <td class="label" style="color:#c60a1a;">IVA (16%)</td>
@@ -202,7 +197,6 @@
             </tr>
             @endif
 
-            {{-- Total Geral --}}
             <tr class="total-final">
                 <td class="label">TOTAL GERAL</td>
                 <td class="value">{{ number_format($totalFinal, 2, ',', '.') }} MT</td>

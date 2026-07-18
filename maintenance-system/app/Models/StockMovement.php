@@ -8,7 +8,18 @@ class StockMovement extends Model
 {
     protected $fillable = ['maintenance_id', 'machine_id', 'stock_item_id', 'quantity'];
 
-public function stockItem() {
-    return $this->belongsTo(StockItem::class, 'stock_item_id');
-}
+    public function stockItem()
+    {
+        return $this->belongsTo(StockItem::class, 'stock_item_id');
+    }
+
+    public function machine()
+    {
+        return $this->belongsTo(Machine::class, 'machine_id');
+    }
+
+    public function maintenance()
+    {
+        return $this->belongsTo(Maintenance::class, 'maintenance_id');
+    }
 }

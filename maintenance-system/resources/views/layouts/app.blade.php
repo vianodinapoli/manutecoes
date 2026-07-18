@@ -459,29 +459,34 @@
             @endcan
 
             {{-- Manutenções --}}
-            @can('acesso manutencoes')
-            <div class="sb-dropdown"
-                 x-data="{ open: {{ request()->routeIs('maintenances.*') ? 'true' : 'false' }} }">
-                <div class="sb-dropdown-trigger" :class="open ? 'open' : ''" @click="open = !open">
-                    <i class="fas fa-wrench ni-icon"></i>
-                    <span class="ni-text">Manutenções</span>
-                    <i class="fas fa-chevron-right sb-chevron"></i>
-                </div>
-                <div x-show="open" x-cloak x-collapse class="sb-dropdown-items">
-                    <x-nav-link :href="route('maintenances.create')" :active="request()->routeIs('maintenances.create')" class="nav-item">
-                        <i class="fas fa-plus-circle ni-icon"></i><span class="ni-text">Criar Manutenção</span>
-                    </x-nav-link>
-                    <x-nav-link :href="route('maintenances.index')" :active="request()->routeIs('maintenances.index')" class="nav-item">
-                        <i class="fas fa-list ni-icon"></i><span class="ni-text">Ver Manutenções</span>
-                    </x-nav-link>
-                </div>
-                <div class="sb-flyout">
-                    <div class="sb-flyout-label">Manutenções</div>
-                    <a href="{{ route('maintenances.create') }}"><i class="fas fa-plus-circle"></i> Criar Manutenção</a>
-                    <a href="{{ route('maintenances.index') }}"><i class="fas fa-list"></i> Ver Manutenções</a>
-                </div>
-            </div>
-            @endcan
+            {{-- Manutenções --}}
+@can('acesso manutencoes')
+<div class="sb-dropdown"
+     x-data="{ open: {{ request()->routeIs('maintenances.*', 'consumption.*') ? 'true' : 'false' }} }">
+    <div class="sb-dropdown-trigger" :class="open ? 'open' : ''" @click="open = !open">
+        <i class="fas fa-wrench ni-icon"></i>
+        <span class="ni-text">Manutenções</span>
+        <i class="fas fa-chevron-right sb-chevron"></i>
+    </div>
+    <div x-show="open" x-cloak x-collapse class="sb-dropdown-items">
+        <x-nav-link :href="route('maintenances.create')" :active="request()->routeIs('maintenances.create')" class="nav-item">
+            <i class="fas fa-plus-circle ni-icon"></i><span class="ni-text">Criar Manutenção</span>
+        </x-nav-link>
+        <x-nav-link :href="route('maintenances.index')" :active="request()->routeIs('maintenances.index')" class="nav-item">
+            <i class="fas fa-list ni-icon"></i><span class="ni-text">Ver Manutenções</span>
+        </x-nav-link>
+        <x-nav-link :href="route('consumption.index')" :active="request()->routeIs('consumption.*')" class="nav-item">
+            <i class="fas fa-chart-bar ni-icon"></i><span class="ni-text">Centro de Consumo</span>
+        </x-nav-link>
+    </div>
+    <div class="sb-flyout">
+        <div class="sb-flyout-label">Manutenções</div>
+        <a href="{{ route('maintenances.create') }}"><i class="fas fa-plus-circle"></i> Criar Manutenção</a>
+        <a href="{{ route('maintenances.index') }}"><i class="fas fa-list"></i> Ver Manutenções</a>
+        <a href="{{ route('consumption.index') }}"><i class="fas fa-chart-bar"></i> Centro de Consumo</a>
+    </div>
+</div>
+@endcan
 
             {{-- Stock / Armazém --}}
             @canany(['acesso stock', 'acesso movimentos'])

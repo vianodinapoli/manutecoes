@@ -156,6 +156,7 @@ Route::middleware('permission:requisicoes-material')->group(function () {
     ->name('requisicoes-material.editar-carga');
 });
 
+Route::get('/consumo', [App\Http\Controllers\ConsumptionController::class, 'index'])->name('consumption.index');
 });
 
 require __DIR__.'/auth.php';
