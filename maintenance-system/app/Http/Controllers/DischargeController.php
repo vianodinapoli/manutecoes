@@ -3,93 +3,103 @@
 namespace App\Http\Controllers;
 
 use App\Models\Discharge;
+use App\Models\DischargeOperation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class DischargeController extends Controller
 {
+    /** A listagem vive agora dentro de cada operação. */
     public function index()
     {
-        $discharges = Discharge::with(['registeredBy', 'confirmedBy'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-        return view('discharges.index', compact('discharges'));
+        return redirect()->route('operations.index');
     }
 
     public function create(Request $request)
     {
-        // Pedido normal (sem ?modal=1) → redireciona para o index
         if (! $request->ajax() && ! $request->has('modal')) {
-            return redirect()->route('discharges.index');
+            return redirect()->route('operations.index');
         }
-        // Pedido via fetch do modal → retorna só a view parcial
-        return view('discharges.create');
+
+        $operation = DischargeOperation::findOrFail($request->query('operation_id'));
+        abort_unless($operation->isActive(), 403, 'Inicie a operação antes de lançar camiões.');
+
+        $items = $this->itensComSaldo($operation, null);
+
+        return view('discharges.create', compact('operation', 'items'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
+            'operation_id'     => 'required|exists:discharge_operations,id',
             'data'             => 'required|date',
             'motorista'        => 'required|string|max:100',
             'matricula'        => 'required|string|max:20',
             'transportadora'   => 'required|string|max:100',
             'numero_guia'      => 'required|string|unique:descargas,numero_guia',
             'hora_saida_porto' => 'nullable|date_format:H:i',
-            'sacos_alta'       => 'required_without:sacos_baixa|integer|min:0',
-            'peso_saco_alta'   => 'required_if:sacos_alta,>0|numeric|min:0',
-            'sacos_baixa'      => 'required_without:sacos_alta|integer|min:0',
-            'peso_saco_baixa'  => 'required_if:sacos_baixa,>0|numeric|min:0',
+            'items'            => 'required|array',
+            'items.*'          => 'nullable|numeric|min:0',
         ]);
 
-        $sacosAlta    = (int)   $request->sacos_alta;
-        $sacosBaixa   = (int)   $request->sacos_baixa;
-        $pesoAlta     = (float) $request->peso_saco_alta;
-        $pesoBaixa    = (float) $request->peso_saco_baixa;
-        $totalAlta    = $sacosAlta  * $pesoAlta;
-        $totalBaixa   = $sacosBaixa * $pesoBaixa;
-        $totalSacos   = $sacosAlta  + $sacosBaixa;
-        $pesoEstimado = $totalAlta  + $totalBaixa;
+        $operation = DischargeOperation::findOrFail($request->operation_id);
+        abort_unless($operation->isActive(), 403, 'A operação não está em curso.');
 
-        Discharge::create([
-            'data'                => $request->data,
-            'motorista'           => $request->motorista,
-            'matricula'           => $request->matricula,
-            'transportadora'      => $request->transportadora,
-            'numero_guia'         => $request->numero_guia,
-            'hora_saida_porto'    => $request->hora_saida_porto,
-            'registado_por'       => auth()->id(),
-            'sacos_alta'          => $sacosAlta,
-            'peso_saco_alta'      => $pesoAlta,
-            'total_alta'          => $totalAlta,
-            'sacos_baixa'         => $sacosBaixa,
-            'peso_saco_baixa'     => $pesoBaixa,
-            'total_baixa'         => $totalBaixa,
-            'total_sacos'         => $totalSacos,
-            'peso_total_estimado' => $pesoEstimado,
-            'status'              => 'in_transit',
-        ]);
+        [$items, $qtys] = $this->quantidades($request, $operation, null);
 
-        return redirect()->route('discharges.index')
+        DB::transaction(function () use ($request, $operation, $items, $qtys) {
+            $discharge = Discharge::create([
+                'operation_id'     => $operation->id,
+                'data'             => $request->data,
+                'motorista'        => $request->motorista,
+                'matricula'        => $request->matricula,
+                'transportadora'   => $request->transportadora,
+                'numero_guia'      => $request->numero_guia,
+                'hora_saida_porto' => $request->hora_saida_porto,
+                'registado_por'    => auth()->id(),
+                'status'           => 'in_transit',
+            ] + $this->totais($items, $qtys));
+
+            $this->gravarItens($discharge, $qtys);
+        });
+
+        return redirect()->route('operations.show', $operation)
             ->with('success', '✅ Descarga registada com sucesso! Aguarda confirmação na balança.');
     }
 
     public function show(Request $request, Discharge $discharge)
     {
         if (! $request->ajax() && ! $request->has('modal')) {
-            return redirect()->route('discharges.index');
+            return redirect()->route('operations.show', $discharge->operation_id);
         }
+
+        $discharge->load(['items.operationItem', 'operation', 'registeredBy', 'confirmedBy']);
+
         return view('discharges.show', compact('discharge'));
     }
 
     public function edit(Request $request, Discharge $discharge)
     {
         if (! $request->ajax() && ! $request->has('modal')) {
-            return redirect()->route('discharges.index');
+            return redirect()->route('operations.show', $discharge->operation_id);
         }
-        return view('discharges.edit', compact('discharge'));
+
+        $operation = $discharge->operation;
+        abort_unless($operation && ! $operation->isArchived(), 403, 'Operação arquivada.');
+
+        $items   = $this->itensComSaldo($operation, $discharge);
+        $actuais = $discharge->items()->pluck('quantidade', 'operation_item_id');
+
+        return view('discharges.edit', compact('discharge', 'operation', 'items', 'actuais'));
     }
 
     public function update(Request $request, Discharge $discharge)
     {
+        $operation = $discharge->operation;
+        abort_unless($operation && ! $operation->isArchived(), 403, 'Operação arquivada.');
+
         $request->validate([
             'data'             => 'required|date',
             'motorista'        => 'required|string|max:100',
@@ -97,69 +107,203 @@ class DischargeController extends Controller
             'transportadora'   => 'required|string|max:100',
             'numero_guia'      => 'required|string|unique:descargas,numero_guia,' . $discharge->id,
             'hora_saida_porto' => 'nullable|date_format:H:i',
+            'items'            => 'required|array',
+            'items.*'          => 'nullable|numeric|min:0',
         ]);
 
-        $sacosAlta  = (int)   $request->sacos_alta;
-        $sacosBaixa = (int)   $request->sacos_baixa;
-        $pesoAlta   = (float) $request->peso_saco_alta;
-        $pesoBaixa  = (float) $request->peso_saco_baixa;
+        [$items, $qtys] = $this->quantidades($request, $operation, $discharge);
 
-        $discharge->update([
-            'data'                => $request->data,
-            'motorista'           => $request->motorista,
-            'matricula'           => $request->matricula,
-            'transportadora'      => $request->transportadora,
-            'numero_guia'         => $request->numero_guia,
-            'hora_saida_porto'    => $request->hora_saida_porto,
-            'sacos_alta'          => $sacosAlta,
-            'peso_saco_alta'      => $pesoAlta,
-            'total_alta'          => $sacosAlta * $pesoAlta,
-            'sacos_baixa'         => $sacosBaixa,
-            'peso_saco_baixa'     => $pesoBaixa,
-            'total_baixa'         => $sacosBaixa * $pesoBaixa,
-            'total_sacos'         => $sacosAlta + $sacosBaixa,
-            'peso_total_estimado' => ($sacosAlta * $pesoAlta) + ($sacosBaixa * $pesoBaixa),
-        ]);
+        DB::transaction(function () use ($request, $discharge, $items, $qtys) {
+            $discharge->update([
+                'data'             => $request->data,
+                'motorista'        => $request->motorista,
+                'matricula'        => $request->matricula,
+                'transportadora'   => $request->transportadora,
+                'numero_guia'      => $request->numero_guia,
+                'hora_saida_porto' => $request->hora_saida_porto,
+            ] + $this->totais($items, $qtys));
 
-        return redirect()->route('discharges.index')
+            $this->gravarItens($discharge, $qtys);
+        });
+
+        return redirect()->route('operations.show', $operation)
             ->with('success', '✅ Descarga atualizada com sucesso!');
     }
 
     public function confirm(Request $request, Discharge $discharge)
     {
+        $discharge->load('items.operationItem', 'operation');
+        abort_if($discharge->operation && $discharge->operation->isArchived(), 403, 'Operação arquivada.');
+
         $request->validate([
             'hora_chegada_balanca' => 'required|date_format:H:i',
             'peso_bruto'           => 'required|numeric|min:0',
             'tara'                 => 'required|numeric|min:0',
-            'sacos_confirmados'    => 'required|integer|min:1',
+            'confirmados'          => 'required|array',
+            'confirmados.*'        => 'required|numeric|min:0',
             'observacoes'          => 'nullable|string|max:500',
         ]);
 
-        $discharge->hora_chegada_balanca = $request->hora_chegada_balanca;
-        $discharge->peso_bruto           = $request->peso_bruto;
-        $discharge->tara                 = $request->tara;
-        $discharge->peso_liquido         = $request->peso_bruto - $request->tara;
-        $discharge->sacos_confirmados    = $request->sacos_confirmados;
-        $discharge->observacoes          = $request->observacoes;
-        $discharge->confirmado_por       = auth()->id();
-        $discharge->status               = 'confirmed';
+        $sacosConfirmados = 0;
+        $divergencia      = false;
 
-        $discharge->calculateTransportTime();
-        $discharge->save();
+        DB::transaction(function () use ($request, $discharge, &$sacosConfirmados, &$divergencia) {
+            foreach ($discharge->items as $item) {
+                $q = (float) $request->input("confirmados.{$item->operation_item_id}", 0);
 
-        $hasDivergence = $discharge->sacos_confirmados != $discharge->total_sacos;
+                $item->update(['quantidade_confirmada' => $q]);
 
-        $message = $hasDivergence
-            ? '⚠️ Confirmado com divergência no número de sacos!'
+                if ($item->operationItem->unidade === 'saco') {
+                    $sacosConfirmados += (int) $q;
+                }
+                if (abs($q - (float) $item->quantidade) > 0.0005) {
+                    $divergencia = true;
+                }
+            }
+
+            $discharge->hora_chegada_balanca = $request->hora_chegada_balanca;
+            $discharge->peso_bruto           = $request->peso_bruto;
+            $discharge->tara                 = $request->tara;
+            $discharge->peso_liquido         = $request->peso_bruto - $request->tara;
+            $discharge->sacos_confirmados    = $sacosConfirmados;
+            $discharge->observacoes          = $request->observacoes;
+            $discharge->confirmado_por       = auth()->id();
+            $discharge->status               = 'confirmed';
+
+            $discharge->calculateTransportTime();
+            $discharge->save();
+        });
+
+        $message = $divergencia
+            ? '⚠️ Confirmado com divergência entre o registado no porto e a balança!'
             : '✅ Descarga confirmada com sucesso!';
 
-        return redirect()->route('discharges.index')->with('success', $message);
+        return redirect()->route('operations.show', $discharge->operation_id)->with('success', $message);
     }
 
     public function destroy(Discharge $discharge)
     {
-        $discharge->delete();
-        return redirect()->route('discharges.index')
+        $operation = $discharge->operation;
+        abort_if($operation && $operation->isArchived(), 403, 'Operação arquivada.');
+
+        $discharge->delete(); // discharge_items apagam em cascata
+
+        return redirect()->route('operations.show', $discharge->operation_id)
             ->with('success', '🗑️ Registo eliminado.');
+    }
+
+    /* ───────────────────────── helpers ───────────────────────── */
+
+    /**
+     * Produtos do plano com o saldo por lançar.
+     * $ignorar = camião a ignorar no cálculo (ao editar, para não contar duas vezes).
+     */
+    private function itensComSaldo(DischargeOperation $operation, ?Discharge $ignorar)
+    {
+        return $operation->items()
+            ->withSum(['dischargeItems as registado' => function ($q) use ($ignorar) {
+                if ($ignorar) {
+                    $q->where('discharge_id', '!=', $ignorar->id);
+                }
+            }], 'quantidade')
+            ->get();
+    }
+
+    /**
+     * Lê items[<id do produto>] = quantidade, valida contra o plano e devolve
+     * [produtos indexados por id, quantidades > 0 por id].
+     */
+    private function quantidades(Request $request, DischargeOperation $operation, ?Discharge $ignorar): array
+    {
+        $items = $this->itensComSaldo($operation, $ignorar)->keyBy('id');
+        $input = $request->input('items', []);
+
+        $qtys  = [];
+        $erros = [];
+
+        foreach ($items as $id => $it) {
+            $q = (float) ($input[$id] ?? 0);
+            if ($q <= 0) {
+                continue;
+            }
+
+            if ($it->unidade === 'saco' && floor($q) != $q) {
+                $erros["items.$id"] = "{$it->nome}: indique um número inteiro de sacos.";
+                continue;
+            }
+
+            $saldo = (float) $it->quantidade - (float) ($it->registado ?? 0);
+            if ($q > $saldo + 0.0005) {
+                $erros["items.$id"] = sprintf(
+                    '%s: ultrapassa o plano da operação. Saldo disponível: %s %s.',
+                    $it->nome,
+                    rtrim(rtrim(number_format($saldo, 3, ',', '.'), '0'), ','),
+                    $it->unidade_label
+                );
+                continue;
+            }
+
+            $qtys[$id] = $q;
+        }
+
+        if (! $erros && ! $qtys) {
+            $erros['items'] = 'Indique a quantidade de pelo menos um produto.';
+        }
+
+        if ($erros) {
+            throw ValidationException::withMessages($erros);
+        }
+
+        return [$items, $qtys];
+    }
+
+    /** Grava/actualiza as linhas do camião e remove as que ficaram a zero. */
+    private function gravarItens(Discharge $discharge, array $qtys): void
+    {
+        $existentes = $discharge->items()->get()->keyBy('operation_item_id');
+
+        foreach ($qtys as $id => $q) {
+            if ($row = $existentes->get($id)) {
+                $row->update(['quantidade' => $q]);
+            } else {
+                $discharge->items()->create(['operation_item_id' => $id, 'quantidade' => $q]);
+            }
+        }
+
+        $discharge->items()->whereNotIn('operation_item_id', array_keys($qtys))->delete();
+    }
+
+    /**
+     * Totais do camião. Mantém também as colunas antigas (sacos_alta, etc.)
+     * para produtos chamados "Alta" / "Baixa", para não partir dashboards/API existentes.
+     */
+    private function totais($items, array $qtys): array
+    {
+        $t = [
+            'total_sacos'         => 0,
+            'peso_total_estimado' => 0,
+            'sacos_alta'          => 0, 'peso_saco_alta'  => 0, 'total_alta'  => 0,
+            'sacos_baixa'         => 0, 'peso_saco_baixa' => 0, 'total_baixa' => 0,
+        ];
+
+        foreach ($qtys as $id => $q) {
+            $it = $items[$id];
+            $kgPorUnidade = $it->unidade === 'tonelada' ? 1000 : (float) $it->peso_unitario_kg;
+            $peso = $q * $kgPorUnidade;
+
+            $t['peso_total_estimado'] += $peso;
+            if ($it->unidade === 'saco') {
+                $t['total_sacos'] += (int) $q;
+            }
+
+            $nome = mb_strtolower(trim($it->nome));
+            if ($nome === 'alta') {
+                $t['sacos_alta'] = (int) $q; $t['peso_saco_alta'] = $kgPorUnidade; $t['total_alta'] = $peso;
+            } elseif ($nome === 'baixa') {
+                $t['sacos_baixa'] = (int) $q; $t['peso_saco_baixa'] = $kgPorUnidade; $t['total_baixa'] = $peso;
+            }
+        }
+
+        return $t;
     }
 }

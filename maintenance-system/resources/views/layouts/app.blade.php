@@ -215,6 +215,33 @@
         #sidebar.collapsed .nav-item .ni-icon { font-size: 15px; }
         #sidebar.collapsed .nav-item::after { display: none; }
 
+        /* ── BADGE (contador) ── */
+        .ni-badge {
+            flex-shrink: 0;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 6px;
+            border-radius: 20px;
+            background: var(--sb-accent);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 600;
+            line-height: 18px;
+            text-align: center;
+        }
+        #sidebar.collapsed .ni-badge { display: none; }
+        /* ponto indicador quando a barra está colapsada */
+        .sb-dot {
+            display: none;
+            position: absolute;
+            top: 6px; right: 14px;
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--sb-accent);
+            box-shadow: 0 0 0 2px var(--sb-bg);
+        }
+        #sidebar.collapsed .sb-dot { display: block; }
+
         /* ── DROPDOWN ── */
         .sb-dropdown { position: relative; }
         .sb-dropdown-trigger {
@@ -300,6 +327,7 @@
         }
         .sb-flyout a:hover { background: rgba(255,255,255,.07); color: var(--sb-text-hover); }
         .sb-flyout a i { width: 14px; font-size: 11px; text-align: center; opacity: .5; }
+        .sb-flyout a .ni-badge { margin-left: auto; }
         #sidebar.collapsed .sb-dropdown:hover .sb-flyout { display: block; }
 
         /* ── FOOTER ── */
@@ -459,34 +487,33 @@
             @endcan
 
             {{-- Manutenções --}}
-            {{-- Manutenções --}}
-@can('acesso manutencoes')
-<div class="sb-dropdown"
-     x-data="{ open: {{ request()->routeIs('maintenances.*', 'consumption.*') ? 'true' : 'false' }} }">
-    <div class="sb-dropdown-trigger" :class="open ? 'open' : ''" @click="open = !open">
-        <i class="fas fa-wrench ni-icon"></i>
-        <span class="ni-text">Manutenções</span>
-        <i class="fas fa-chevron-right sb-chevron"></i>
-    </div>
-    <div x-show="open" x-cloak x-collapse class="sb-dropdown-items">
-        <x-nav-link :href="route('maintenances.create')" :active="request()->routeIs('maintenances.create')" class="nav-item">
-            <i class="fas fa-plus-circle ni-icon"></i><span class="ni-text">Criar Manutenção</span>
-        </x-nav-link>
-        <x-nav-link :href="route('maintenances.index')" :active="request()->routeIs('maintenances.index')" class="nav-item">
-            <i class="fas fa-list ni-icon"></i><span class="ni-text">Ver Manutenções</span>
-        </x-nav-link>
-        <x-nav-link :href="route('consumption.index')" :active="request()->routeIs('consumption.*')" class="nav-item">
-            <i class="fas fa-chart-bar ni-icon"></i><span class="ni-text">Centro de Consumo</span>
-        </x-nav-link>
-    </div>
-    <div class="sb-flyout">
-        <div class="sb-flyout-label">Manutenções</div>
-        <a href="{{ route('maintenances.create') }}"><i class="fas fa-plus-circle"></i> Criar Manutenção</a>
-        <a href="{{ route('maintenances.index') }}"><i class="fas fa-list"></i> Ver Manutenções</a>
-        <a href="{{ route('consumption.index') }}"><i class="fas fa-chart-bar"></i> Centro de Consumo</a>
-    </div>
-</div>
-@endcan
+            @can('acesso manutencoes')
+            <div class="sb-dropdown"
+                 x-data="{ open: {{ request()->routeIs('maintenances.*', 'consumption.*') ? 'true' : 'false' }} }">
+                <div class="sb-dropdown-trigger" :class="open ? 'open' : ''" @click="open = !open">
+                    <i class="fas fa-wrench ni-icon"></i>
+                    <span class="ni-text">Manutenções</span>
+                    <i class="fas fa-chevron-right sb-chevron"></i>
+                </div>
+                <div x-show="open" x-cloak x-collapse class="sb-dropdown-items">
+                    <x-nav-link :href="route('maintenances.create')" :active="request()->routeIs('maintenances.create')" class="nav-item">
+                        <i class="fas fa-plus-circle ni-icon"></i><span class="ni-text">Criar Manutenção</span>
+                    </x-nav-link>
+                    <x-nav-link :href="route('maintenances.index')" :active="request()->routeIs('maintenances.index')" class="nav-item">
+                        <i class="fas fa-list ni-icon"></i><span class="ni-text">Ver Manutenções</span>
+                    </x-nav-link>
+                    <x-nav-link :href="route('consumption.index')" :active="request()->routeIs('consumption.*')" class="nav-item">
+                        <i class="fas fa-chart-bar ni-icon"></i><span class="ni-text">Centro de Consumo</span>
+                    </x-nav-link>
+                </div>
+                <div class="sb-flyout">
+                    <div class="sb-flyout-label">Manutenções</div>
+                    <a href="{{ route('maintenances.create') }}"><i class="fas fa-plus-circle"></i> Criar Manutenção</a>
+                    <a href="{{ route('maintenances.index') }}"><i class="fas fa-list"></i> Ver Manutenções</a>
+                    <a href="{{ route('consumption.index') }}"><i class="fas fa-chart-bar"></i> Centro de Consumo</a>
+                </div>
+            </div>
+            @endcan
 
             {{-- Stock / Armazém --}}
             @canany(['acesso stock', 'acesso movimentos'])
@@ -521,61 +548,60 @@
             </div>
             @endcanany
 
-           {{-- Pedidos / Requisições --}}
-@canany(['acesso pedidos', 'requisicoes-material'])
-<div class="sb-dropdown"
-     x-data="{ open: {{ request()->routeIs('suppliers.*', 'compras.*', 'requisicao.*', 'requisicoes.*', 'requisicoes-material.*') ? 'true' : 'false' }} }">
-    <div class="sb-dropdown-trigger" :class="open ? 'open' : ''" @click="open = !open">
-        <i class="fas fa-shopping-cart ni-icon"></i>
-        <span class="ni-text">Pedidos / Requisições</span>
-        <i class="fas fa-chevron-right sb-chevron"></i>
-    </div>
-    <div x-show="open" x-cloak x-collapse class="sb-dropdown-items">
+            {{-- Pedidos / Requisições --}}
+            @canany(['acesso pedidos', 'requisicoes-material'])
+            <div class="sb-dropdown"
+                 x-data="{ open: {{ request()->routeIs('suppliers.*', 'compras.*', 'requisicao.*', 'requisicoes.*', 'requisicoes-material.*') ? 'true' : 'false' }} }">
+                <div class="sb-dropdown-trigger" :class="open ? 'open' : ''" @click="open = !open">
+                    <i class="fas fa-shopping-cart ni-icon"></i>
+                    <span class="ni-text">Pedidos / Requisições</span>
+                    <i class="fas fa-chevron-right sb-chevron"></i>
+                </div>
+                <div x-show="open" x-cloak x-collapse class="sb-dropdown-items">
 
-        @can('acesso pedidos')
-        <x-nav-link :href="route('compras.index')" :active="request()->routeIs('compras.index')" class="nav-item">
-            <i class="fas fa-list-ul ni-icon"></i><span class="ni-text">Pedidos Internos</span>
-        </x-nav-link>
-        @endcan
+                    @can('acesso pedidos')
+                    <x-nav-link :href="route('compras.index')" :active="request()->routeIs('compras.index')" class="nav-item">
+                        <i class="fas fa-list-ul ni-icon"></i><span class="ni-text">Pedidos Internos</span>
+                    </x-nav-link>
+                    @endcan
 
+                    @if(auth()->user()->hasRole('super-admin') || auth()->user()->hasRole('gestor'))
+                    <x-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')" class="nav-item">
+                        <i class="fas fa-truck ni-icon"></i><span class="ni-text">Fornecedores</span>
+                    </x-nav-link>
+                    <x-nav-link :href="route('requisicoes.create')" :active="request()->routeIs('requisicoes.create')" class="nav-item">
+                        <i class="fas fa-plus-circle ni-icon"></i><span class="ni-text">Nova Requisição</span>
+                    </x-nav-link>
+                    <x-nav-link :href="route('requisicoes.index')" :active="request()->routeIs('requisicoes.index')" class="nav-item">
+                        <i class="fas fa-list ni-icon"></i><span class="ni-text">Lista de Requisições</span>
+                    </x-nav-link>
+                    @endif
 
-        @if(auth()->user()->hasRole('super-admin') || auth()->user()->hasRole('gestor'))
-        <x-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')" class="nav-item">
-            <i class="fas fa-truck ni-icon"></i><span class="ni-text">Fornecedores</span>
-        </x-nav-link>
-        <x-nav-link :href="route('requisicoes.create')" :active="request()->routeIs('requisicoes.create')" class="nav-item">
-            <i class="fas fa-plus-circle ni-icon"></i><span class="ni-text">Nova Requisição</span>
-        </x-nav-link>
-        <x-nav-link :href="route('requisicoes.index')" :active="request()->routeIs('requisicoes.index')" class="nav-item">
-            <i class="fas fa-list ni-icon"></i><span class="ni-text">Lista de Requisições</span>
-        </x-nav-link>
-      
-        @endif
-       @can('requisicoes-material')
-<x-nav-link :href="route('requisicoes-material.index')"
-    :active="request()->routeIs('requisicoes-material.*')" class="nav-item">
-    <i class="fas fa-dolly ni-icon"></i>
-    <span class="ni-text">Req. de Material</span>
-</x-nav-link>
-@endcan
+                    @can('requisicoes-material')
+                    <x-nav-link :href="route('requisicoes-material.index')"
+                        :active="request()->routeIs('requisicoes-material.*')" class="nav-item">
+                        <i class="fas fa-dolly ni-icon"></i>
+                        <span class="ni-text">Req. de Material</span>
+                    </x-nav-link>
+                    @endcan
 
-    </div>
-    <div class="sb-flyout">
-        <div class="sb-flyout-label">Pedidos / Requisições</div>
-        @can('acesso pedidos')
-        <a href="{{ route('compras.index') }}"><i class="fas fa-list-ul"></i> Pedidos Internos</a>
-        @endcan
-        @can('requisicoes-material')
-        <a href="{{ route('requisicoes-material.index') }}"><i class="fas fa-dolly"></i> Req. de Material</a>
-        @endcan
-        @if(auth()->user()->hasRole('super-admin') || auth()->user()->hasRole('gestor'))
-        <a href="{{ route('suppliers.index') }}"><i class="fas fa-truck"></i> Fornecedores</a>
-        <a href="{{ route('requisicoes.create') }}"><i class="fas fa-plus-circle"></i> Nova Requisição</a>
-        <a href="{{ route('requisicoes.index') }}"><i class="fas fa-list"></i> Lista de Requisições</a>
-        @endif
-    </div>
-</div>
-@endcanany
+                </div>
+                <div class="sb-flyout">
+                    <div class="sb-flyout-label">Pedidos / Requisições</div>
+                    @can('acesso pedidos')
+                    <a href="{{ route('compras.index') }}"><i class="fas fa-list-ul"></i> Pedidos Internos</a>
+                    @endcan
+                    @can('requisicoes-material')
+                    <a href="{{ route('requisicoes-material.index') }}"><i class="fas fa-dolly"></i> Req. de Material</a>
+                    @endcan
+                    @if(auth()->user()->hasRole('super-admin') || auth()->user()->hasRole('gestor'))
+                    <a href="{{ route('suppliers.index') }}"><i class="fas fa-truck"></i> Fornecedores</a>
+                    <a href="{{ route('requisicoes.create') }}"><i class="fas fa-plus-circle"></i> Nova Requisição</a>
+                    <a href="{{ route('requisicoes.index') }}"><i class="fas fa-list"></i> Lista de Requisições</a>
+                    @endif
+                </div>
+            </div>
+            @endcanany
 
             {{-- Combustível --}}
             @can('acesso combustivel')
@@ -585,33 +611,67 @@
             </x-nav-link>
             @endcan
 
-          {{-- Viaturas --}}
-@can('acesso viaturas')
-<x-nav-link :href="route('viaturas.index')" :active="request()->routeIs('viaturas.*')" class="nav-item">
-    <i class="fas fa-truck-moving ni-icon"></i>
-    <span class="ni-text">Docs / Viaturas</span>
-</x-nav-link>
-@endcan
-
-            
-
-            {{-- Discharges --}}
-            @can('acesso discharges')
-            <x-nav-link :href="route('discharges.index')" :active="request()->routeIs('discharges.*')" class="nav-item">
-                <i class="fas fa-sign-out-alt ni-icon"></i>
-                <span class="ni-text">Descarga / Navio</span>
+            {{-- Viaturas --}}
+            @can('acesso viaturas')
+            <x-nav-link :href="route('viaturas.index')" :active="request()->routeIs('viaturas.*')" class="nav-item">
+                <i class="fas fa-truck-moving ni-icon"></i>
+                <span class="ni-text">Docs / Viaturas</span>
             </x-nav-link>
             @endcan
 
+            {{-- Descarga / Navio --}}
+            @can('acesso discharges')
+            @php
+                // Camiões ainda por confirmar na balança (em operações em curso)
+                $camioesPendentes = \App\Models\Discharge::whereIn('status', ['pending', 'in_transit'])
+                    ->whereHas('operation', fn ($q) => $q->where('status', 'active'))
+                    ->count();
+            @endphp
+            <div class="sb-dropdown"
+                 x-data="{ open: {{ request()->routeIs('operations.*', 'discharges.*') ? 'true' : 'false' }} }">
+                <div class="sb-dropdown-trigger" :class="open ? 'open' : ''" @click="open = !open" style="position:relative;">
+                    <i class="fas fa-ship ni-icon"></i>
+                    <span class="ni-text">Descarga / Navio</span>
+                    @if($camioesPendentes > 0)
+                        <span class="ni-badge" title="Camiões por confirmar na balança">{{ $camioesPendentes }}</span>
+                        <span class="sb-dot"></span>
+                    @endif
+                    <i class="fas fa-chevron-right sb-chevron"></i>
+                </div>
+                <div x-show="open" x-cloak x-collapse class="sb-dropdown-items">
+                    <x-nav-link :href="route('operations.index')"
+                        :active="request()->routeIs('operations.index', 'operations.show', 'discharges.*')" class="nav-item">
+                        <i class="fas fa-anchor ni-icon"></i>
+                        <span class="ni-text">Operações</span>
+                        @if($camioesPendentes > 0)
+                            <span class="ni-badge" title="Camiões por confirmar na balança">{{ $camioesPendentes }}</span>
+                        @endif
+                    </x-nav-link>
+                    <x-nav-link :href="route('operations.archive')"
+                        :active="request()->routeIs('operations.archive')" class="nav-item">
+                        <i class="fas fa-archive ni-icon"></i>
+                        <span class="ni-text">Arquivo</span>
+                    </x-nav-link>
+                </div>
+                <div class="sb-flyout">
+                    <div class="sb-flyout-label">Descarga / Navio</div>
+                    <a href="{{ route('operations.index') }}">
+                        <i class="fas fa-anchor"></i> Operações
+                        @if($camioesPendentes > 0)<span class="ni-badge">{{ $camioesPendentes }}</span>@endif
+                    </a>
+                    <a href="{{ route('operations.archive') }}"><i class="fas fa-archive"></i> Arquivo</a>
+                </div>
+            </div>
+            @endcan
 
             @can('acesso caixa')
-<div class="sb-divider"></div>
-<div class="sb-section">Contabilidade</div>
-<x-nav-link :href="route('caixa.index')" :active="request()->routeIs('caixa.*')" class="nav-item">
-    <i class="fas fa-cash-register ni-icon"></i>
-    <span class="ni-text">Caixa e Bancos</span>
-</x-nav-link>
-@endcan
+            <div class="sb-divider"></div>
+            <div class="sb-section">Contabilidade</div>
+            <x-nav-link :href="route('caixa.index')" :active="request()->routeIs('caixa.*')" class="nav-item">
+                <i class="fas fa-cash-register ni-icon"></i>
+                <span class="ni-text">Caixa e Bancos</span>
+            </x-nav-link>
+            @endcan
 
             {{-- Conta --}}
             <div class="sb-divider"></div>
@@ -624,18 +684,15 @@
 
             {{-- Admin --}}
             @hasrole('super-admin')
-          
-
-<div class="sb-section">Administração</div>
-<x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" class="nav-item">
-    <i class="fas fa-users-cog ni-icon"></i>
-    <span class="ni-text">Utilizadores</span>
-</x-nav-link>
-<x-nav-link :href="route('admin.backup.index')" :active="request()->routeIs('admin.backup.*')" class="nav-item">
-    <i class="fas fa-database ni-icon"></i>
-    <span class="ni-text">Backup BD</span>
-</x-nav-link>
-
+            <div class="sb-section">Administração</div>
+            <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" class="nav-item">
+                <i class="fas fa-users-cog ni-icon"></i>
+                <span class="ni-text">Utilizadores</span>
+            </x-nav-link>
+            <x-nav-link :href="route('admin.backup.index')" :active="request()->routeIs('admin.backup.*')" class="nav-item">
+                <i class="fas fa-database ni-icon"></i>
+                <span class="ni-text">Backup BD</span>
+            </x-nav-link>
             @endhasrole
 
         </nav>

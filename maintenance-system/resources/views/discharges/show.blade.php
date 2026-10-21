@@ -1,27 +1,40 @@
 {{--
     View parcial — carregada via fetch no modalPrincipal do index
     NÃO usa x-app-layout
+    Recebe: $discharge (com items.operationItem, operation, registeredBy, confirmedBy)
 --}}
 @php
-    $sacosAlta  = $discharge->sacos_alta  ?? 0;
-    $sacosBaixa = $discharge->sacos_baixa ?? 0;
+    $palette = [
+        ['bg' => '#e8f0fe', 'bd' => '#1a56db', 'tx' => '#1a56db'],
+        ['bg' => '#fde8e8', 'bd' => '#dc3545', 'tx' => '#dc3545'],
+        ['bg' => '#e6f4ec', 'bd' => '#198754', 'tx' => '#198754'],
+        ['bg' => '#fff3cd', 'bd' => '#fd7e14', 'tx' => '#b35c00'],
+        ['bg' => '#f3e8ff', 'bd' => '#6f42c1', 'tx' => '#6f42c1'],
+        ['bg' => '#e0f7fc', 'bd' => '#0aa2c0', 'tx' => '#0aa2c0'],
+    ];
+    $fmt = fn ($n) => rtrim(rtrim(number_format((float) $n, 3, ',', '.'), '0'), ',');
     $statusClass = match($discharge->status) {
         'confirmed'  => 'success',
         'in_transit' => 'info',
         default      => 'warning',
     };
-    $hasDivergence = $discharge->sacos_confirmados
-        && $discharge->sacos_confirmados != $discharge->total_sacos;
+    $hasDivergence = $discharge->hasDivergence();
+    $arquivada     = $discharge->operation?->isArchived();
 @endphp
 
 {{-- Badges de estado --}}
-<div class="d-flex align-items-center gap-2 mb-4">
-    <span class="badge bg-dark{{ $statusClass }} bg-opacity-15 text-{{ $statusClass }} border border-{{ $statusClass }} border-opacity-25 px-3 py-2" style="font-size:.78rem;">
+<div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
+    <span class="badge bg-{{ $statusClass }} bg-opacity-10 text-{{ $statusClass }} border border-{{ $statusClass }} border-opacity-25 px-3 py-2" style="font-size:.78rem;">
         {{ $discharge->status_label }}
     </span>
     @if($hasDivergence)
     <span class="badge" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-size:.72rem;">
-        <i class="bi bi-exclamation-triangle-fill me-1"></i>Divergência nos sacos
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>Divergência entre o porto e a balança
+    </span>
+    @endif
+    @if($discharge->operation)
+    <span class="badge bg-light text-dark border" style="font-size:.72rem;">
+        <i class="bi bi-ship me-1"></i>{{ $discharge->operation->navio }}
     </span>
     @endif
 </div>
@@ -73,30 +86,33 @@
     <div class="col-12">
         <h6 class="fw-bold text-primary border-bottom pb-2 mb-3"><i class="bi bi-box-seam me-1"></i> Carga Registada no Porto</h6>
         <div class="row g-3">
-            @if($sacosAlta > 0)
+            @foreach($discharge->items as $i => $it)
+            @php
+                $op    = $it->operationItem;
+                $c     = $palette[$i % count($palette)];
+                $kgUn  = $op->unidade === 'tonelada' ? 1000 : (float) $op->peso_unitario_kg;
+            @endphp
             <div class="col-md-4">
-                <div class="card border-0 h-100" style="background:#e8f0fe;border-left:4px solid #1a56db !important;border-radius:8px;">
+                <div class="card border-0 h-100" style="background:{{ $c['bg'] }};border-left:4px solid {{ $c['bd'] }} !important;border-radius:8px;">
                     <div class="card-body py-3 px-4">
-                        <div class="small text-muted fw-bold mb-2"><span class="badge me-1" style="background:#1a56db;">ALTA</span></div>
-                        <div class="fw-bold" style="font-size:1.4rem;color:#1a56db;">{{ $sacosAlta }} sacos</div>
-                        <div class="small text-muted">× {{ number_format($discharge->peso_saco_alta, 0, ',', '.') }} kg</div>
-                        <div class="fw-bold text-primary mt-1">= {{ number_format($discharge->total_alta, 0, ',', '.') }} kg</div>
+                        <div class="small fw-bold mb-2"><span class="badge" style="background:{{ $c['bd'] }};">{{ mb_strtoupper($op->nome) }}</span></div>
+                        <div class="fw-bold" style="font-size:1.4rem;color:{{ $c['tx'] }};">{{ $fmt($it->quantidade) }} {{ $op->unidade_label }}</div>
+                        @if($op->unidade === 'saco')
+                            <div class="small text-muted">× {{ $fmt($kgUn) }} kg</div>
+                        @endif
+                        <div class="fw-bold mt-1" style="color:{{ $c['tx'] }};">= {{ number_format($it->quantidade * $kgUn, 0, ',', '.') }} kg</div>
+                        @if($it->quantidade_confirmada !== null)
+                            @php $dif = abs($it->quantidade_confirmada - $it->quantidade) > 0.0005; @endphp
+                            <div class="small mt-2 {{ $dif ? 'text-danger fw-bold' : 'text-success' }}">
+                                <i class="bi bi-speedometer2 me-1"></i>Balança: {{ $fmt($it->quantidade_confirmada) }} {{ $op->unidade_label }}
+                                @if($dif) <i class="bi bi-exclamation-triangle-fill text-warning ms-1"></i> @endif
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
-            @endif
-            @if($sacosBaixa > 0)
-            <div class="col-md-4">
-                <div class="card border-0 h-100" style="background:#fde8e8;border-left:4px solid #dc3545 !important;border-radius:8px;">
-                    <div class="card-body py-3 px-4">
-                        <div class="small text-muted fw-bold mb-2"><span class="badge bg-danger me-1">BAIXA</span></div>
-                        <div class="fw-bold" style="font-size:1.4rem;color:#dc3545;">{{ $sacosBaixa }} sacos</div>
-                        <div class="small text-muted">× {{ number_format($discharge->peso_saco_baixa, 0, ',', '.') }} kg</div>
-                        <div class="fw-bold text-danger mt-1">= {{ number_format($discharge->total_baixa, 0, ',', '.') }} kg</div>
-                    </div>
-                </div>
-            </div>
-            @endif
+            @endforeach
+
             <div class="col-md-4">
                 <div class="card border-0 h-100" style="background:#f0fdf4;border-left:4px solid #198754 !important;border-radius:8px;">
                     <div class="card-body py-3 px-4">
@@ -172,12 +188,13 @@
         <i class="bi bi-x me-1"></i>Fechar
     </button>
     <div class="d-flex gap-2">
+        @unless($arquivada)
         <button type="button" class="btn btn-warning px-4 fw-bold"
                 onclick="abrirModal('{{ route('discharges.edit', $discharge->id) }}', 'Editar Descarga #{{ $discharge->id }}', 'warning')">
             <i class="bi bi-pencil me-1"></i>Editar
         </button>
-        <button type="button" class="btn btn-outline-dark px-4"
-                onclick="window.print()">
+        @endunless
+        <button type="button" class="btn btn-outline-dark px-4" onclick="window.print()">
             <i class="bi bi-printer me-1"></i>Imprimir
         </button>
     </div>
