@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DischargeOperation;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -82,6 +83,135 @@ class DischargeOperationController extends Controller
             ->get();
 
         return view('discharges.index', compact('operation', 'discharges', 'planItems'));
+    }
+
+    /** Relatório completo da operação (página própria, pronta a imprimir / guardar em PDF). */
+    public function report(DischargeOperation $operation)
+    {
+        if ($operation->isPlanned()) {
+            return redirect()->route('operations.show', $operation)
+                ->withErrors(['archive' => 'A operação ainda não foi iniciada: não há dados para o relatório.']);
+        }
+
+        $operation->load(['items', 'startedBy', 'archivedBy']);
+
+        $discharges = $operation->discharges()
+            ->with(['items.operationItem', 'registeredBy', 'confirmedBy'])
+            ->orderBy('data')->orderBy('id')
+            ->get();
+
+        $kgUn        = fn ($it) => $it->unidade === 'tonelada' ? 1000 : (float) $it->peso_unitario_kg;
+        $confirmadas = $discharges->where('status', 'confirmed');
+        $pendentes   = $discharges->whereIn('status', ['pending', 'in_transit']);
+
+        // ── 1. Resumo ──
+        $portoKg    = (float) $discharges->sum('peso_total_estimado');
+        $balancaKg  = (float) $confirmadas->sum('peso_liquido');
+        $estConfKg  = (float) $confirmadas->sum('peso_total_estimado');
+        $esperadoKg = (float) $operation->quantidade_esperada * 1000;
+        $tempo      = $discharges->whereNotNull('tempo_transporte')->avg('tempo_transporte');
+
+        $resumo = [
+            'esperado_ton'  => (float) $operation->quantidade_esperada,
+            'porto_ton'     => round($portoKg / 1000, 3),
+            'balanca_ton'   => round($balancaKg / 1000, 3),
+            'falta_ton'     => round(($esperadoKg - $balancaKg) / 1000, 3),
+            'lancado_pct'   => $esperadoKg > 0 ? min(100, round($portoKg / $esperadoKg * 100, 1)) : 0,
+            'progresso'     => $esperadoKg > 0 ? min(100, round($balancaKg / $esperadoKg * 100, 1)) : 0,
+            'camioes'       => $discharges->count(),
+            'confirmados'   => $confirmadas->count(),
+            'por_confirmar' => $pendentes->count(),
+            'divergencias'  => $discharges->filter(fn ($d) => $d->hasDivergence())->count(),
+            'tempo_medio'   => $tempo ? (int) round($tempo) : null,
+            'dif_peso_kg'   => round($balancaKg - $estConfKg, 1),   // pesado vs estimado (só confirmados)
+        ];
+
+        // ── 2. Plano vs realizado por produto ──
+        $porProduto = $operation->items->map(function ($it) use ($discharges, $kgUn) {
+            $reg = $regConf = $conf = 0.0;
+
+            foreach ($discharges as $d) {
+                foreach ($d->items as $l) {
+                    if ($l->operation_item_id != $it->id) {
+                        continue;
+                    }
+                    $reg += (float) $l->quantidade;
+                    if ($d->status === 'confirmed') {
+                        $regConf += (float) $l->quantidade;
+                        $conf    += (float) $l->quantidade_confirmada;
+                    }
+                }
+            }
+
+            $kg = $kgUn($it);
+
+            return [
+                'item'          => $it,
+                'plano'         => (float) $it->quantidade,
+                'registado'     => $reg,
+                'confirmado'    => $conf,
+                'falta'         => round((float) $it->quantidade - $reg, 3),
+                'dif'           => round($conf - $regConf, 3),      // balança vs porto (confirmados)
+                'plano_kg'      => (float) $it->quantidade * $kg,
+                'porto_kg'      => $reg * $kg,
+                'confirmado_kg' => $conf * $kg,
+            ];
+        });
+
+        // ── 3. Por transportadora ──
+        $extras = $operation->transportadorasExtra();
+
+        $porTransp = $discharges
+            ->groupBy(fn ($d) => trim($d->transportadora))
+            ->map(function ($g, $nome) use ($extras) {
+                $t = $g->whereNotNull('tempo_transporte')->avg('tempo_transporte');
+                return [
+                    'nome'         => $nome,
+                    'extra'        => in_array(mb_strtolower($nome), $extras, true),
+                    'camioes'      => $g->count(),
+                    'confirmados'  => $g->where('status', 'confirmed')->count(),
+                    'sacos'        => (int) $g->sum('total_sacos'),
+                    'estimado_kg'  => (float) $g->sum('peso_total_estimado'),
+                    'liquido_kg'   => (float) $g->where('status', 'confirmed')->sum('peso_liquido'),
+                    'tempo_medio'  => $t ? (int) round($t) : null,
+                    'divergencias' => $g->filter(fn ($d) => $d->hasDivergence())->count(),
+                ];
+            })
+            ->sortByDesc('camioes')
+            ->values();
+
+        // transportadoras previstas que não tiveram camiões
+        $usadas = $porTransp->pluck('nome')->map(fn ($n) => mb_strtolower($n))->all();
+        $semCamioes = collect($operation->transportadoras ?? [])
+            ->reject(fn ($t) => in_array(mb_strtolower($t['nome']), $usadas, true))
+            ->pluck('nome');
+
+        // ── 4. Histórico da operação ──
+        $historico = collect([['quando' => $operation->created_at, 'texto' => 'Operação criada (planeada).']]);
+
+        if ($operation->started_at) {
+            $historico->push([
+                'quando' => $operation->started_at,
+                'texto'  => 'Descarga iniciada' . ($operation->startedBy ? ' por ' . $operation->startedBy->name : '') . '. Plano bloqueado.',
+            ]);
+        }
+        foreach (($operation->plan_log ?? []) as $log) {
+            $historico->push([
+                'quando' => Carbon::parse($log['em']),
+                'texto'  => 'Plano alterado por ' . ($log['user'] ?? '—') . '. Motivo: ' . ($log['motivo'] ?? '—'),
+            ]);
+        }
+        if ($operation->archived_at) {
+            $historico->push([
+                'quando' => $operation->archived_at,
+                'texto'  => 'Operação arquivada' . ($operation->archivedBy ? ' por ' . $operation->archivedBy->name : '') . '.',
+            ]);
+        }
+        $historico = $historico->sortBy('quando')->values();
+
+        return view('operations.report', compact(
+            'operation', 'discharges', 'resumo', 'porProduto', 'porTransp', 'semCamioes', 'historico'
+        ));
     }
 
     public function update(Request $request, DischargeOperation $operation)
@@ -202,6 +332,10 @@ class DischargeOperationController extends Controller
             'metadata_keys.*'   => 'nullable|string|max:60',
             'metadata_values'   => 'nullable|array',
             'metadata_values.*' => 'nullable|string|max:255',
+            'transportadoras'         => 'nullable|array|max:50',
+            'transportadoras.*'       => 'nullable|string|max:100',
+            'transportadoras_extra'   => 'nullable|array',
+            'transportadoras_extra.*' => 'nullable|string|max:100',
         ];
 
         if ($editPlan) {
@@ -231,6 +365,26 @@ class DischargeOperationController extends Controller
         }
         unset($data['metadata_keys'], $data['metadata_values']);
         $data['metadata'] = $meta ?: null;
+
+        // transportadoras (stickers): sem duplicados, com a marca "extra" preservada
+        $extras = collect($data['transportadoras_extra'] ?? [])
+            ->map(fn ($n) => mb_strtolower(trim((string) $n)))
+            ->all();
+
+        $lista  = [];
+        $vistos = [];
+        foreach (($data['transportadoras'] ?? []) as $n) {
+            $n = trim(preg_replace('/\s+/', ' ', (string) $n));
+            $k = mb_strtolower($n);
+            if ($n === '' || in_array($k, $vistos, true)) {
+                continue;
+            }
+            $vistos[] = $k;
+            $lista[]  = ['nome' => $n, 'extra' => in_array($k, $extras, true)];
+        }
+
+        unset($data['transportadoras'], $data['transportadoras_extra']);
+        $data['transportadoras'] = $lista ?: null;
 
         return $data;
     }

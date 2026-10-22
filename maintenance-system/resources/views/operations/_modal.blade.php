@@ -1,4 +1,11 @@
 {{-- Modal criar/editar operação + plano. Incluir com @include('operations._modal') --}}
+@php
+    // Nomes já usados em camiões anteriores, para sugerir ao escrever
+    $transpSugestoes = \App\Models\Discharge::query()
+        ->whereNotNull('transportadora')
+        ->distinct()->orderBy('transportadora')->limit(200)
+        ->pluck('transportadora');
+@endphp
 <div class="modal fade" id="modalOperacao" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
@@ -79,6 +86,27 @@
                             </div>
                         </div>
 
+                        {{-- Transportadoras (stickers) --}}
+                        <div class="col-12">
+                            <label class="form-label op-lbl">Transportadoras</label>
+                            <div class="chips-box" onclick="document.getElementById('transpInput').focus()">
+                                <span id="transpChips" style="display:contents;"></span>
+                                <input type="text" id="transpInput" class="chip-input" list="transpSugestoes"
+                                       maxlength="100" autocomplete="off"
+                                       placeholder="Escreva o nome e carregue Enter…">
+                            </div>
+                            <div id="transpHidden"></div>
+                            <datalist id="transpSugestoes">
+                                @foreach($transpSugestoes as $nomeT)
+                                    <option value="{{ $nomeT }}"></option>
+                                @endforeach
+                            </datalist>
+                            <div style="font-size:.66rem;color:#94a3b8;margin-top:4px;">
+                                Ao lançar um camião, estas aparecem na lista. Uma transportadora que não esteja aqui
+                                pode ser acrescentada na hora e fica a <b style="color:#fd7e14;">laranja</b>.
+                            </div>
+                        </div>
+
                         {{-- Metadata --}}
                         <div class="col-12">
                             <div class="d-flex justify-content-between align-items-center mb-1">
@@ -110,6 +138,19 @@
 <style>
     .op-lbl{font-size:.68rem;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
     .plan-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px}
+
+    /* Stickers de transportadoras */
+    .chips-box{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:42px;cursor:text;
+               border:1px solid #dee2e6;border-radius:6px;padding:6px 8px;background:#fff}
+    .chips-box:focus-within{border-color:#86b7fe;box-shadow:0 0 0 .2rem rgba(13,110,253,.15)}
+    .chip-input{flex:1;min-width:180px;border:none;outline:none;font-size:.82rem;padding:2px 4px;background:transparent}
+    .tp-sticker{display:inline-flex;align-items:center;gap:6px;border-radius:20px;padding:3px 6px 3px 11px;
+                font-size:.72rem;font-weight:600;background:#eef2ff;color:#3b4cca;border:1px solid #d5dcff}
+    .tp-sticker.extra{background:#fd7e14;color:#fff;border-color:#fd7e14;box-shadow:0 0 0 3px rgba(253,126,20,.22)}
+    .tp-sticker button{border:none;background:rgba(0,0,0,.08);color:inherit;width:18px;height:18px;border-radius:50%;
+                       font-size:.6rem;line-height:18px;padding:0;cursor:pointer;display:inline-flex;
+                       align-items:center;justify-content:center}
+    .tp-sticker button:hover{background:rgba(0,0,0,.2)}
     .item-head,.item-row{display:grid;grid-template-columns:2fr 1fr 1.2fr 1.2fr 36px;gap:8px;align-items:center}
     .item-head{font-size:.6rem;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#94a3b8;margin-bottom:4px}
     @media (max-width:768px){
@@ -138,6 +179,87 @@
         row.querySelector('[name="metadata_values[]"]').value = v;
         document.getElementById('metaRows').appendChild(row);
     }
+
+    /* ── Transportadoras (stickers) ── */
+    let transp = [];   // [{nome, extra}]
+
+    function renderTransp() {
+        const box = document.getElementById('transpChips');
+        const hid = document.getElementById('transpHidden');
+        box.innerHTML = '';
+        hid.innerHTML = '';
+
+        transp.forEach((t, i) => {
+            const chip = document.createElement('span');
+            chip.className = 'tp-sticker' + (t.extra ? ' extra' : '');
+            if (t.extra) chip.title = 'Fora da lista prevista. Clique em ✓ para aprovar.';
+
+            if (t.extra) {
+                const w = document.createElement('i');
+                w.className = 'bi bi-exclamation-triangle-fill';
+                chip.appendChild(w);
+            }
+            const nome = document.createElement('span');
+            nome.textContent = t.nome;
+            chip.appendChild(nome);
+
+            if (t.extra) {
+                const ok = document.createElement('button');
+                ok.type = 'button'; ok.title = 'Aprovar (passa a transportadora prevista)';
+                ok.innerHTML = '<i class="bi bi-check-lg"></i>';
+                ok.onclick = e => { e.stopPropagation(); transp[i].extra = false; renderTransp(); };
+                chip.appendChild(ok);
+            }
+            const rm = document.createElement('button');
+            rm.type = 'button'; rm.title = 'Remover';
+            rm.innerHTML = '<i class="bi bi-x-lg"></i>';
+            rm.onclick = e => { e.stopPropagation(); transp.splice(i, 1); renderTransp(); };
+            chip.appendChild(rm);
+
+            box.appendChild(chip);
+
+            const a = document.createElement('input');
+            a.type = 'hidden'; a.name = 'transportadoras[]'; a.value = t.nome;
+            hid.appendChild(a);
+            if (t.extra) {
+                const b = document.createElement('input');
+                b.type = 'hidden'; b.name = 'transportadoras_extra[]'; b.value = t.nome;
+                hid.appendChild(b);
+            }
+        });
+    }
+
+    function addTransp(txt) {
+        const nome = (txt || '').replace(/\s+/g, ' ').trim();
+        if (!nome) return;
+        if (transp.some(t => t.nome.toLowerCase() === nome.toLowerCase())) return;
+        transp.push({ nome, extra: false });
+        renderTransp();
+    }
+
+    function flushTranspInput() {
+        const inp = document.getElementById('transpInput');
+        inp.value.split(',').forEach(addTransp);
+        inp.value = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const inp = document.getElementById('transpInput');
+        if (!inp) return;
+
+        inp.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                flushTranspInput();
+            } else if (e.key === 'Backspace' && inp.value === '' && transp.length) {
+                transp.pop();
+                renderTransp();
+            }
+        });
+        inp.addEventListener('change', flushTranspInput);   // escolha na lista de sugestões
+        inp.addEventListener('blur', flushTranspInput);
+        document.getElementById('formOperacao').addEventListener('submit', flushTranspInput);
+    });
 
     /* ── Plano: linhas de produtos ── */
     function addItemRow(it = {}) {
@@ -208,6 +330,9 @@
         document.getElementById('motivoWrap').style.display = 'none';
         document.getElementById('op_motivo').required = false;
         itemIdx = 0;
+        transp = (op && op.transportadoras ? op.transportadoras : []).map(t => ({ nome: t.nome, extra: !!t.extra }));
+        document.getElementById('transpInput').value = '';
+        renderTransp();
 
         const campos = ['navio','empresa','bl','factura','data_chegada','observacoes'];
 

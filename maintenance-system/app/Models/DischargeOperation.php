@@ -13,6 +13,7 @@ class DischargeOperation extends Model
         'navio', 'bl', 'factura', 'empresa', 'quantidade_esperada',
         'data_chegada', 'status', 'archived_at', 'archived_by',
         'started_at', 'started_by', 'plan_log',
+        'transportadoras',
         'metadata', 'observacoes',
     ];
 
@@ -22,6 +23,7 @@ class DischargeOperation extends Model
         'archived_at'         => 'datetime',
         'started_at'          => 'datetime',
         'plan_log'            => 'array',
+        'transportadoras'     => 'array',
         'metadata'            => 'array',
     ];
 
@@ -93,6 +95,21 @@ class DischargeOperation extends Model
         return $esp > 0 ? min(100, round($this->recebido_ton / $esp * 100, 1)) : 0;
     }
 
+    /** Nomes (minúsculas) das transportadoras fora da lista prevista. */
+    public function transportadorasExtra(): array
+    {
+        return collect($this->transportadoras ?? [])
+            ->filter(fn ($t) => ! empty($t['extra']))
+            ->map(fn ($t) => mb_strtolower($t['nome']))
+            ->values()
+            ->all();
+    }
+
+    public function isTransportadoraExtra(?string $nome): bool
+    {
+        return $nome !== null && in_array(mb_strtolower(trim($nome)), $this->transportadorasExtra(), true);
+    }
+
     /** Dados para o modal de criar/editar (JS: abrirOperacaoModal). */
     public function modalPayload(): array
     {
@@ -106,6 +123,7 @@ class DischargeOperation extends Model
             'observacoes'  => $this->observacoes,
             'data_chegada' => $this->data_chegada?->format('Y-m-d'),
             'metadata'     => $this->metadata ?? [],
+            'transportadoras' => $this->transportadoras ?? [],
             'items'        => $this->items->map(fn ($i) => [
                 'id'               => $i->id,
                 'nome'             => $i->nome,

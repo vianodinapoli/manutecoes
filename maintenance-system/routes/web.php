@@ -117,18 +117,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/caixa-bancos', fn() => view('caixa-bancos.index'))->name('caixa.index');
     });
 
-        // ── Discharges / Operações de descarga ──────────────────
+       
+    // ── Discharges / Operações de descarga ──────────────────
     Route::middleware('permission:acesso discharges')->group(function () {
-
+ 
         // Operações (navios). 'archive' tem de vir ANTES do resource.
         Route::get('operations/archive', [DischargeOperationController::class, 'archive'])->name('operations.archive');
         Route::resource('operations', DischargeOperationController::class)
             ->except(['create', 'edit'])
             ->parameters(['operations' => 'operation']);
+        Route::get('operations/{operation}/relatorio', [DischargeOperationController::class, 'report'])->name('operations.report');
         Route::patch('operations/{operation}/iniciar',   [DischargeOperationController::class, 'start'])           ->name('operations.start');
         Route::patch('operations/{operation}/arquivar',  [DischargeOperationController::class, 'archiveOperation'])->name('operations.archiveOperation');
         Route::patch('operations/{operation}/restaurar', [DischargeOperationController::class, 'restore'])         ->name('operations.restore');
-
+ 
         // Camiões (descargas) de cada operação
         Route::resource('discharges', DischargeController::class);
         Route::patch('discharges/{discharge}/confirm', [DischargeController::class, 'confirm'])->name('discharges.confirm');

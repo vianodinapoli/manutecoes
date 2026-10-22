@@ -67,10 +67,45 @@
             @error('matricula')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
         <div class="col-md-4">
+            @php
+                $lista_ed  = collect($operation->transportadoras ?? []);
+                $valTp_ed  = trim((string) old('transportadora', $discharge->transportadora));
+                $naLista_ed = $valTp_ed !== '' && $lista_ed->contains(fn ($t) => mb_strtolower($t['nome']) === mb_strtolower($valTp_ed));
+            @endphp
             <label class="small fw-bold text-muted">Transportadora</label>
-            <input type="text" name="transportadora" class="form-control @error('transportadora') is-invalid @enderror"
-                   value="{{ old('transportadora', $discharge->transportadora) }}" required>
-            @error('transportadora')<div class="invalid-feedback">{{ $message }}</div>@enderror
+
+            @if($lista_ed->isNotEmpty())
+                {{-- Lista da operação + opção "Outra" --}}
+                <select id="ed_transp_sel" class="form-select @error('transportadora') is-invalid @enderror"
+                        onchange="edTranspChange()" required>
+                    <option value="">Seleccione…</option>
+                    @foreach($lista_ed as $t)
+                        <option value="{{ $t['nome'] }}"
+                                @selected($naLista_ed && mb_strtolower($valTp_ed) === mb_strtolower($t['nome']))>
+                            {{ !empty($t['extra']) ? '⚠ ' : '' }}{{ $t['nome'] }}
+                        </option>
+                    @endforeach
+                    <option value="__nova__" @selected($valTp_ed !== '' && ! $naLista_ed)>＋ Outra (não está na lista)…</option>
+                </select>
+
+                <input type="text" id="ed_transp_nova" class="form-control mt-2"
+                       style="display:none;border:2px solid #fd7e14;background:#fff4e6;"
+                       placeholder="Nome da transportadora" maxlength="100"
+                       value="{{ $valTp_ed !== '' && ! $naLista_ed ? $valTp_ed : '' }}"
+                       oninput="edTranspSync()">
+
+                <div id="ed_transp_aviso" class="mt-1"
+                     style="display:none;background:#fd7e14;color:#fff;border-radius:6px;padding:4px 8px;font-size:.72rem;font-weight:600;">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Fora da lista desta operação. Será acrescentada e ficará a laranja.
+                </div>
+
+                <input type="hidden" name="transportadora" id="ed_transp_val" value="{{ $valTp_ed }}">
+            @else
+                {{-- Operação sem lista: campo livre --}}
+                <input type="text" name="transportadora" class="form-control @error('transportadora') is-invalid @enderror"
+                       value="{{ $valTp_ed }}" placeholder="Nome da empresa" required>
+            @endif
+            @error('transportadora')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
     </div>
 
@@ -187,4 +222,23 @@ function edCalc() {
     document.getElementById('edSubmit').disabled = excede || kg <= 0;
 }
 edCalc();
+
+function edTranspChange() {
+    const sel = document.getElementById('ed_transp_sel');
+    if (!sel) return;
+    const nova  = document.getElementById('ed_transp_nova');
+    const aviso = document.getElementById('ed_transp_aviso');
+    const val   = document.getElementById('ed_transp_val');
+    const outra = sel.value === '__nova__';
+
+    nova.style.display  = outra ? 'block' : 'none';
+    aviso.style.display = outra ? 'block' : 'none';
+    nova.required       = outra;
+    val.value           = outra ? nova.value.trim() : sel.value;
+}
+function edTranspSync() {
+    document.getElementById('ed_transp_val').value =
+        document.getElementById('ed_transp_nova').value.trim();
+}
+edTranspChange();
 </script>

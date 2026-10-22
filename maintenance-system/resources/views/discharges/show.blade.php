@@ -78,6 +78,12 @@
             <div class="col-md-4">
                 <div class="small text-muted fw-bold mb-1">Transportadora</div>
                 <div class="fw-semibold">{{ $discharge->transportadora }}</div>
+                @if($discharge->operation?->isTransportadoraExtra($discharge->transportadora))
+                    <span style="display:inline-flex;align-items:center;gap:4px;background:#fd7e14;color:#fff;border-radius:20px;
+                                 font-size:.64rem;font-weight:700;padding:2px 9px;margin-top:4px;box-shadow:0 0 0 3px rgba(253,126,20,.22);">
+                        <i class="bi bi-exclamation-triangle-fill"></i>Fora da lista da operação
+                    </span>
+                @endif
             </div>
         </div>
     </div>

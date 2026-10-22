@@ -43,7 +43,7 @@
                         <th class="text-center">CAMIÕES</th>
                         <th>METADATA</th>
                         <th>ARQUIVADO</th>
-                        <th class="text-center" style="width:90px">AÇÕES</th>
+                        <th class="text-center" style="width:120px">AÇÕES</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -72,6 +72,9 @@
                             <div class="d-flex justify-content-center gap-1">
                                 <a href="{{ route('operations.show', $op) }}" class="btn btn-outline-primary btn-sm py-0 px-2" title="Ver">
                                     <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ route('operations.report', $op) }}" target="_blank" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Relatório">
+                                    <i class="bi bi-file-earmark-text"></i>
                                 </a>
                                 <form action="{{ route('operations.restore', $op) }}" method="POST" class="m-0">
                                     @csrf @method('PATCH')

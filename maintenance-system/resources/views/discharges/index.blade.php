@@ -22,6 +22,7 @@
     foreach ($planItems as $idx => $pi) { $cor[$pi->id] = $palette[$idx % count($palette)]; }
 
     $fmt = fn ($n) => rtrim(rtrim(number_format((float) $n, 3, ',', '.'), '0'), ',');
+    $transpExtra = $operation->transportadorasExtra();
 @endphp
 
 <style>
@@ -40,6 +41,12 @@
     .op-nums{display:flex;justify-content:space-between;font-size:.7rem;color:#64748b;flex-wrap:wrap;gap:6px}
     .meta-chip{display:inline-block;background:#f1f3f5;color:#475569;border-radius:4px;
                font-size:.62rem;padding:1px 7px;margin:2px 3px 0 0}
+
+    /* ── Stickers de transportadoras ── */
+    .tp-label{font-size:.6rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#94a3b8;margin-right:6px}
+    .tp-chip{display:inline-flex;align-items:center;gap:4px;background:#eef2ff;color:#3b4cca;border:1px solid #d5dcff;
+             border-radius:20px;font-size:.64rem;font-weight:600;padding:2px 9px;margin:2px 3px 0 0;white-space:nowrap}
+    .tp-chip.extra{background:#fd7e14;color:#fff;border-color:#fd7e14;box-shadow:0 0 0 3px rgba(253,126,20,.22)}
 
     /* ── Plano vs realizado ── */
     #planoTable th{font-size:.58rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#868e96;
@@ -125,12 +132,6 @@
     .modal-loading{display:flex;align-items:center;justify-content:center;
                    height:260px;flex-direction:column;gap:10px;color:#adb5bd}
 
-    @media print{
-        .no-print{display:none!important}
-        body *{visibility:hidden}
-        #reportArea,#reportArea *{visibility:visible}
-        #reportArea{position:absolute;left:0;top:0;width:100%;padding:28px}
-    }
 </style>
 
 <div class="container-fluid py-3 px-4">
@@ -153,9 +154,10 @@
             <div class="page-sub">{{ $operation->empresa }} — Nitrato de Amónio</div>
         </div>
         <div class="d-flex gap-2">
-            <button onclick="imprimirRelatorio()" class="btn btn-outline-secondary btn-sm fw-bold" style="border-radius:7px;font-size:.75rem;">
-                <i class="bi bi-printer me-1"></i>Relatório
-            </button>
+            <a href="{{ route('operations.report', $operation) }}" target="_blank"
+               class="btn btn-outline-secondary btn-sm fw-bold" style="border-radius:7px;font-size:.75rem;">
+                <i class="bi bi-file-earmark-text me-1"></i>Relatório
+            </a>
 
             @if(!$readonly)
                 <button class="btn btn-outline-primary btn-sm fw-bold" style="border-radius:7px;font-size:.75rem;"
@@ -229,6 +231,18 @@
         <div>
             @foreach($operation->metadata as $k => $v)
                 <span class="meta-chip"><b>{{ $k }}:</b> {{ $v }}</span>
+            @endforeach
+        </div>
+        @endif
+
+        @if(!empty($operation->transportadoras))
+        <div class="mt-1">
+            <span class="tp-label">Transportadoras</span>
+            @foreach($operation->transportadoras as $t)
+                <span class="tp-chip {{ !empty($t['extra']) ? 'extra' : '' }}"
+                      @if(!empty($t['extra'])) title="Fora da lista prevista (acrescentada ao lançar um camião)" @endif>
+                    @if(!empty($t['extra']))<i class="bi bi-exclamation-triangle-fill"></i>@endif{{ $t['nome'] }}
+                </span>
             @endforeach
         </div>
         @endif
@@ -427,6 +441,11 @@
                     {{-- Transportadora --}}
                     <td>
                         <span style="font-size:.75rem;color:#64748b;">{{ $d->transportadora }}</span>
+                        @if(in_array(mb_strtolower($d->transportadora), $transpExtra, true))
+                            <div><span class="tp-chip extra" title="Transportadora fora da lista prevista da operação">
+                                <i class="bi bi-exclamation-triangle-fill"></i>Fora da lista
+                            </span></div>
+                        @endif
                     </td>
 
                     {{-- Carga (um pill por produto) --}}
@@ -715,70 +734,6 @@
     @include('operations._modal')
 @endunless
 
-{{-- RELATÓRIO IMPRESSÃO --}}
-<div id="reportArea" style="display:none;">
-    <div style="font-family:Arial,sans-serif;padding:20px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;
-                    border-bottom:3px solid #198754;padding-bottom:14px;margin-bottom:20px;">
-            <div>
-                <h2 style="margin:0;color:#198754;font-size:1.1rem;">RELATÓRIO DE DESCARGAS — {{ $operation->navio }}</h2>
-                <p style="margin:3px 0 0;color:#666;font-size:.78rem;">
-                    Nitrato de Amónio · {{ $operation->empresa }}
-                    · BL: {{ $operation->bl ?: '—' }} · Factura: {{ $operation->factura ?: '—' }}
-                </p>
-                <p style="margin:3px 0 0;color:#666;font-size:.75rem;">
-                    Esperado: {{ number_format($esperado,1,',','.') }} t ·
-                    Pesado na balança: {{ number_format($recebido,1,',','.') }} t ·
-                    {{ $falta > 0 ? 'Em falta: ' . number_format($falta,1,',','.') . ' t' : 'Excesso: ' . number_format(abs($falta),1,',','.') . ' t' }}
-                </p>
-                <p style="margin:3px 0 0;color:#666;font-size:.72rem;">
-                    @foreach($planItems as $pi)
-                        {{ $pi->nome }}: {{ $fmt($pi->registado ?? 0) }}/{{ $fmt($pi->quantidade) }} {{ $pi->unidade_label }}@if(!$loop->last) · @endif
-                    @endforeach
-                </p>
-            </div>
-            <div style="text-align:right;color:#666;font-size:.75rem;">
-                <div>Emitido: {{ now()->format('d/m/Y H:i') }}</div>
-                <div>Total: {{ $discharges->count() }} registos</div>
-            </div>
-        </div>
-        <table style="width:100%;border-collapse:collapse;font-size:.72rem;">
-            <thead>
-                <tr style="background:#1a56db;color:white;">
-                    <th style="padding:6px 8px;">Nº</th><th style="padding:6px 8px;">Data</th>
-                    <th style="padding:6px 8px;">Guia</th><th style="padding:6px 8px;">Motorista</th>
-                    <th style="padding:6px 8px;">Transportadora</th>
-                    @foreach($planItems as $pi)
-                        <th style="padding:6px 8px;text-align:center;">{{ $pi->nome }}</th>
-                    @endforeach
-                    <th style="padding:6px 8px;text-align:right;">Peso Líq.</th>
-                    <th style="padding:6px 8px;text-align:center;">Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($discharges as $d)
-                <tr style="border-bottom:1px solid #eee;{{ $loop->even ? 'background:#f9f9f9;' : '' }}">
-                    <td style="padding:5px 8px;color:#666;">#{{ $d->id }}</td>
-                    <td style="padding:5px 8px;">{{ $d->data->format('d/m/Y') }}</td>
-                    <td style="padding:5px 8px;font-weight:bold;color:#1a56db;">{{ $d->numero_guia }}</td>
-                    <td style="padding:5px 8px;">{{ $d->motorista }}</td>
-                    <td style="padding:5px 8px;">{{ $d->transportadora }}</td>
-                    @foreach($planItems as $pi)
-                        @php $li = $d->items->firstWhere('operation_item_id', $pi->id); @endphp
-                        <td style="padding:5px 8px;text-align:center;font-weight:bold;">{{ $li ? $fmt($li->quantidade) : '—' }}</td>
-                    @endforeach
-                    <td style="padding:5px 8px;text-align:right;">{{ $d->peso_liquido ? number_format($d->peso_liquido,0,',','.').' kg' : '—' }}</td>
-                    <td style="padding:5px 8px;text-align:center;">{{ $d->status_label }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-        <div style="margin-top:24px;text-align:center;color:#aaa;font-size:.65rem;">
-            Documento gerado automaticamente · {{ now()->format('d/m/Y H:i') }}
-        </div>
-    </div>
-</div>
-
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
@@ -953,12 +908,6 @@ function submeterFormModal(form) {
         mostrarErrosModal(form, ['Sem ligação ao servidor. Tente novamente.']);
         if(btn){ btn.disabled=false; btn.innerHTML=textoOriginal; }
     });
-}
-
-function imprimirRelatorio(){
-    document.getElementById('reportArea').style.display='block';
-    window.print();
-    document.getElementById('reportArea').style.display='none';
 }
 
 function calcTransportTime(){

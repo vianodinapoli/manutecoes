@@ -9,6 +9,11 @@
     .op-ref b{color:#475569;font-weight:600}
     .meta-chip{display:inline-block;background:#f1f3f5;color:#475569;border-radius:4px;
                font-size:.62rem;padding:1px 7px;margin:2px 3px 0 0}
+    /* ── Stickers de transportadoras ── */
+    .tp-label{font-size:.6rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#94a3b8;margin-right:6px}
+    .tp-chip{display:inline-flex;align-items:center;gap:4px;background:#eef2ff;color:#3b4cca;border:1px solid #d5dcff;
+             border-radius:20px;font-size:.64rem;font-weight:600;padding:2px 9px;margin:2px 3px 0 0;white-space:nowrap}
+    .tp-chip.extra{background:#fd7e14;color:#fff;border-color:#fd7e14;box-shadow:0 0 0 3px rgba(253,126,20,.22)}
     #planTable th{font-size:.6rem;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:#868e96;
                   border-bottom:1px solid #e9ecef;padding:8px 10px}
     #planTable td{font-size:.8rem;padding:8px 10px;vertical-align:middle}
@@ -74,6 +79,17 @@
         @foreach(($operation->metadata ?? []) as $k => $v)
             <span class="meta-chip"><b>{{ $k }}:</b> {{ $v }}</span>
         @endforeach
+        @if(!empty($operation->transportadoras))
+        <div class="mt-2">
+            <span class="tp-label">Transportadoras</span>
+            @foreach($operation->transportadoras as $t)
+                <span class="tp-chip {{ !empty($t['extra']) ? 'extra' : '' }}"
+                      @if(!empty($t['extra'])) title="Fora da lista prevista (acrescentada ao lançar um camião)" @endif>
+                    @if(!empty($t['extra']))<i class="bi bi-exclamation-triangle-fill"></i>@endif{{ $t['nome'] }}
+                </span>
+            @endforeach
+        </div>
+        @endif
         @if($operation->observacoes)
             <div class="mt-2" style="font-size:.74rem;color:#64748b;"><i class="bi bi-chat-left-text me-1"></i>{{ $operation->observacoes }}</div>
         @endif

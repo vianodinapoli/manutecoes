@@ -68,10 +68,45 @@
             @error('matricula')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
         <div class="col-md-4">
+            @php
+                $lista_cr  = collect($operation->transportadoras ?? []);
+                $valTp_cr  = trim((string) old('transportadora', ''));
+                $naLista_cr = $valTp_cr !== '' && $lista_cr->contains(fn ($t) => mb_strtolower($t['nome']) === mb_strtolower($valTp_cr));
+            @endphp
             <label class="small fw-bold text-muted">Transportadora</label>
-            <input type="text" name="transportadora" class="form-control @error('transportadora') is-invalid @enderror"
-                   value="{{ old('transportadora') }}" placeholder="Nome da empresa" required>
-            @error('transportadora')<div class="invalid-feedback">{{ $message }}</div>@enderror
+
+            @if($lista_cr->isNotEmpty())
+                {{-- Lista da operação + opção "Outra" --}}
+                <select id="cr_transp_sel" class="form-select @error('transportadora') is-invalid @enderror"
+                        onchange="crTranspChange()" required>
+                    <option value="">Seleccione…</option>
+                    @foreach($lista_cr as $t)
+                        <option value="{{ $t['nome'] }}"
+                                @selected($naLista_cr && mb_strtolower($valTp_cr) === mb_strtolower($t['nome']))>
+                            {{ !empty($t['extra']) ? '⚠ ' : '' }}{{ $t['nome'] }}
+                        </option>
+                    @endforeach
+                    <option value="__nova__" @selected($valTp_cr !== '' && ! $naLista_cr)>＋ Outra (não está na lista)…</option>
+                </select>
+
+                <input type="text" id="cr_transp_nova" class="form-control mt-2"
+                       style="display:none;border:2px solid #fd7e14;background:#fff4e6;"
+                       placeholder="Nome da transportadora" maxlength="100"
+                       value="{{ $valTp_cr !== '' && ! $naLista_cr ? $valTp_cr : '' }}"
+                       oninput="crTranspSync()">
+
+                <div id="cr_transp_aviso" class="mt-1"
+                     style="display:none;background:#fd7e14;color:#fff;border-radius:6px;padding:4px 8px;font-size:.72rem;font-weight:600;">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Fora da lista desta operação. Será acrescentada e ficará a laranja.
+                </div>
+
+                <input type="hidden" name="transportadora" id="cr_transp_val" value="{{ $valTp_cr }}">
+            @else
+                {{-- Operação sem lista: campo livre --}}
+                <input type="text" name="transportadora" class="form-control @error('transportadora') is-invalid @enderror"
+                       value="{{ $valTp_cr }}" placeholder="Nome da empresa" required>
+            @endif
+            @error('transportadora')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
     </div>
 
@@ -188,4 +223,23 @@ function crCalc() {
     document.getElementById('crSubmit').disabled = excede || kg <= 0;
 }
 crCalc();
+
+function crTranspChange() {
+    const sel = document.getElementById('cr_transp_sel');
+    if (!sel) return;
+    const nova  = document.getElementById('cr_transp_nova');
+    const aviso = document.getElementById('cr_transp_aviso');
+    const val   = document.getElementById('cr_transp_val');
+    const outra = sel.value === '__nova__';
+
+    nova.style.display  = outra ? 'block' : 'none';
+    aviso.style.display = outra ? 'block' : 'none';
+    nova.required       = outra;
+    val.value           = outra ? nova.value.trim() : sel.value;
+}
+function crTranspSync() {
+    document.getElementById('cr_transp_val').value =
+        document.getElementById('cr_transp_nova').value.trim();
+}
+crTranspChange();
 </script>

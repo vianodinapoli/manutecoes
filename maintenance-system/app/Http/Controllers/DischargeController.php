@@ -50,12 +50,14 @@ class DischargeController extends Controller
         [$items, $qtys] = $this->quantidades($request, $operation, null);
 
         DB::transaction(function () use ($request, $operation, $items, $qtys) {
+            $transp = $this->resolverTransportadora($operation, $request->transportadora);
+
             $discharge = Discharge::create([
                 'operation_id'     => $operation->id,
                 'data'             => $request->data,
                 'motorista'        => $request->motorista,
                 'matricula'        => $request->matricula,
-                'transportadora'   => $request->transportadora,
+                'transportadora'   => $transp,
                 'numero_guia'      => $request->numero_guia,
                 'hora_saida_porto' => $request->hora_saida_porto,
                 'registado_por'    => auth()->id(),
@@ -113,12 +115,14 @@ class DischargeController extends Controller
 
         [$items, $qtys] = $this->quantidades($request, $operation, $discharge);
 
-        DB::transaction(function () use ($request, $discharge, $items, $qtys) {
+        DB::transaction(function () use ($request, $operation, $discharge, $items, $qtys) {
+            $transp = $this->resolverTransportadora($operation, $request->transportadora);
+
             $discharge->update([
                 'data'             => $request->data,
                 'motorista'        => $request->motorista,
                 'matricula'        => $request->matricula,
-                'transportadora'   => $request->transportadora,
+                'transportadora'   => $transp,
                 'numero_guia'      => $request->numero_guia,
                 'hora_saida_porto' => $request->hora_saida_porto,
             ] + $this->totais($items, $qtys));
@@ -255,6 +259,32 @@ class DischargeController extends Controller
         }
 
         return [$items, $qtys];
+    }
+
+    /**
+     * Se a operação tem lista de transportadoras e esta não consta, acrescenta-a
+     * marcada como "extra" (aparece a laranja). Devolve o nome canónico.
+     * Sem lista definida, o campo é livre e nada é marcado.
+     */
+    private function resolverTransportadora(DischargeOperation $operation, string $nome): string
+    {
+        $nome  = trim(preg_replace('/\s+/', ' ', $nome));
+        $lista = $operation->transportadoras ?? [];
+
+        if (! $lista) {
+            return $nome;
+        }
+
+        foreach ($lista as $t) {
+            if (mb_strtolower($t['nome']) === mb_strtolower($nome)) {
+                return $t['nome'];
+            }
+        }
+
+        $lista[] = ['nome' => $nome, 'extra' => true];
+        $operation->update(['transportadoras' => $lista]);
+
+        return $nome;
     }
 
     /** Grava/actualiza as linhas do camião e remove as que ficaram a zero. */
