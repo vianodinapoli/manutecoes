@@ -108,6 +108,24 @@
             @endif
             @error('transportadora')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
+
+        {{-- Tipo de atrelado (definido no porto) --}}
+        <div class="col-md-4">
+            @php $atr_cr = old('tipo_atrelado', null); @endphp
+            <label class="small fw-bold text-muted">Tipo de atrelado</label>
+            <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="tipo_atrelado" id="cr_atr_normal" value="normal"
+                       autocomplete="off" required onchange="crCalc()" {{ $atr_cr === 'normal' ? 'checked' : '' }}>
+                <label class="btn btn-outline-primary" for="cr_atr_normal">Normal <small>(até 24)</small></label>
+
+                <input type="radio" class="btn-check" name="tipo_atrelado" id="cr_atr_link" value="link"
+                       autocomplete="off" onchange="crCalc()" {{ $atr_cr === 'link' ? 'checked' : '' }}>
+                <label class="btn btn-outline-danger" for="cr_atr_link">Link <small>(mais de 24)</small></label>
+            </div>
+            @error('tipo_atrelado')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+            <div id="cr_atr_aviso" class="mt-1"
+                 style="display:none;background:#fd7e14;color:#fff;border-radius:6px;padding:4px 8px;font-size:.72rem;font-weight:600;"></div>
+        </div>
     </div>
 
     {{-- Carga: uma linha por produto do plano --}}
@@ -219,6 +237,7 @@ function crCalc() {
         }
     });
     document.getElementById('cr_total_sacos').value = sacos;
+    crAtreladoAviso(sacos);
     document.getElementById('cr_total_peso').value  = kg.toLocaleString('pt-MZ');
     document.getElementById('crSubmit').disabled = excede || kg <= 0;
 }
@@ -240,6 +259,19 @@ function crTranspChange() {
 function crTranspSync() {
     document.getElementById('cr_transp_val').value =
         document.getElementById('cr_transp_nova').value.trim();
+}
+
+function crAtreladoAviso(sacos) {
+    const sel = document.querySelector('input[name=tipo_atrelado]:checked');
+    const av  = document.getElementById('cr_atr_aviso');
+    if (!sel || sacos <= 0) { av.style.display = 'none'; return; }
+
+    const normal = sel.value === 'normal';
+    const incons = (normal && sacos > 24) || (!normal && sacos <= 24);
+    av.style.display = incons ? 'block' : 'none';
+    av.textContent = normal
+        ? '⚠ ' + sacos + ' sacos é mais do que um atrelado normal (24). Confirme o tipo.'
+        : '⚠ ' + sacos + ' sacos não passa de 24. É mesmo um atrelado link?';
 }
 crTranspChange();
 </script>

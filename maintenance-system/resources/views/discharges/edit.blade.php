@@ -107,6 +107,24 @@
             @endif
             @error('transportadora')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         </div>
+
+        {{-- Tipo de atrelado (definido no porto) --}}
+        <div class="col-md-4">
+            @php $atr_ed = old('tipo_atrelado', $discharge->tipo_atrelado); @endphp
+            <label class="small fw-bold text-muted">Tipo de atrelado</label>
+            <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="tipo_atrelado" id="ed_atr_normal" value="normal"
+                       autocomplete="off" required onchange="edCalc()" {{ $atr_ed === 'normal' ? 'checked' : '' }}>
+                <label class="btn btn-outline-primary" for="ed_atr_normal">Normal <small>(até 24)</small></label>
+
+                <input type="radio" class="btn-check" name="tipo_atrelado" id="ed_atr_link" value="link"
+                       autocomplete="off" onchange="edCalc()" {{ $atr_ed === 'link' ? 'checked' : '' }}>
+                <label class="btn btn-outline-danger" for="ed_atr_link">Link <small>(mais de 24)</small></label>
+            </div>
+            @error('tipo_atrelado')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+            <div id="ed_atr_aviso" class="mt-1"
+                 style="display:none;background:#fd7e14;color:#fff;border-radius:6px;padding:4px 8px;font-size:.72rem;font-weight:600;"></div>
+        </div>
     </div>
 
     {{-- Carga: uma linha por produto do plano --}}
@@ -218,6 +236,7 @@ function edCalc() {
         }
     });
     document.getElementById('ed_total_sacos').value = sacos;
+    edAtreladoAviso(sacos);
     document.getElementById('ed_total_peso').value  = kg.toLocaleString('pt-MZ');
     document.getElementById('edSubmit').disabled = excede || kg <= 0;
 }
@@ -239,6 +258,19 @@ function edTranspChange() {
 function edTranspSync() {
     document.getElementById('ed_transp_val').value =
         document.getElementById('ed_transp_nova').value.trim();
+}
+
+function edAtreladoAviso(sacos) {
+    const sel = document.querySelector('input[name=tipo_atrelado]:checked');
+    const av  = document.getElementById('ed_atr_aviso');
+    if (!sel || sacos <= 0) { av.style.display = 'none'; return; }
+
+    const normal = sel.value === 'normal';
+    const incons = (normal && sacos > 24) || (!normal && sacos <= 24);
+    av.style.display = incons ? 'block' : 'none';
+    av.textContent = normal
+        ? '⚠ ' + sacos + ' sacos é mais do que um atrelado normal (24). Confirme o tipo.'
+        : '⚠ ' + sacos + ' sacos não passa de 24. É mesmo um atrelado link?';
 }
 edTranspChange();
 </script>

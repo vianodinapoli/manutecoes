@@ -40,6 +40,7 @@ class DischargeController extends Controller
             'transportadora'   => 'required|string|max:100',
             'numero_guia'      => 'required|string|unique:descargas,numero_guia',
             'hora_saida_porto' => 'nullable|date_format:H:i',
+            'tipo_atrelado'    => 'required|in:normal,link',
             'items'            => 'required|array',
             'items.*'          => 'nullable|numeric|min:0',
         ]);
@@ -58,6 +59,7 @@ class DischargeController extends Controller
                 'motorista'        => $request->motorista,
                 'matricula'        => $request->matricula,
                 'transportadora'   => $transp,
+                'tipo_atrelado'    => $request->tipo_atrelado,
                 'numero_guia'      => $request->numero_guia,
                 'hora_saida_porto' => $request->hora_saida_porto,
                 'registado_por'    => auth()->id(),
@@ -109,6 +111,7 @@ class DischargeController extends Controller
             'transportadora'   => 'required|string|max:100',
             'numero_guia'      => 'required|string|unique:descargas,numero_guia,' . $discharge->id,
             'hora_saida_porto' => 'nullable|date_format:H:i',
+            'tipo_atrelado'    => 'required|in:normal,link',
             'items'            => 'required|array',
             'items.*'          => 'nullable|numeric|min:0',
         ]);
@@ -123,6 +126,7 @@ class DischargeController extends Controller
                 'motorista'        => $request->motorista,
                 'matricula'        => $request->matricula,
                 'transportadora'   => $transp,
+                'tipo_atrelado'    => $request->tipo_atrelado,
                 'numero_guia'      => $request->numero_guia,
                 'hora_saida_porto' => $request->hora_saida_porto,
             ] + $this->totais($items, $qtys));

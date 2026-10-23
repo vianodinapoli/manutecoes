@@ -76,6 +76,21 @@
                 <span class="badge bg-dark bg-opacity-75" style="font-size:.75rem;letter-spacing:1px;">{{ $discharge->matricula }}</span>
             </div>
             <div class="col-md-4">
+                <div class="small text-muted fw-bold mb-1">Tipo de atrelado</div>
+                @if($discharge->tipo_atrelado)
+                    <span class="badge {{ $discharge->tipo_atrelado === 'link' ? 'bg-danger' : 'bg-primary' }}" style="font-size:.75rem;">
+                        {{ strtoupper($discharge->tipo_atrelado) }}
+                    </span>
+                    @if($discharge->atreladoInconsistente())
+                        <span style="display:inline-block;background:#fd7e14;color:#fff;border-radius:20px;font-size:.64rem;font-weight:700;padding:2px 9px;margin-left:4px;">
+                            ⚠ não bate com os {{ $discharge->total_sacos }} sacos
+                        </span>
+                    @endif
+                @else
+                    <span class="text-muted">Não definido</span>
+                @endif
+            </div>
+            <div class="col-md-4">
                 <div class="small text-muted fw-bold mb-1">Transportadora</div>
                 <div class="fw-semibold">{{ $discharge->transportadora }}</div>
                 @if($discharge->operation?->isTransportadoraExtra($discharge->transportadora))

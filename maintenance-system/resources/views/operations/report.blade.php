@@ -244,7 +244,7 @@
         <table>
             <thead>
                 <tr>
-                    <th>Transportadora</th><th class="c">Camiões</th><th class="c">Confirmados</th><th class="r">Sacos</th>
+                    <th>Transportadora</th><th class="c">Camiões</th><th class="c">Confirmados</th><th class="c">Atrelado normal</th><th class="c">Atrelado link</th><th class="r">Sacos</th>
                     <th class="r">Peso estimado (kg)</th><th class="r">Peso líquido (kg)</th>
                     <th class="c">Tempo médio</th><th class="c">Divergências</th>
                 </tr>
@@ -256,6 +256,8 @@
                         @if($t['extra'])<span class="tag extra">⚠ fora da lista prevista</span>@endif</td>
                     <td class="c">{{ $t['camioes'] }}</td>
                     <td class="c">{{ $t['confirmados'] }}</td>
+                    <td class="c">{{ $t['normal'] }}</td>
+                    <td class="c">{{ $t['link'] }}</td>
                     <td class="r">{{ $n($t['sacos']) }}</td>
                     <td class="r">{{ $n($t['estimado_kg']) }}</td>
                     <td class="r">{{ $n($t['liquido_kg']) }}</td>
@@ -263,7 +265,7 @@
                     <td class="c {{ $t['divergencias'] ? 'neg' : 'mut' }}">{{ $t['divergencias'] }}</td>
                 </tr>
                 @empty
-                <tr><td colspan="8" class="c mut">Sem camiões registados.</td></tr>
+                <tr><td colspan="10" class="c mut">Sem camiões registados.</td></tr>
                 @endforelse
             </tbody>
             @if($porTransp->isNotEmpty())
@@ -272,6 +274,8 @@
                     <td>Total</td>
                     <td class="c">{{ $porTransp->sum('camioes') }}</td>
                     <td class="c">{{ $porTransp->sum('confirmados') }}</td>
+                    <td class="c">{{ $porTransp->sum('normal') }}</td>
+                    <td class="c">{{ $porTransp->sum('link') }}</td>
                     <td class="r">{{ $n($porTransp->sum('sacos')) }}</td>
                     <td class="r">{{ $n($porTransp->sum('estimado_kg')) }}</td>
                     <td class="r">{{ $n($porTransp->sum('liquido_kg')) }}</td>
@@ -308,7 +312,7 @@
                 <tr class="{{ $dv ? 'div' : '' }}">
                     <td class="nw"><b>#{{ $d->id }}</b><br>{{ $d->data->format('d/m/Y') }}</td>
                     <td class="nw"><b>{{ $d->numero_guia }}</b></td>
-                    <td>{{ $d->motorista }}<br><span class="mut">{{ $d->matricula }}</span></td>
+                    <td>{{ $d->motorista }}<br><span class="mut">{{ $d->matricula }}@if($d->tipo_atrelado) · {{ strtoupper($d->tipo_atrelado) }}@endif</span></td>
                     <td>{{ $d->transportadora }}@if($tpExtra)<br><span class="tag extra">⚠ fora da lista</span>@endif</td>
                     <td class="nw">{{ $d->hora_saida_porto ?: '—' }} → {{ $d->hora_chegada_balanca ?: '—' }}
                         @if($d->tempo_transporte)<br><span class="mut">{{ $d->tempo_transporte }} min</span>@endif</td>

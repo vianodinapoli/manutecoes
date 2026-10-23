@@ -14,6 +14,7 @@ class Discharge extends Model
         'operation_id',
         'data', 'motorista', 'matricula', 'transportadora',
         'numero_guia', 'hora_saida_porto', 'registado_por',
+        'tipo_atrelado',
         // colunas legado (preenchidas apenas para produtos "Alta" / "Baixa")
         'sacos_alta', 'peso_saco_alta', 'total_alta',
         'sacos_baixa', 'peso_saco_baixa', 'total_baixa',
@@ -45,6 +46,18 @@ class Discharge extends Model
             $arrival   = \Carbon\Carbon::createFromTimeString($this->hora_chegada_balanca);
             $this->tempo_transporte = $departure->diffInMinutes($arrival);
         }
+    }
+
+    /** Limite de sacos de um atrelado normal. Acima disto é "link". */
+    public const LIMITE_ATRELADO_NORMAL = 24;
+
+    /** O tipo escolhido não bate certo com o nº de sacos (aviso, não bloqueia). */
+    public function atreladoInconsistente(): bool
+    {
+        $sacos = (int) $this->total_sacos;
+
+        return ($this->tipo_atrelado === 'normal' && $sacos > self::LIMITE_ATRELADO_NORMAL)
+            || ($this->tipo_atrelado === 'link' && $sacos > 0 && $sacos <= self::LIMITE_ATRELADO_NORMAL);
     }
 
     /** Divergência: algum produto confirmado na balança difere do registado no porto. */

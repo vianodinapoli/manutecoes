@@ -80,6 +80,9 @@
            cursor:pointer;border:1px solid #dee2e6;display:inline-flex;align-items:center;gap:5px}
     .btn-fa{background:#0d6efd;color:#fff;border-color:#0d6efd}.btn-fa:hover{background:#0b5ed7}
     .btn-fc{background:#f8f9fa;color:#495057}.btn-fc:hover{background:#e9ecef}
+    .btn-fr{background:#198754;color:#fff;border-color:#198754}.btn-fr:hover{background:#146c43}
+    .atr-chip{display:inline-block;font-size:.55rem;font-weight:700;letter-spacing:.5px;padding:1px 6px;border-radius:3px;margin:2px 0 0 4px}
+    .atr-chip.normal{background:#e8f0fe;color:#1a56db}.atr-chip.link{background:#fde8e8;color:#dc3545}
     .active-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
     .ftag{display:inline-flex;align-items:center;gap:4px;background:#e7f1ff;color:#0d6efd;
           border:1px solid #b6d0ff;border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:500}
@@ -368,9 +371,22 @@
                     <option value="nao">Sem divergência</option>
                 </select>
             </div>
-            <div class="d-flex gap-1 align-items-end">
+            <div class="fi">
+                <label>Atrelado</label>
+                <select id="fAtrel">
+                    <option value="">Todos</option>
+                    <option value="normal">Normal (até 24)</option>
+                    <option value="link">Link (mais de 24)</option>
+                    <option value="nd">Não definido</option>
+                </select>
+            </div>
+            <div class="d-flex gap-1 align-items-end flex-wrap">
                 <button class="btn-f btn-fa" onclick="applyFilters()"><i class="bi bi-search"></i>Filtrar</button>
                 <button class="btn-f btn-fc" onclick="clearFilters()"><i class="bi bi-x"></i>Limpar</button>
+                <button class="btn-f btn-fr" onclick="gerarRelatorioCargas()"
+                        title="Relatório de cargas por transportadora e tipo de atrelado, com os filtros aplicados">
+                    <i class="bi bi-file-earmark-bar-graph"></i>Gerar relatório
+                </button>
             </div>
         </div>
         <div class="active-tags" id="activeTags"></div>
@@ -419,7 +435,8 @@
                     data-transportadora="{{ strtolower($d->transportadora) }}"
                     data-data="{{ $d->data->format('Y-m-d') }}"
                     data-produtos="{{ $produtos }}"
-                    data-divergencia="{{ $div ? 'sim' : 'nao' }}">
+                    data-divergencia="{{ $div ? 'sim' : 'nao' }}"
+                    data-atrelado="{{ $d->tipo_atrelado ?: 'nd' }}">
 
                     {{-- Nº / Data --}}
                     <td>
@@ -436,6 +453,12 @@
                     <td>
                         <div class="motorista-name">{{ $d->motorista }}</div>
                         <span class="mat-badge">{{ $d->matricula }}</span>
+                        @if($d->tipo_atrelado)
+                            <span class="atr-chip {{ $d->tipo_atrelado }}"
+                                  title="{{ $d->atreladoInconsistente() ? 'Não bate com o nº de sacos' : 'Atrelado ' . $d->tipo_atrelado }}">
+                                {{ strtoupper($d->tipo_atrelado) }}@if($d->atreladoInconsistente()) ⚠@endif
+                            </span>
+                        @endif
                     </td>
 
                     {{-- Transportadora --}}
@@ -923,40 +946,71 @@ function calcNetWeight(){
 }
 
 /* ── Filtros ── */
+const RELATORIO_CARGAS_URL = @json(route('operations.report.cargas', $operation));
+let filtros = { de:'', ate:'', tr:'', st:'', tc:'', dv:'', at:'' };
+
+function lerFiltros(){
+    return {
+        de:$('#fDe').val(), ate:$('#fAte').val(), tr:$('#fTrans').val(), st:$('#fStatus').val(),
+        tc:$('#fCarga').val(), dv:$('#fDiv').val(), at:$('#fAtrel').val()
+    };
+}
+
+// Filtro aplicado a TODAS as linhas da tabela (não só às da página visível)
+$.fn.dataTable.ext.search.push(function(settings, data, dataIndex){
+    if (settings.nTable.id !== 'dTable') return true;
+    const f = filtros;
+    const r = $(settings.aoData[dataIndex].nTr);
+    const prods = (r.attr('data-produtos') || '').split('|').filter(Boolean);
+
+    if (f.de  && r.attr('data-data') < f.de)  return false;
+    if (f.ate && r.attr('data-data') > f.ate) return false;
+    if (f.tr  && !(r.attr('data-transportadora') || '').includes(f.tr.toLowerCase())) return false;
+    if (f.st  && r.attr('data-status') !== f.st) return false;
+    if (f.tc === 'misto' && prods.length < 2) return false;
+    if (f.tc && f.tc !== 'misto' && !(prods.length === 1 && prods[0] === f.tc)) return false;
+    if (f.dv  && r.attr('data-divergencia') !== f.dv) return false;
+    if (f.at  && r.attr('data-atrelado') !== f.at) return false;
+    return true;
+});
+
 function applyFilters(){
-    const df=$('#fDe').val(), dt=$('#fAte').val(),
-          tr=$('#fTrans').val().toLowerCase(), st=$('#fStatus').val(),
-          tc=$('#fCarga').val(), dv=$('#fDiv').val();
-    $('#dTable tbody tr').each(function(){
-        const r=$(this);
-        const prods=(r.attr('data-produtos')||'').split('|').filter(Boolean);
-        let show=true;
-        if(df && r.data('data')<df) show=false;
-        if(dt && r.data('data')>dt) show=false;
-        if(tr && !r.data('transportadora').includes(tr)) show=false;
-        if(st && r.data('status')!==st) show=false;
-        if(tc==='misto' && prods.length<2) show=false;
-        if(tc && tc!=='misto' && !(prods.length===1 && prods[0]===tc)) show=false;
-        if(dv && r.attr('data-divergencia')!==dv) show=false;
-        r.toggle(show);
-    });
-    renderTags(df,dt,tr,st,tc,dv); dtTable.draw();
+    filtros = lerFiltros();
+    renderTags();
+    dtTable.draw();
 }
 function clearFilters(){
     $('#fDe,#fAte').val('');
-    $('#fTrans,#fStatus,#fCarga,#fDiv').val('');
-    $('#dTable tbody tr').show(); $('#activeTags').html(''); dtTable.draw();
+    $('#fTrans,#fStatus,#fCarga,#fDiv,#fAtrel').val('');
+    filtros = { de:'', ate:'', tr:'', st:'', tc:'', dv:'', at:'' };
+    $('#activeTags').html('');
+    dtTable.draw();
 }
-function renderTags(df,dt,tr,st,tc,dv){
-    const m={df,dt,tr,st,tc,dv};
-    const l={df:`De: ${df}`,dt:`Até: ${dt}`,tr:`Transportadora: ${tr}`,st:`Estado: ${st}`,tc:`Carga: ${tc}`,dv:`Divergência: ${dv}`};
-    let html='';
-    for(const [k,v] of Object.entries(m)){ if(v) html+=`<span class="ftag">${l[k]} <span class="rm" onclick="removeTag('${k}')">✕</span></span>`; }
+function renderTags(){
+    const f = filtros;
+    const l = {
+        de:`De: ${f.de}`, ate:`Até: ${f.ate}`, tr:`Transportadora: ${f.tr}`, st:`Estado: ${f.st}`,
+        tc:`Carga: ${f.tc}`, dv:`Divergência: ${f.dv}`, at:`Atrelado: ${f.at === 'nd' ? 'não definido' : f.at}`
+    };
+    let html = '';
+    for (const [k, v] of Object.entries(f)) {
+        if (v) html += `<span class="ftag">${l[k]} <span class="rm" onclick="removeTag('${k}')">✕</span></span>`;
+    }
     $('#activeTags').html(html);
 }
 function removeTag(k){
-    const m={df:'fDe',dt:'fAte',tr:'fTrans',st:'fStatus',tc:'fCarga',dv:'fDiv'};
-    $(`#${m[k]}`).val(''); applyFilters();
+    const m = { de:'fDe', ate:'fAte', tr:'fTrans', st:'fStatus', tc:'fCarga', dv:'fDiv', at:'fAtrel' };
+    $(`#${m[k]}`).val('');
+    applyFilters();
+}
+
+// Relatório de cargas por transportadora / atrelado, com os filtros em uso
+function gerarRelatorioCargas(){
+    const f = lerFiltros();
+    const p = new URLSearchParams();
+    Object.entries(f).forEach(([k, v]) => { if (v) p.set(k, v); });
+    const qs = p.toString();
+    window.open(RELATORIO_CARGAS_URL + (qs ? '?' + qs : ''), '_blank');
 }
 
 /* ── Leitura da balança (porta serial) ── */

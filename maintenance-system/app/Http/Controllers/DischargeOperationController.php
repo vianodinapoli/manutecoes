@@ -170,6 +170,8 @@ class DischargeOperationController extends Controller
                     'extra'        => in_array(mb_strtolower($nome), $extras, true),
                     'camioes'      => $g->count(),
                     'confirmados'  => $g->where('status', 'confirmed')->count(),
+                    'normal'       => $g->where('tipo_atrelado', 'normal')->count(),
+                    'link'         => $g->where('tipo_atrelado', 'link')->count(),
                     'sacos'        => (int) $g->sum('total_sacos'),
                     'estimado_kg'  => (float) $g->sum('peso_total_estimado'),
                     'liquido_kg'   => (float) $g->where('status', 'confirmed')->sum('peso_liquido'),
@@ -212,6 +214,108 @@ class DischargeOperationController extends Controller
         return view('operations.report', compact(
             'operation', 'discharges', 'resumo', 'porProduto', 'porTransp', 'semCamioes', 'historico'
         ));
+    }
+
+    /**
+     * Relatório de cargas por transportadora e tipo de atrelado (normal / link).
+     * Respeita os filtros enviados pela página de descargas (de, ate, tr, st, tc, dv, at).
+     */
+    public function reportCargas(Request $request, DischargeOperation $operation)
+    {
+        if ($operation->isPlanned()) {
+            return redirect()->route('operations.show', $operation)
+                ->withErrors(['archive' => 'A operação ainda não foi iniciada: não há dados para o relatório.']);
+        }
+
+        $f = $request->only(['de', 'ate', 'tr', 'st', 'tc', 'dv', 'at']);
+
+        $q = $operation->discharges()->with(['items.operationItem', 'registeredBy']);
+
+        if (! empty($f['de']))  { $q->whereDate('data', '>=', $f['de']); }
+        if (! empty($f['ate'])) { $q->whereDate('data', '<=', $f['ate']); }
+        if (! empty($f['tr']))  { $q->whereRaw('LOWER(transportadora) LIKE ?', ['%' . mb_strtolower($f['tr']) . '%']); }
+        if (! empty($f['st']))  { $q->where('status', $f['st']); }
+
+        if (($f['at'] ?? '') === 'nd') {
+            $q->whereNull('tipo_atrelado');
+        } elseif (in_array($f['at'] ?? '', ['normal', 'link'], true)) {
+            $q->where('tipo_atrelado', $f['at']);
+        }
+
+        $rows = $q->orderBy('data')->orderBy('id')->get();
+
+        // Filtros que dependem dos itens do camião
+        if (! empty($f['tc'])) {
+            $carga = $f['tc'];
+            $rows = $rows->filter(function ($d) use ($carga) {
+                $prods = $d->items->map(fn ($i) => mb_strtolower($i->operationItem->nome))->unique()->values();
+                return $carga === 'misto'
+                    ? $prods->count() > 1
+                    : ($prods->count() === 1 && $prods[0] === $carga);
+            })->values();
+        }
+        if (($f['dv'] ?? '') === 'sim') { $rows = $rows->filter(fn ($d) => $d->hasDivergence())->values(); }
+        if (($f['dv'] ?? '') === 'nao') { $rows = $rows->reject(fn ($d) => $d->hasDivergence())->values(); }
+
+        $extras = $operation->transportadorasExtra();
+
+        // ── Por transportadora ──
+        $porTransp = $rows
+            ->groupBy(fn ($d) => trim($d->transportadora))
+            ->map(function ($g, $nome) use ($extras) {
+                $cargas = $g->count();
+                $link   = $g->where('tipo_atrelado', 'link')->count();
+                return [
+                    'nome'           => $nome,
+                    'extra'          => in_array(mb_strtolower($nome), $extras, true),
+                    'cargas'         => $cargas,
+                    'normal'         => $g->where('tipo_atrelado', 'normal')->count(),
+                    'link'           => $link,
+                    'nd'             => $g->whereNull('tipo_atrelado')->count(),
+                    'pct_link'       => $cargas ? round($link / $cargas * 100) : 0,
+                    'sacos'          => (int) $g->sum('total_sacos'),
+                    'media_sacos'    => $cargas ? round($g->avg('total_sacos'), 1) : 0,
+                    'estimado_kg'    => (float) $g->sum('peso_total_estimado'),
+                    'liquido_kg'     => (float) $g->where('status', 'confirmed')->sum('peso_liquido'),
+                    'inconsistentes' => $g->filter(fn ($d) => $d->atreladoInconsistente())->count(),
+                ];
+            })
+            ->sortByDesc('cargas')
+            ->values();
+
+        $resumo = [
+            'cargas'         => $rows->count(),
+            'normal'         => $rows->where('tipo_atrelado', 'normal')->count(),
+            'link'           => $rows->where('tipo_atrelado', 'link')->count(),
+            'nd'             => $rows->whereNull('tipo_atrelado')->count(),
+            'transportadoras'=> $porTransp->count(),
+            'inconsistentes' => $rows->filter(fn ($d) => $d->atreladoInconsistente())->count(),
+            'sacos'          => (int) $rows->sum('total_sacos'),
+            'estimado_kg'    => (float) $rows->sum('peso_total_estimado'),
+            'liquido_kg'     => (float) $rows->where('status', 'confirmed')->sum('peso_liquido'),
+        ];
+
+        // ── Critérios aplicados (para constar no relatório) ──
+        $estados = ['in_transit' => 'Em trânsito', 'confirmed' => 'Confirmado', 'pending' => 'Pendente'];
+        $criterios = [];
+        if (! empty($f['de']))  { $criterios[] = 'De: ' . Carbon::parse($f['de'])->format('d/m/Y'); }
+        if (! empty($f['ate'])) { $criterios[] = 'Até: ' . Carbon::parse($f['ate'])->format('d/m/Y'); }
+        if (! empty($f['tr']))  { $criterios[] = 'Transportadora: ' . $f['tr']; }
+        if (! empty($f['st']))  { $criterios[] = 'Estado: ' . ($estados[$f['st']] ?? $f['st']); }
+        if (! empty($f['tc']))  { $criterios[] = 'Carga: ' . ($f['tc'] === 'misto' ? 'mista' : 'só ' . $f['tc']); }
+        if (! empty($f['dv']))  { $criterios[] = 'Divergência: ' . ($f['dv'] === 'sim' ? 'com' : 'sem'); }
+        if (! empty($f['at']))  { $criterios[] = 'Atrelado: ' . (['normal' => 'normal', 'link' => 'link', 'nd' => 'não definido'][$f['at']] ?? $f['at']); }
+
+        $limite = \App\Models\Discharge::LIMITE_ATRELADO_NORMAL;
+
+        return view('operations.report-cargas', [
+            'operation'  => $operation,
+            'discharges' => $rows,
+            'porTransp'  => $porTransp,
+            'resumo'     => $resumo,
+            'criterios'  => $criterios,
+            'limite'     => $limite,
+        ]);
     }
 
     public function update(Request $request, DischargeOperation $operation)
