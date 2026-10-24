@@ -626,9 +626,10 @@
                 $camioesPendentes = \App\Models\Discharge::whereIn('status', ['pending', 'in_transit'])
                     ->whereHas('operation', fn ($q) => $q->where('status', 'active'))
                     ->count();
+                $temSaidas = \Illuminate\Support\Facades\Route::has('saidas.index');
             @endphp
             <div class="sb-dropdown"
-                 x-data="{ open: {{ request()->routeIs('operations.*', 'discharges.*') ? 'true' : 'false' }} }">
+                 x-data="{ open: {{ request()->routeIs('operations.*', 'discharges.*', 'saidas.*') ? 'true' : 'false' }} }">
                 <div class="sb-dropdown-trigger" :class="open ? 'open' : ''" @click="open = !open" style="position:relative;">
                     <i class="fas fa-ship ni-icon"></i>
                     <span class="ni-text">Descarga / Navio</span>
@@ -647,6 +648,13 @@
                             <span class="ni-badge" title="Camiões por confirmar na balança">{{ $camioesPendentes }}</span>
                         @endif
                     </x-nav-link>
+                    @if($temSaidas)
+                    <x-nav-link :href="route('saidas.index')"
+                        :active="request()->routeIs('saidas.*')" class="nav-item">
+                        <i class="fas fa-box-open ni-icon"></i>
+                        <span class="ni-text">Saída de carga</span>
+                    </x-nav-link>
+                    @endif
                     <x-nav-link :href="route('operations.archive')"
                         :active="request()->routeIs('operations.archive')" class="nav-item">
                         <i class="fas fa-archive ni-icon"></i>
@@ -659,6 +667,9 @@
                         <i class="fas fa-anchor"></i> Operações
                         @if($camioesPendentes > 0)<span class="ni-badge">{{ $camioesPendentes }}</span>@endif
                     </a>
+                    @if($temSaidas)
+                    <a href="{{ route('saidas.index') }}"><i class="fas fa-box-open"></i> Saída de carga</a>
+                    @endif
                     <a href="{{ route('operations.archive') }}"><i class="fas fa-archive"></i> Arquivo</a>
                 </div>
             </div>

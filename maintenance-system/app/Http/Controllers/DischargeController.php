@@ -43,6 +43,15 @@ class DischargeController extends Controller
             'tipo_atrelado'    => 'required|in:normal,link',
             'items'            => 'required|array',
             'items.*'          => 'nullable|numeric|min:0',
+            'assinatura'       => ['required', 'string', 'max:700000', function ($attr, $value, $fail) {
+                $prefixo = 'data:image/png;base64,';
+                $bin = str_starts_with($value, $prefixo) ? base64_decode(substr($value, strlen($prefixo)), true) : false;
+                if ($bin === false || ! str_starts_with($bin, "\x89PNG")) {
+                    $fail('A assinatura do motorista é inválida. Peça-lhe para assinar de novo.');
+                }
+            }],
+        ], [
+            'assinatura.required' => 'A assinatura do motorista é obrigatória.',
         ]);
 
         $operation = DischargeOperation::findOrFail($request->operation_id);
@@ -67,6 +76,12 @@ class DischargeController extends Controller
             ] + $this->totais($items, $qtys));
 
             $this->gravarItens($discharge, $qtys);
+
+            $discharge->signature()->create([
+                'nome'         => $request->motorista,
+                'imagem'       => $request->assinatura,
+                'assinado_por' => auth()->id(),
+            ]);
         });
 
         return redirect()->route('operations.show', $operation)
@@ -79,7 +94,7 @@ class DischargeController extends Controller
             return redirect()->route('operations.show', $discharge->operation_id);
         }
 
-        $discharge->load(['items.operationItem', 'operation', 'registeredBy', 'confirmedBy']);
+        $discharge->load(['items.operationItem', 'operation', 'registeredBy', 'confirmedBy', 'signature']);
 
         return view('discharges.show', compact('discharge'));
     }
@@ -138,55 +153,120 @@ class DischargeController extends Controller
             ->with('success', '✅ Descarga atualizada com sucesso!');
     }
 
+    /**
+     * Pesagem na balança, em duas fases:
+     *   1. o camião chega cheio  → regista-se o peso cheio (bruto) e as quantidades
+     *   2. o camião volta vazio  → regista-se o peso vazio (tara)
+     * Os pesos podem ser registados em qualquer ordem e em submissões separadas.
+     * Só quando existem os dois é que o estado passa a "confirmed".
+     * Enquanto falta um, o estado é "weighing" (A pesar).
+     */
     public function confirm(Request $request, Discharge $discharge)
     {
         $discharge->load('items.operationItem', 'operation');
         abort_if($discharge->operation && $discharge->operation->isArchived(), 403, 'Operação arquivada.');
 
+        // as quantidades por produto só são obrigatórias na primeira passagem
+        $jaTemQtd = $discharge->items->isNotEmpty()
+            && $discharge->items->every(fn ($i) => $i->quantidade_confirmada !== null);
+
         $request->validate([
-            'hora_chegada_balanca' => 'required|date_format:H:i',
-            'peso_bruto'           => 'required|numeric|min:0',
-            'tara'                 => 'required|numeric|min:0',
-            'confirmados'          => 'required|array',
+            'hora_chegada_balanca' => [$discharge->hora_chegada_balanca ? 'nullable' : 'required', 'date_format:H:i,H:i:s'],
+            'peso_bruto'           => 'nullable|numeric|min:0',
+            'tara'                 => 'nullable|numeric|min:0',
+            'confirmados'          => [$jaTemQtd ? 'nullable' : 'required', 'array'],
             'confirmados.*'        => 'required|numeric|min:0',
             'observacoes'          => 'nullable|string|max:500',
         ]);
 
-        $sacosConfirmados = 0;
-        $divergencia      = false;
+        // pesos finais = o que veio agora, ou o que já estava gravado
+        $brutoActual = $discharge->peso_bruto !== null ? (float) $discharge->peso_bruto : null;
+        $taraActual  = $discharge->tara !== null ? (float) $discharge->tara : null;
 
-        DB::transaction(function () use ($request, $discharge, &$sacosConfirmados, &$divergencia) {
-            foreach ($discharge->items as $item) {
-                $q = (float) $request->input("confirmados.{$item->operation_item_id}", 0);
+        $bruto = $request->filled('peso_bruto') ? (float) $request->peso_bruto : $brutoActual;
+        $tara  = $request->filled('tara')       ? (float) $request->tara       : $taraActual;
 
-                $item->update(['quantidade_confirmada' => $q]);
+        if ($bruto === null && $tara === null) {
+            throw ValidationException::withMessages([
+                'peso_bruto' => 'Registe pelo menos um peso (cheio ou vazio).',
+            ]);
+        }
 
-                if ($item->operationItem->unidade === 'saco') {
-                    $sacosConfirmados += (int) $q;
+        if ($bruto !== null && $tara !== null && $bruto <= $tara) {
+            throw ValidationException::withMessages([
+                'peso_bruto' => 'O peso cheio tem de ser maior que o peso vazio.',
+            ]);
+        }
+
+        DB::transaction(function () use ($request, $discharge, $bruto, $tara, $brutoActual, $taraActual) {
+            // Quantidades confirmadas por produto (primeira passagem, ou correcção)
+            if ($request->filled('confirmados')) {
+                $sacosConfirmados = 0;
+
+                foreach ($discharge->items as $item) {
+                    $q = (float) $request->input("confirmados.{$item->operation_item_id}", 0);
+
+                    $item->update(['quantidade_confirmada' => $q]);
+
+                    if ($item->operationItem->unidade === 'saco') {
+                        $sacosConfirmados += (int) $q;
+                    }
                 }
-                if (abs($q - (float) $item->quantidade) > 0.0005) {
-                    $divergencia = true;
-                }
+
+                $discharge->sacos_confirmados = $sacosConfirmados;
             }
 
-            $discharge->hora_chegada_balanca = $request->hora_chegada_balanca;
-            $discharge->peso_bruto           = $request->peso_bruto;
-            $discharge->tara                 = $request->tara;
-            $discharge->peso_liquido         = $request->peso_bruto - $request->tara;
-            $discharge->sacos_confirmados    = $sacosConfirmados;
-            $discharge->observacoes          = $request->observacoes;
-            $discharge->confirmado_por       = auth()->id();
-            $discharge->status               = 'confirmed';
+            if ($request->filled('hora_chegada_balanca')) {
+                $discharge->hora_chegada_balanca = $request->hora_chegada_balanca;
+            }
+
+            // só carimba a hora da pesagem quando o peso é novo ou foi alterado
+            if ($request->filled('peso_bruto') && $bruto !== $brutoActual) {
+                $discharge->peso_bruto_em = now();
+            }
+            if ($request->filled('tara') && $tara !== $taraActual) {
+                $discharge->tara_em = now();
+            }
+
+            $completo = $bruto !== null && $tara !== null;
+
+            $discharge->peso_bruto     = $bruto;
+            $discharge->tara           = $tara;
+            $discharge->peso_liquido   = $completo ? $bruto - $tara : null;
+            $discharge->observacoes    = $request->observacoes;
+            $discharge->status         = $completo ? 'confirmed' : 'weighing';
+            $discharge->confirmado_por = $completo ? auth()->id() : null;
 
             $discharge->calculateTransportTime();
             $discharge->save();
         });
 
-        $message = $divergencia
-            ? '⚠️ Confirmado com divergência entre o registado no porto e a balança!'
-            : '✅ Descarga confirmada com sucesso!';
+        // recarrega para avaliar a divergência com o que ficou gravado
+        $discharge->refresh()->load('items');
+        $divergencia = $discharge->hasDivergence();
 
-        return redirect()->route('operations.show', $discharge->operation_id)->with('success', $message);
+        $message = match (true) {
+            $discharge->status === 'weighing' && $discharge->peso_bruto !== null
+                => '⏳ Peso cheio registado. Falta pesar o camião vazio.' . ($divergencia ? ' ⚠️ Há divergência nas quantidades.' : ''),
+            $discharge->status === 'weighing'
+                => '⏳ Peso vazio registado. Falta pesar o camião cheio.' . ($divergencia ? ' ⚠️ Há divergência nas quantidades.' : ''),
+            $divergencia
+                => '⚠️ Confirmado com divergência entre o registado no porto e a balança!',
+            default
+                => '✅ Descarga confirmada com sucesso!',
+        };
+
+        return redirect()->route('operations.show', $discharge->operation_id)
+            ->with('success', $message)
+            ->with('ticket_url', route('discharges.ticket', $discharge));
+    }
+
+    /** Ticket de confirmação (imprimível), com a assinatura do motorista. */
+    public function ticket(Discharge $discharge)
+    {
+        $discharge->load(['operation', 'items.operationItem', 'signature', 'registeredBy', 'confirmedBy']);
+
+        return view('discharges.ticket', compact('discharge'));
     }
 
     public function destroy(Discharge $discharge)

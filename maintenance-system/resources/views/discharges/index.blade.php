@@ -63,6 +63,7 @@
     .kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:10px 0 0 10px}
     .kpi.teal::before{background:#0dcaf0}.kpi.green::before{background:#198754}
     .kpi.purple::before{background:#6f42c1}.kpi.gold::before{background:#fd7e14}
+    .kpi.amber::before{background:#ffc107}
     .kpi-lbl{font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#adb5bd;margin-bottom:2px}
     .kpi-val{font-size:1.35rem;font-weight:800;line-height:1.1;color:#1e293b}
     .kpi-sub{font-size:.62rem;color:#adb5bd;margin-top:1px}
@@ -118,6 +119,8 @@
                  background:#198754;color:#fff;border:none;white-space:nowrap;
                  display:inline-flex;align-items:center;gap:3px}
     .btn-balanca:hover{background:#146c43;color:#fff}
+    .btn-balanca.pesar{background:#fd7e14}
+    .btn-balanca.pesar:hover{background:#d96a0c}
 
     /* ── Motorista block ── */
     .motorista-name{font-size:.78rem;font-weight:600;color:#1e293b;line-height:1.2}
@@ -134,6 +137,12 @@
 
     .modal-loading{display:flex;align-items:center;justify-content:center;
                    height:260px;flex-direction:column;gap:10px;color:#adb5bd}
+
+    /* ── Progresso da pesagem (modal da balança) ── */
+    #pwProg{border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;background:#f8fafc}
+    #pwBarra{height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin:8px 0}
+    #pwFill{height:100%;width:0;border-radius:6px;transition:width .25s,background .25s}
+    .pw-chip{font-size:.72rem;font-weight:600;border-radius:20px;padding:2px 12px;border:1px solid #cbd5e1}
 
 </style>
 
@@ -208,12 +217,19 @@
                     box-shadow:0 8px 24px rgba(25,135,84,.3);">
             <div class="d-flex align-items-center gap-2 px-3 py-2">
                 <i class="bi bi-check-circle-fill text-white" style="font-size:1.1rem;"></i>
-                <div style="font-size:.75rem;color:rgba(255,255,255,.95);">{{ session('success') }}</div>
+                <div style="font-size:.75rem;color:rgba(255,255,255,.95);">{{ session('success') }}
+                    @if(session('ticket_url'))
+                        <a href="{{ session('ticket_url') }}" target="_blank"
+                           style="color:#fff;font-weight:700;text-decoration:underline;margin-left:6px;white-space:nowrap;">
+                            <i class="bi bi-receipt"></i> Imprimir ticket
+                        </a>
+                    @endif
+                </div>
                 <button type="button" class="btn-close btn-close-white opacity-75 ms-auto"
                         data-bs-dismiss="toast" style="font-size:.5rem;"></button>
             </div>
             <div style="height:2px;background:rgba(255,255,255,.15);">
-                <div id="toastProg" style="height:100%;width:100%;background:rgba(255,255,255,.5);transition:width 3.5s linear;"></div>
+                <div id="toastProg" style="height:100%;width:100%;background:rgba(255,255,255,.5);transition:width {{ session('ticket_url') ? '12s' : '3.5s' }} linear;"></div>
             </div>
         </div>
     </div>
@@ -311,6 +327,11 @@
             <div class="kpi-val" style="color:#0dcaf0;">{{ $discharges->where('status','in_transit')->count() }}</div>
             <div class="kpi-sub">camiões</div>
         </div>
+        <div class="kpi amber">
+            <div class="kpi-lbl">A Pesar</div>
+            <div class="kpi-val" style="color:#d39e00;">{{ $discharges->where('status','weighing')->count() }}</div>
+            <div class="kpi-sub">falta 1 peso</div>
+        </div>
         <div class="kpi green">
             <div class="kpi-lbl">Confirmados</div>
             <div class="kpi-val" style="color:#198754;">{{ $discharges->where('status','confirmed')->count() }}</div>
@@ -349,6 +370,7 @@
                 <select id="fStatus">
                     <option value="">Todos</option>
                     <option value="in_transit">Em Trânsito</option>
+                    <option value="weighing">A pesar</option>
                     <option value="confirmed">Confirmado</option>
                     <option value="pending">Pendente</option>
                 </select>
@@ -406,7 +428,7 @@
                         <th class="text-center" style="width:100px">PESO</th>
                         <th class="text-center" style="width:70px">TEMPO</th>
                         <th class="text-center" style="width:100px">ESTADO</th>
-                        <th class="text-center" style="width:120px">AÇÕES</th>
+                        <th class="text-center" style="width:140px">AÇÕES</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -415,11 +437,12 @@
                     $stClass = match($d->status){
                         'confirmed'  => 'bg-success bg-opacity-10 text-success',
                         'in_transit' => 'bg-info bg-opacity-10 text-info',
-                        default      => 'bg-warning bg-opacity-10 text-warning',
+                        default      => 'bg-warning bg-opacity-10 text-warning',   // weighing (A pesar) e pending
                     };
                     $stIcon = match($d->status){
                         'confirmed'  => 'check-circle-fill',
                         'in_transit' => 'truck',
+                        'weighing'   => 'speedometer2',
                         default      => 'hourglass-split',
                     };
                     $div = $d->hasDivergence();
@@ -429,7 +452,13 @@
                         'nome'       => $i->operationItem->nome,
                         'unidade'    => $i->operationItem->unidade,
                         'quantidade' => (float) $i->quantidade,
+                        'confirmada' => $i->quantidade_confirmada !== null ? (float) $i->quantidade_confirmada : null,
                     ])->values();
+                    $labelBalanca = match(true){
+                        $d->status === 'weighing' && $d->peso_bruto !== null => 'Pesar vazio',
+                        $d->status === 'weighing'                           => 'Pesar cheio',
+                        default                                             => 'Balança',
+                    };
                 @endphp
                 <tr data-status="{{ $d->status }}"
                     data-transportadora="{{ strtolower($d->transportadora) }}"
@@ -453,6 +482,9 @@
                     <td>
                         <div class="motorista-name">{{ $d->motorista }}</div>
                         <span class="mat-badge">{{ $d->matricula }}</span>
+                        @if($d->assinado ?? false)
+                            <i class="bi bi-pen-fill" style="color:#198754;font-size:.6rem;margin-left:4px;" title="Assinado pelo motorista"></i>
+                        @endif
                         @if($d->tipo_atrelado)
                             <span class="atr-chip {{ $d->tipo_atrelado }}"
                                   title="{{ $d->atreladoInconsistente() ? 'Não bate com o nº de sacos' : 'Atrelado ' . $d->tipo_atrelado }}">
@@ -494,8 +526,12 @@
                     {{-- Peso --}}
                     <td class="text-center">
                         <div class="fw-bold" style="font-size:.75rem;">{{ number_format($d->peso_total_estimado, 0, ',', '.') }} kg</div>
-                        @if($d->peso_liquido)
-                        <div style="font-size:.65rem;color:#198754;">Líq: {{ number_format($d->peso_liquido,0,',','.') }}</div>
+                        @if($d->status === 'weighing')
+                            <div style="font-size:.65rem;color:#b35c00;">
+                                {{ $d->peso_bruto !== null ? 'Cheio: ' . number_format($d->peso_bruto, 0, ',', '.') : 'Vazio: ' . number_format($d->tara, 0, ',', '.') }}
+                            </div>
+                        @elseif($d->peso_liquido)
+                            <div style="font-size:.65rem;color:#198754;">Líq: {{ number_format($d->peso_liquido,0,',','.') }}</div>
                         @endif
                     </td>
 
@@ -519,14 +555,25 @@
                     {{-- Ações --}}
                     <td class="text-center">
                         <div class="d-flex justify-content-center align-items-center gap-1">
-                            @if(!$readonly && in_array($d->status, ['pending','in_transit']))
-                            <button class="btn-balanca"
+                            @if(!$readonly && in_array($d->status, ['pending','in_transit','weighing']))
+                            <button class="btn-balanca {{ $d->status === 'weighing' ? 'pesar' : '' }}"
                                     data-bs-toggle="modal" data-bs-target="#modalConfirm"
                                     data-id="{{ $d->id }}" data-guia="{{ $d->numero_guia }}"
                                     data-itens='@json($itensBalanca)'
-                                    data-saida="{{ $d->hora_saida_porto }}">
-                                <i class="bi bi-speedometer2"></i>Balança
+                                    data-saida="{{ $d->hora_saida_porto }}"
+                                    data-hora="{{ $d->hora_chegada_balanca }}"
+                                    data-bruto="{{ $d->peso_bruto }}"
+                                    data-tara="{{ $d->tara }}"
+                                    data-obs="{{ $d->observacoes }}">
+                                <i class="bi bi-speedometer2"></i>{{ $labelBalanca }}
                             </button>
+                            @endif
+                            @if(in_array($d->status, ['weighing','confirmed']))
+                            <a href="{{ route('discharges.ticket', $d->id) }}" target="_blank"
+                               class="ab {{ $d->status === 'confirmed' ? 'text-success border-success' : 'text-warning border-warning' }} border-opacity-25"
+                               title="{{ $d->status === 'confirmed' ? 'Ticket' : 'Ticket provisório' }}">
+                                <i class="bi bi-receipt"></i>
+                            </a>
                             @endif
                             <button type="button"
                                 onclick="abrirModal('{{ route('discharges.show', $d->id) }}', 'Descarga #{{ $d->id }}', 'dark')"
@@ -597,6 +644,19 @@
                 @csrf @method('PATCH')
                 <div class="modal-body p-4">
 
+                    {{-- Progresso da pesagem (2 passos: cheio e vazio, em qualquer ordem) --}}
+                    <div id="pwProg" class="mb-3">
+                        <div class="d-flex justify-content-between align-items-baseline flex-wrap gap-1">
+                            <strong id="pwTitulo" style="font-size:.95rem;">Passo 0 de 2</strong>
+                            <span id="pwTexto" class="small text-muted"></span>
+                        </div>
+                        <div id="pwBarra"><div id="pwFill"></div></div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="pw-chip" id="pwChipB"></span>
+                            <span class="pw-chip" id="pwChipT"></span>
+                        </div>
+                    </div>
+
                     {{-- Info da guia --}}
                     <div class="alert py-2 mb-3 border-0"
                          style="border-radius:8px;background:#e8f4fd;color:#1a56db;font-size:.78rem;">
@@ -625,35 +685,41 @@
                             </div>
                         </div>
 
-                        {{-- Peso Bruto com botão de leitura --}}
+                        {{-- Peso cheio (bruto) com botão de leitura --}}
                         <div class="col-12">
                             <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
-                                Peso Bruto (kg)
+                                Peso Cheio / Bruto (kg) <span class="fw-normal">· camião a chegar com a carga</span>
                             </label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="peso_bruto" id="peso_bruto"
                                        class="form-control" style="border-radius:7px 0 0 7px;"
                                        step="0.01" min="0" placeholder="0.00"
-                                       oninput="calcNetWeight()" required>
+                                       oninput="calcNetWeight()">
                                 <button type="button" id="btnLerBalanca"
-                                        onclick="lerBalancaUI()"
+                                        onclick="lerBalancaUI('peso_bruto')"
                                         class="btn btn-sm btn-outline-success fw-bold"
                                         style="border-radius:0 7px 7px 0;font-size:.72rem;white-space:nowrap;padding:0 12px;">
                                     <i class="bi bi-usb-symbol me-1"></i>Ler Balança
                                 </button>
                             </div>
-                            {{-- Status da leitura --}}
-                            <div id="balanca-status" class="mt-1" style="font-size:.68rem;min-height:16px;"></div>
                         </div>
 
-                        {{-- Tara --}}
+                        {{-- Peso vazio (tara) com botão de leitura --}}
                         <div class="col-md-6">
                             <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
-                                Tara (kg)
+                                Peso Vazio / Tara (kg) <span class="fw-normal">· ao voltar</span>
                             </label>
-                            <input type="number" name="tara" id="tara"
-                                   class="form-control form-control-sm" style="border-radius:7px;"
-                                   step="0.01" min="0" oninput="calcNetWeight()" required>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="tara" id="tara"
+                                       class="form-control" style="border-radius:7px 0 0 7px;"
+                                       step="0.01" min="0" placeholder="0.00" oninput="calcNetWeight()">
+                                <button type="button" id="btnLerTara"
+                                        onclick="lerBalancaUI('tara')"
+                                        class="btn btn-sm btn-outline-success fw-bold"
+                                        style="border-radius:0 7px 7px 0;font-size:.72rem;white-space:nowrap;padding:0 10px;">
+                                    <i class="bi bi-usb-symbol me-1"></i>Ler
+                                </button>
+                            </div>
                         </div>
 
                         {{-- Peso líquido calculado --}}
@@ -663,7 +729,12 @@
                             </label>
                             <input type="text" id="net_weight_calc"
                                    class="form-control form-control-sm bg-light fw-bold text-success"
-                                   style="border-radius:7px;" readonly placeholder="Calculado auto.">
+                                   style="border-radius:7px;" readonly placeholder="Aguarda os 2 pesos">
+                        </div>
+
+                        {{-- Status da leitura / validação --}}
+                        <div class="col-12">
+                            <div id="balanca-status" style="font-size:.68rem;min-height:16px;"></div>
                         </div>
 
                         {{-- Quantidades confirmadas, uma por produto (gerado por JS) --}}
@@ -731,7 +802,7 @@
                             <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
                                 Observações
                             </label>
-                            <textarea name="observacoes" class="form-control form-control-sm"
+                            <textarea name="observacoes" id="obs_balanca" class="form-control form-control-sm"
                                       style="border-radius:7px;" rows="2"
                                       placeholder="Ex: saco rasgado, diferença de peso..."></textarea>
                         </div>
@@ -742,7 +813,7 @@
                     <button type="button" class="btn btn-light btn-sm px-3"
                             style="border-radius:7px;" data-bs-dismiss="modal"
                             onclick="Balanca.cancelar()">Cancelar</button>
-                    <button type="submit" class="btn btn-success btn-sm px-4 fw-bold"
+                    <button type="submit" id="btnConfirmar" class="btn btn-success btn-sm px-4 fw-bold"
                             style="border-radius:7px;">
                         <i class="bi bi-check-circle me-1"></i>Confirmar e Guardar
                     </button>
@@ -775,22 +846,49 @@ $(document).ready(function(){
 
     @if(session('success'))
     const t = document.getElementById('successToast');
-    new bootstrap.Toast(t,{delay:3500}).show();
+    new bootstrap.Toast(t,{delay:{{ session('ticket_url') ? 12000 : 3500 }}}).show();
     setTimeout(()=>{ document.getElementById('toastProg').style.width='0%'; },50);
     @endif
 
-    // Abrir modal da balança: gera um campo por produto
+    // Abrir modal da balança: gera um campo por produto e pré-preenche o que já foi registado
     $(document).on('click','[data-bs-target="#modalConfirm"]',function(){
         const b=$(this);
         $('#confirm_guia').text(b.data('guia'));
         window._departureTime = b.data('saida');
         $('#formConfirm').attr('action',`/discharges/${b.data('id')}/confirm`);
-        $('#hora_chegada_balanca,#peso_bruto,#tara,#net_weight_calc,#transport_time_calc').val('');
+
+        // valores já gravados (1ª pesagem), se existirem
+        // (attr() e não data(): o jQuery converteria os números e perderia o formato)
+        const horaGravada = (b.attr('data-hora') || '').substring(0,5);
+        $('#hora_chegada_balanca').val(horaGravada);
+        $('#peso_bruto').val(b.attr('data-bruto') || '');
+        $('#tara').val(b.attr('data-tara') || '');
+        $('#obs_balanca').val(b.attr('data-obs') || '');
+        $('#net_weight_calc,#transport_time_calc').val('');
+        $('#balanca-status').html('');
         $('#divergence_alert').addClass('d-none');
+
         construirCamposBalanca(b.data('itens') || []);
+        verificarDivergencia();
+        calcTransportTime();
+        calcNetWeight();   // também actualiza o progresso e o botão
     });
 
     $('#hora_chegada_balanca').on('change', calcTransportTime);
+
+    // Validação no cliente: pelo menos 1 peso; se houver os dois, cheio > vazio
+    document.getElementById('formConfirm').addEventListener('submit', function(e){
+        const sb = $('#peso_bruto').val().trim(), st = $('#tara').val().trim();
+        if (sb === '' && st === '') {
+            e.preventDefault();
+            setBalancaStatus('✗ Registe pelo menos um peso (cheio ou vazio).', '#dc3545');
+            return;
+        }
+        if (sb !== '' && st !== '' && parseFloat(sb) <= parseFloat(st)) {
+            e.preventDefault();
+            setBalancaStatus('✗ O peso cheio tem de ser maior que o peso vazio.', '#dc3545');
+        }
+    });
 
     document.getElementById('modalPrincipal').addEventListener('hidden.bs.modal',function(){
         document.getElementById('modalConteudo').innerHTML='';
@@ -798,6 +896,10 @@ $(document).ready(function(){
         document.getElementById('modalLoading').style.display='flex';
     });
 });
+
+function setBalancaStatus(msg, cor = '#64748b') {
+    document.getElementById('balanca-status').innerHTML = `<span style="color:${cor};">${msg}</span>`;
+}
 
 /* ── Balança: campos por produto ── */
 function construirCamposBalanca(itens) {
@@ -820,7 +922,8 @@ function construirCamposBalanca(itens) {
         inp.style.borderRadius = '7px';
         inp.min = 0;
         inp.step = it.unidade === 'tonelada' ? '0.001' : '1';
-        inp.value = it.quantidade;
+        // se já foi confirmada na 1ª pesagem, mostra o valor confirmado
+        inp.value = (it.confirmada !== null && it.confirmada !== undefined) ? it.confirmada : it.quantidade;
         inp.required = true;
         inp.dataset.esperado = it.quantidade;
         inp.addEventListener('input', verificarDivergencia);
@@ -936,13 +1039,57 @@ function submeterFormModal(form) {
 function calcTransportTime(){
     const dep=window._departureTime, arr=$('#hora_chegada_balanca').val();
     if(!dep||!arr) return;
-    const [hD,mD]=dep.split(':').map(Number),[hA,mA]=arr.split(':').map(Number);
+    const [hD,mD]=String(dep).split(':').map(Number),[hA,mA]=arr.split(':').map(Number);
     const diff=(hA*60+mA)-(hD*60+mD);
     $('#transport_time_calc').val(diff>=0?diff:'—');
 }
+
+// Líquido só com os dois pesos; actualiza também o progresso e o botão
 function calcNetWeight(){
-    const net=(parseFloat($('#peso_bruto').val())||0)-(parseFloat($('#tara').val())||0);
-    $('#net_weight_calc').val(net>0?net.toFixed(2):'—');
+    const sb = $('#peso_bruto').val().trim(), st = $('#tara').val().trim();
+    if (sb !== '' && st !== '') {
+        const net = parseFloat(sb) - parseFloat(st);
+        $('#net_weight_calc').val(net > 0 ? net.toFixed(2) : '—');
+    } else {
+        $('#net_weight_calc').val('');
+    }
+    atualizarProgressoPesagem();
+}
+
+/* ── Progresso da pesagem: Passo 0/1/2 de 2 ── */
+function atualizarProgressoPesagem(){
+    const b = $('#peso_bruto').val().trim() !== '';
+    const t = $('#tara').val().trim() !== '';
+    const n = (b ? 1 : 0) + (t ? 1 : 0);
+
+    document.getElementById('pwTitulo').textContent = `Passo ${n} de 2`;
+
+    const fill = document.getElementById('pwFill');
+    fill.style.width = (n * 50) + '%';
+    fill.style.background = n === 2 ? '#198754' : (n === 1 ? '#fd7e14' : '#cbd5e1');
+
+    const texto = document.getElementById('pwTexto');
+    if (n === 0)      texto.textContent = 'Registe pelo menos um peso (cheio ou vazio)';
+    else if (n === 2) texto.textContent = 'Pesagem completa: ao guardar, a descarga fica confirmada';
+    else if (b)       texto.textContent = 'Peso cheio registado. Falta pesar o camião vazio (ao voltar)';
+    else              texto.textContent = 'Peso vazio registado. Falta pesar o camião cheio';
+
+    const chip = (id, nome, ok) => {
+        const el = document.getElementById(id);
+        el.textContent = (ok ? '✓ ' : '○ ') + nome;
+        el.style.background  = ok ? '#e6f4ec' : '#fff';
+        el.style.color       = ok ? '#198754' : '#64748b';
+        el.style.borderColor = ok ? '#b7dfc7' : '#cbd5e1';
+    };
+    chip('pwChipB', 'Cheio (bruto)', b);
+    chip('pwChipT', 'Vazio (tara)', t);
+
+    // botão: confirma só quando houver os dois pesos
+    const btn = document.getElementById('btnConfirmar');
+    btn.disabled = (n === 0);
+    btn.innerHTML = n === 2
+        ? '<i class="bi bi-check-circle me-1"></i>Confirmar descarga'
+        : '<i class="bi bi-save me-1"></i>Guardar peso (passo 1 de 2)';
 }
 
 /* ── Filtros ── */
@@ -1013,14 +1160,10 @@ function gerarRelatorioCargas(){
     window.open(RELATORIO_CARGAS_URL + (qs ? '?' + qs : ''), '_blank');
 }
 
-/* ── Leitura da balança (porta serial) ── */
-async function lerBalancaUI() {
-    const btn = document.getElementById('btnLerBalanca');
-    const status = document.getElementById('balanca-status');
-
-    const setStatus = (msg, cor = '#64748b') => {
-        status.innerHTML = `<span style="color:${cor};">${msg}</span>`;
-    };
+/* ── Leitura da balança (porta serial): campo = 'peso_bruto' (cheio) ou 'tara' (vazio) ── */
+async function lerBalancaUI(campo = 'peso_bruto') {
+    const btn = document.getElementById(campo === 'tara' ? 'btnLerTara' : 'btnLerBalanca');
+    const htmlOriginal = btn.innerHTML;
 
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>A ler...';
@@ -1031,18 +1174,18 @@ async function lerBalancaUI() {
             parity   : document.getElementById('cfg_parity').value           || 'none',
             dataBits : 8,
             stopBits : 1,
-            onStatus : msg => setStatus('⏳ ' + msg),
+            onStatus : msg => setBalancaStatus('⏳ ' + msg),
         });
 
-        document.getElementById('peso_bruto').value = peso.toFixed(2);
+        document.getElementById(campo).value = peso.toFixed(2);
         calcNetWeight();
-        setStatus(`✓ Peso lido: ${peso.toFixed(2)} kg`, '#198754');
+        setBalancaStatus(`✓ Peso ${campo === 'tara' ? 'vazio' : 'cheio'} lido: ${peso.toFixed(2)} kg`, '#198754');
 
     } catch (err) {
-        setStatus('✗ ' + err.message, '#dc3545');
+        setBalancaStatus('✗ ' + err.message, '#dc3545');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-usb-symbol me-1"></i>Ler Balança';
+        btn.innerHTML = htmlOriginal;
     }
 }
 </script>

@@ -73,6 +73,7 @@ class DischargeOperationController extends Controller
 
         $discharges = $operation->discharges()
             ->with(['items.operationItem', 'registeredBy', 'confirmedBy'])
+            ->withExists('signature as assinado')
             ->orderByDesc('id')
             ->get();
 

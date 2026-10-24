@@ -122,6 +122,7 @@ URL: http://127.0.0.1:8000
 Email: admin@sistema.com
 
 Password: password
+composer require phpoffice/phpspreadsheet
 
 Nota: Por questões de segurança, altere a palavra-passe após o primeiro acesso no painel de perfil.
 

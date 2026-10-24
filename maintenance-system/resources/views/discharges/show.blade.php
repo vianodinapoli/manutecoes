@@ -13,13 +13,16 @@
         ['bg' => '#e0f7fc', 'bd' => '#0aa2c0', 'tx' => '#0aa2c0'],
     ];
     $fmt = fn ($n) => rtrim(rtrim(number_format((float) $n, 3, ',', '.'), '0'), ',');
+    $kg  = fn ($n) => $n !== null ? number_format((float) $n, 0, ',', '.') . ' kg' : '—';
     $statusClass = match($discharge->status) {
         'confirmed'  => 'success',
         'in_transit' => 'info',
-        default      => 'warning',
+        default      => 'warning',   // weighing (A pesar) e pending
     };
     $hasDivergence = $discharge->hasDivergence();
     $arquivada     = $discharge->operation?->isArchived();
+    $confirmado    = $discharge->status === 'confirmed';
+    $naBalanca     = in_array($discharge->status, ['weighing', 'confirmed'], true);
 @endphp
 
 {{-- Badges de estado --}}
@@ -103,6 +106,21 @@
         </div>
     </div>
 
+    {{-- Assinatura do motorista --}}
+    <div class="col-12">
+        <h6 class="fw-bold text-primary border-bottom pb-2 mb-3"><i class="bi bi-pen me-1"></i> Assinatura do motorista</h6>
+        @if($discharge->signature)
+            <div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;background:#fff;display:inline-block;">
+                <img src="{{ $discharge->signature->imagem }}" alt="Assinatura do motorista" style="max-width:320px;width:100%;height:auto;display:block;">
+            </div>
+            <div class="small text-muted mt-1">
+                {{ $discharge->signature->nome ?? $discharge->motorista }} · assinado em {{ $discharge->signature->created_at->format('d/m/Y H:i') }}
+            </div>
+        @else
+            <div class="text-muted small">Sem assinatura registada (camião anterior a esta funcionalidade).</div>
+        @endif
+    </div>
+
     {{-- Carga no Porto --}}
     <div class="col-12">
         <h6 class="fw-bold text-primary border-bottom pb-2 mb-3"><i class="bi bi-box-seam me-1"></i> Carga Registada no Porto</h6>
@@ -148,10 +166,17 @@
         </div>
     </div>
 
-    {{-- Confirmação na Balança --}}
-    @if($discharge->status === 'confirmed')
+    {{-- Pesagem na Balança (A pesar ou confirmada) --}}
+    @if($naBalanca)
     <div class="col-12">
-        <h6 class="fw-bold text-success border-bottom pb-2 mb-3"><i class="bi bi-speedometer2 me-1"></i> Confirmação na Balança</h6>
+        <h6 class="fw-bold text-{{ $confirmado ? 'success' : 'warning' }} border-bottom pb-2 mb-3">
+            <i class="bi bi-speedometer2 me-1"></i> {{ $confirmado ? 'Confirmação na Balança' : 'Pesagem na Balança (em curso)' }}
+        </h6>
+
+        @unless($confirmado)
+            @include('discharges._progresso-pesagem', ['discharge' => $discharge])
+        @endunless
+
         <div class="row g-3">
             <div class="col-md-3">
                 <div class="small text-muted fw-bold mb-1">Hora Chegada</div>
@@ -167,16 +192,24 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="small text-muted fw-bold mb-1">Peso Bruto</div>
-                <div class="fw-semibold">{{ number_format($discharge->peso_bruto, 0, ',', '.') }} kg</div>
+                <div class="small text-muted fw-bold mb-1">Peso Cheio (Bruto)</div>
+                <div class="fw-semibold">{{ $kg($discharge->peso_bruto) }}</div>
+                @if($discharge->peso_bruto_em)
+                    <div class="small text-muted">{{ $discharge->peso_bruto_em->format('d/m/Y H:i') }}</div>
+                @endif
             </div>
             <div class="col-md-3">
-                <div class="small text-muted fw-bold mb-1">Tara</div>
-                <div class="fw-semibold">{{ number_format($discharge->tara, 0, ',', '.') }} kg</div>
+                <div class="small text-muted fw-bold mb-1">Peso Vazio (Tara)</div>
+                <div class="fw-semibold">{{ $kg($discharge->tara) }}</div>
+                @if($discharge->tara_em)
+                    <div class="small text-muted">{{ $discharge->tara_em->format('d/m/Y H:i') }}</div>
+                @endif
             </div>
             <div class="col-md-3">
                 <div class="small text-muted fw-bold mb-1">Peso Líquido</div>
-                <div class="fw-bold text-success" style="font-size:1.1rem;">{{ number_format($discharge->peso_liquido, 0, ',', '.') }} kg</div>
+                <div class="fw-bold {{ $discharge->peso_liquido !== null ? 'text-success' : 'text-muted' }}" style="font-size:1.1rem;">
+                    {{ $kg($discharge->peso_liquido) }}
+                </div>
             </div>
             <div class="col-md-3">
                 <div class="small text-muted fw-bold mb-1">Sacos Confirmados</div>
@@ -189,7 +222,7 @@
             </div>
             <div class="col-md-3">
                 <div class="small text-muted fw-bold mb-1">Confirmado por</div>
-                <div class="fw-semibold">{{ $discharge->confirmedBy->name ?? '—' }}</div>
+                <div class="fw-semibold">{{ $confirmado ? ($discharge->confirmedBy->name ?? '—') : '—' }}</div>
             </div>
             @if($discharge->observacoes)
             <div class="col-12">
@@ -209,6 +242,12 @@
         <i class="bi bi-x me-1"></i>Fechar
     </button>
     <div class="d-flex gap-2">
+        @if($naBalanca)
+        <a href="{{ route('discharges.ticket', $discharge->id) }}" target="_blank"
+           class="btn {{ $confirmado ? 'btn-success' : 'btn-outline-warning' }} px-4 fw-bold">
+            <i class="bi bi-receipt me-1"></i>{{ $confirmado ? 'Ticket' : 'Ticket provisório' }}
+        </a>
+        @endif
         @unless($arquivada)
         <button type="button" class="btn btn-warning px-4 fw-bold"
                 onclick="abrirModal('{{ route('discharges.edit', $discharge->id) }}', 'Editar Descarga #{{ $discharge->id }}', 'warning')">

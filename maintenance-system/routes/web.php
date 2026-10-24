@@ -17,6 +17,11 @@ use App\Http\Controllers\ViaturaController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\RequisicaoMaterialController;
 use App\Http\Controllers\DischargeOperationController;
+use App\Http\Controllers\SaidaController;
+use App\Http\Controllers\SaidaCargaController;
+use App\Http\Controllers\SaidaPesagemController;
+
+
 // ── Página inicial ──────────────────────────────────────────
 Route::get('/', function () {
     return auth()->check() ? redirect()->route('dashboard') : view('auth/login');
@@ -117,9 +122,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/caixa-bancos', fn() => view('caixa-bancos.index'))->name('caixa.index');
     });
 
-         // ── Discharges / Operações de descarga ──────────────────
+    // ── Discharges / Operações de descarga ──────────────────
     Route::middleware('permission:acesso discharges')->group(function () {
- 
+
         // Operações (navios). 'archive' tem de vir ANTES do resource.
         Route::get('operations/archive', [DischargeOperationController::class, 'archive'])->name('operations.archive');
         Route::resource('operations', DischargeOperationController::class)
@@ -130,12 +135,47 @@ Route::middleware('auth')->group(function () {
         Route::patch('operations/{operation}/iniciar',   [DischargeOperationController::class, 'start'])           ->name('operations.start');
         Route::patch('operations/{operation}/arquivar',  [DischargeOperationController::class, 'archiveOperation'])->name('operations.archiveOperation');
         Route::patch('operations/{operation}/restaurar', [DischargeOperationController::class, 'restore'])         ->name('operations.restore');
- 
+
         // Camiões (descargas) de cada operação
         Route::resource('discharges', DischargeController::class);
+        Route::get('discharges/{discharge}/ticket', [DischargeController::class, 'ticket'])->name('discharges.ticket');
         Route::patch('discharges/{discharge}/confirm', [DischargeController::class, 'confirm'])->name('discharges.confirm');
     });
- 
+
+    // ── Saídas de carga (cada saída = uma operação de carga) ─
+    Route::middleware('permission:acesso discharges')
+        ->prefix('saidas')
+        ->name('saidas.')
+        ->group(function () {
+
+            // Lista, criação, exportação e modelo Excel (antes de {saida})
+            Route::get('/',               [SaidaController::class, 'index'])   ->name('index');
+            Route::post('/',              [SaidaController::class, 'store'])   ->name('store');
+            Route::get('exportar',        [SaidaController::class, 'exportar'])->name('exportar');
+            Route::get('modelo/{saida?}', [SaidaController::class, 'modelo'])  ->name('modelo');
+
+            // Camiões registados (acções sobre uma linha)
+            Route::patch('camioes/{camiao}/carregar', [SaidaCargaController::class, 'carregar'])->name('camioes.carregar');
+            Route::patch('camioes/{camiao}/devolver', [SaidaCargaController::class, 'devolver'])->name('camioes.devolver');
+            Route::delete('camioes/{camiao}',         [SaidaCargaController::class, 'destroy']) ->name('camioes.destroy');
+
+            // Uma saída
+            Route::get('{saida}',             [SaidaController::class, 'show'])     ->name('show');
+            Route::put('{saida}',             [SaidaController::class, 'update'])   ->name('update');
+            Route::delete('{saida}',          [SaidaController::class, 'destroy'])  ->name('destroy');
+            Route::patch('{saida}/fechar',    [SaidaController::class, 'fechar'])   ->name('fechar');
+            Route::patch('{saida}/reabrir',   [SaidaController::class, 'reabrir'])  ->name('reabrir');
+            Route::get('{saida}/relatorio',   [SaidaController::class, 'relatorio'])->name('relatorio');
+            Route::post('{saida}/importar',   [SaidaController::class, 'importar']) ->name('importar');
+            Route::post('{saida}/camioes',    [SaidaCargaController::class, 'store'])->name('camioes.store');
+
+
+// dentro do grupo ->prefix('saidas')->name('saidas.')
+Route::patch('camioes/{camiao}/pesagem-vazio', [SaidaPesagemController::class, 'vazio'])->name('camioes.vazio');
+Route::patch('camioes/{camiao}/pesagem-cheio', [SaidaPesagemController::class, 'cheio'])->name('camioes.cheio');
+Route::patch('camioes/{camiao}/anular-pesagem', [SaidaPesagemController::class, 'anular'])->name('camioes.anular');
+Route::get('camioes/{camiao}/ticket', [SaidaPesagemController::class, 'ticket'])->name('camioes.ticket');
+        });
 
     // ── Administração ───────────────────────────────────────
     Route::middleware('role:super-admin')->prefix('admin')->name('admin.')->group(function () {
@@ -150,27 +190,28 @@ Route::middleware('auth')->group(function () {
     });
 
     // ── Requisições de Material ─────────────────────────────
-Route::middleware('permission:requisicoes-material')->group(function () {
+    Route::middleware('permission:requisicoes-material')->group(function () {
 
-    Route::get(
-        'requisicoes-material/{requisicaoMaterial}/pdf',
-        [RequisicaoMaterialController::class, 'pdf']
-    )->name('requisicoes-material.pdf');
+        Route::get(
+            'requisicoes-material/{requisicaoMaterial}/pdf',
+            [RequisicaoMaterialController::class, 'pdf']
+        )->name('requisicoes-material.pdf');
 
-    Route::post(
-        'requisicoes-material/{requisicaoMaterial}/confirmar-carga',
-        [RequisicaoMaterialController::class, 'confirmarCarga']
-    )->name('requisicoes-material.confirmar-carga');
+        Route::post(
+            'requisicoes-material/{requisicaoMaterial}/confirmar-carga',
+            [RequisicaoMaterialController::class, 'confirmarCarga']
+        )->name('requisicoes-material.confirmar-carga');
 
-    Route::resource('requisicoes-material', RequisicaoMaterialController::class)
-        ->parameters(['requisicoes-material' => 'requisicaoMaterial']); // ← esta linha
+        Route::resource('requisicoes-material', RequisicaoMaterialController::class)
+            ->parameters(['requisicoes-material' => 'requisicaoMaterial']);
 
-        Route::patch('requisicoes-material/{requisicaoMaterial}/editar-carga',
-    [RequisicaoMaterialController::class, 'editarCarga'])
-    ->name('requisicoes-material.editar-carga');
-});
+        Route::patch(
+            'requisicoes-material/{requisicaoMaterial}/editar-carga',
+            [RequisicaoMaterialController::class, 'editarCarga']
+        )->name('requisicoes-material.editar-carga');
+    });
 
-Route::get('/consumo', [App\Http\Controllers\ConsumptionController::class, 'index'])->name('consumption.index');
+    Route::get('/consumo', [App\Http\Controllers\ConsumptionController::class, 'index'])->name('consumption.index');
 });
 
 require __DIR__.'/auth.php';

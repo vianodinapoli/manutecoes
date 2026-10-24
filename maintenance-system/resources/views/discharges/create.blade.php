@@ -199,6 +199,32 @@
         </div>
     </div>
 
+    {{-- Assinatura do motorista (caneta do tablet / dedo / rato) --}}
+    <h6 class="fw-bold text-primary border-bottom pb-2 mb-3"><i class="bi bi-pen me-1"></i> Assinatura do motorista</h6>
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-muted">Assina: <b id="sig_nome">o motorista</b></span>
+            <button type="button" id="sig_limpar" class="btn btn-outline-secondary btn-sm py-0 px-3">
+                <i class="bi bi-eraser me-1"></i>Limpar
+            </button>
+        </div>
+        <div style="position:relative;">
+            <canvas id="sig_canvas"
+                    style="display:block;width:100%;height:190px;touch-action:none;cursor:crosshair;background:#fff;
+                           border:2px dashed #94a3b8;border-radius:10px;"></canvas>
+            <div id="sig_dica" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+                                      pointer-events:none;color:#cbd5e1;font-size:1.1rem;letter-spacing:1px;">
+                ✍ Assine aqui
+            </div>
+            <div style="position:absolute;left:24px;right:24px;bottom:42px;border-bottom:1px solid #e2e8f0;pointer-events:none;"></div>
+        </div>
+        <input type="hidden" name="assinatura" id="sig_data">
+        <div id="sig_aviso" class="mt-1"
+             style="display:none;background:#dc3545;color:#fff;border-radius:6px;padding:4px 10px;font-size:.78rem;font-weight:600;">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>A assinatura do motorista é obrigatória.
+        </div>
+    </div>
+
     <div class="d-flex justify-content-end gap-2 mt-2">
         <button type="button" class="btn btn-light border px-4"
                 onclick="bootstrap.Modal.getInstance(document.getElementById('modalPrincipal')).hide()">
@@ -274,4 +300,92 @@ function crAtreladoAviso(sacos) {
         : '⚠ ' + sacos + ' sacos não passa de 24. É mesmo um atrelado link?';
 }
 crTranspChange();
+</script>
+
+<script>
+(function () {
+    const cv    = document.getElementById('sig_canvas');
+    if (!cv) return;
+    const ctx   = cv.getContext('2d');
+    const dica  = document.getElementById('sig_dica');
+    const data  = document.getElementById('sig_data');
+    const aviso = document.getElementById('sig_aviso');
+    const form  = cv.closest('form');
+
+    let ink = false, drawing = false, last = null, mid = null, penSeen = false;
+
+    // Ajusta a resolução ao ecrã (nítido em tablets) — só depois de o modal estar visível
+    function preparar() {
+        const r = cv.getBoundingClientRect();
+        if (!r.width) { requestAnimationFrame(preparar); return; }
+        const ratio = window.devicePixelRatio || 1;
+        cv.width  = Math.round(r.width  * ratio);
+        cv.height = Math.round(r.height * ratio);
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#0f172a'; ctx.fillStyle = '#0f172a';
+    }
+    preparar();
+
+    // O nome do motorista aparece por cima do campo
+    const inpMot = form.querySelector('[name=motorista]');
+    const nome   = document.getElementById('sig_nome');
+    const mostraNome = () => { nome.textContent = (inpMot && inpMot.value.trim()) || 'o motorista'; };
+    if (inpMot) inpMot.addEventListener('input', mostraNome);
+    mostraNome();
+
+    function pos(e) {
+        const r = cv.getBoundingClientRect();
+        const p = e.pressure && e.pressure !== 0.5 ? e.pressure : 0.5;   // rato = 0.5; caneta = pressão real
+        return { x: e.clientX - r.left, y: e.clientY - r.top, p };
+    }
+    function guardar() { data.value = ink ? cv.toDataURL('image/png') : ''; }
+
+    cv.addEventListener('pointerdown', e => {
+        if (e.pointerType === 'pen') penSeen = true;
+        if (e.pointerType === 'touch' && penSeen) return;          // ignora a palma da mão quando se usa caneta
+        e.preventDefault();
+        cv.setPointerCapture(e.pointerId);
+        drawing = true;
+        last = mid = pos(e);
+        ctx.beginPath(); ctx.arc(last.x, last.y, 1.3, 0, Math.PI * 2); ctx.fill();
+        ink = true; dica.style.display = 'none'; aviso.style.display = 'none';
+    });
+
+    cv.addEventListener('pointermove', e => {
+        if (!drawing) return;
+        if (e.pointerType === 'touch' && penSeen) return;
+        e.preventDefault();
+        const p = pos(e);
+        const m = { x: (last.x + p.x) / 2, y: (last.y + p.y) / 2 };   // curva suave entre pontos
+        ctx.lineWidth = 1.4 + p.p * 2.8;
+        ctx.beginPath();
+        ctx.moveTo(mid.x, mid.y);
+        ctx.quadraticCurveTo(last.x, last.y, m.x, m.y);
+        ctx.stroke();
+        last = p; mid = m;
+    });
+
+    function fim() { if (!drawing) return; drawing = false; guardar(); }
+    cv.addEventListener('pointerup', fim);
+    cv.addEventListener('pointercancel', fim);
+
+    document.getElementById('sig_limpar').addEventListener('click', () => {
+        ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, cv.width, cv.height);
+        ctx.restore();
+        ink = false; data.value = ''; dica.style.display = 'flex';
+    });
+
+    // Sem assinatura não segue. Este listener corre antes do que envia o formulário.
+    form.addEventListener('submit', e => {
+        guardar();
+        if (!ink) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            aviso.style.display = 'block';
+            cv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
+})();
 </script>
