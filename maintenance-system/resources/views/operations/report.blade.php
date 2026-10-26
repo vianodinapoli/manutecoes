@@ -131,7 +131,7 @@
     {{-- CABEÇALHO --}}
     <div class="doc-head">
         <div>
-            <div class="doc-org">FEM — Fábrica de Explosivos de Moçambique · Descarga de Nitrato de Amónio</div>
+            <div class="doc-org">SGL DEMO</div>
             <div class="doc-title">Relatório de Descarga — {{ $operation->navio }}
                 <span class="estado" style="background:{{ $estado[1] }};">{{ $estado[0] }}</span>
             </div>
@@ -408,7 +408,7 @@
         <div>Verificado por</div>
         <div>Aprovado por</div>
     </div>
-    <div class="nota" style="text-align:center;">Documento gerado automaticamente pelo Sistema de Gestão FEM · {{ $refDoc }} · {{ now()->format('d/m/Y H:i') }}</div>
+    <div class="nota" style="text-align:center;">SGL DEMO · {{ $refDoc }} · {{ now()->format('d/m/Y H:i') }}</div>
 
 </div>
 </body>
