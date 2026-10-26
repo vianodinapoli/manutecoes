@@ -351,7 +351,7 @@
 
         <footer class="panel-footer">
             <div class="footer-meta">
-                <span class="footer-copy">&copy; {{ date('Y') }} FEM · v2.0</span>
+                <span class="footer-copy">&copy; {{ date('Y') }} · v2.0</span>
                 <span class="status-dot">Sistema operacional</span>
             </div>
         </footer>
