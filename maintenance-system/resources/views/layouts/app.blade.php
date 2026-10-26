@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>FEM — Fábrica de Explosivos</title>
+    <title>SGL - Creativ demo</title>
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
@@ -459,8 +459,8 @@
                 <img src="{{ asset('images/bymozelogo.png') }}" alt="FEM">
             </div> -->
             <div class="sb-brand-text">
-                <div class="sb-brand-name">FEM</div>
-                <div class="sb-brand-sub">Sistema de Gestão</div>
+                <div class="sb-brand-name">SGL - CREATIV DEMO</div>
+                <div class="sb-brand-sub">Sistema de Gestão </div>
             </div>
             <button id="toggleBtn" class="sb-toggle" title="Colapsar">
                 <i class="fas fa-bars" style="font-size:11px;"></i>
@@ -627,9 +627,12 @@
                     ->whereHas('operation', fn ($q) => $q->where('status', 'active'))
                     ->count();
                 $temSaidas = \Illuminate\Support\Facades\Route::has('saidas.index');
+                // Dashboards só aparecem quando as rotas já existem (evita erro 500 no menu)
+                $temDashboards = \Illuminate\Support\Facades\Route::has('dashboard.descargas')
+                              && \Illuminate\Support\Facades\Route::has('dashboard.saidas');
             @endphp
             <div class="sb-dropdown"
-                 x-data="{ open: {{ request()->routeIs('operations.*', 'discharges.*', 'saidas.*') ? 'true' : 'false' }} }">
+                 x-data="{ open: {{ request()->routeIs('operations.*', 'discharges.*', 'saidas.*', 'dashboard.descargas', 'dashboard.saidas') ? 'true' : 'false' }} }">
                 <div class="sb-dropdown-trigger" :class="open ? 'open' : ''" @click="open = !open" style="position:relative;">
                     <i class="fas fa-ship ni-icon"></i>
                     <span class="ni-text">Descarga / Navio</span>
@@ -640,6 +643,18 @@
                     <i class="fas fa-chevron-right sb-chevron"></i>
                 </div>
                 <div x-show="open" x-cloak x-collapse class="sb-dropdown-items">
+                    @if($temDashboards)
+                    <x-nav-link :href="route('dashboard.descargas')"
+                        :active="request()->routeIs('dashboard.descargas')" class="nav-item">
+                        <i class="fas fa-chart-line ni-icon"></i>
+                        <span class="ni-text">Dashboard Descargas</span>
+                    </x-nav-link>
+                    <x-nav-link :href="route('dashboard.saidas')"
+                        :active="request()->routeIs('dashboard.saidas')" class="nav-item">
+                        <i class="fas fa-chart-pie ni-icon"></i>
+                        <span class="ni-text">Dashboard Saídas</span>
+                    </x-nav-link>
+                    @endif
                     <x-nav-link :href="route('operations.index')"
                         :active="request()->routeIs('operations.index', 'operations.show', 'discharges.*')" class="nav-item">
                         <i class="fas fa-anchor ni-icon"></i>
@@ -663,6 +678,10 @@
                 </div>
                 <div class="sb-flyout">
                     <div class="sb-flyout-label">Descarga / Navio</div>
+                    @if($temDashboards)
+                    <a href="{{ route('dashboard.descargas') }}"><i class="fas fa-chart-line"></i> Dashboard Descargas</a>
+                    <a href="{{ route('dashboard.saidas') }}"><i class="fas fa-chart-pie"></i> Dashboard Saídas</a>
+                    @endif
                     <a href="{{ route('operations.index') }}">
                         <i class="fas fa-anchor"></i> Operações
                         @if($camioesPendentes > 0)<span class="ni-badge">{{ $camioesPendentes }}</span>@endif

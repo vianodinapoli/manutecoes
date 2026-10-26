@@ -183,7 +183,7 @@
     <div class="company-block">
         <img src="{{ public_path('images/bymozelogo.png') }}" class="company-logo" alt="Logo" style="width: 60px; height: auto;">
         <div class="company-info">
-            <div class="company-name">Fábrica de Explosivos de Moçambique</div>
+            <div class="company-name">SGL - Creativ demo</div>
             <div class="company-detail">
                 Contribuinte Nº 400019029<br>
                 Av. Samora Machel Nº — Parcela 10<br>

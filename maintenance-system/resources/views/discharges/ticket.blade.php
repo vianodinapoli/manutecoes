@@ -149,7 +149,7 @@
         {{-- Cabeçalho --}}
         <div class="head">
             <div>
-                <div class="org">FEM — Fábrica de Explosivos de Moçambique</div>
+                <div class="org">SGL - Creativ demo</div>
                 <div class="titulo">Ticket de Descarga</div>
             </div>
             <div class="meio">

@@ -20,6 +20,8 @@ use App\Http\Controllers\DischargeOperationController;
 use App\Http\Controllers\SaidaController;
 use App\Http\Controllers\SaidaCargaController;
 use App\Http\Controllers\SaidaPesagemController;
+ use App\Http\Controllers\DashboardDescargasController;
+use App\Http\Controllers\DashboardSaidasController;
 
 
 // ── Página inicial ──────────────────────────────────────────
@@ -31,6 +33,13 @@ Route::get('/', function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified', 'permission:acesso dashboard'])
     ->name('dashboard');
+
+   
+
+Route::prefix('dashboard')->group(function () {
+    Route::get('/descargas', [DashboardDescargasController::class, 'index'])->name('dashboard.descargas');
+    Route::get('/saidas',    [DashboardSaidasController::class,    'index'])->name('dashboard.saidas');
+});
 
 // ── Rotas protegidas ────────────────────────────────────────
 Route::middleware('auth')->group(function () {
