@@ -14,7 +14,12 @@ class DischargeOperationController extends Controller
     public function index()
     {
         $operations = DischargeOperation::open()
-            ->with('items')
+            ->with([
+                'items',
+                // camiões que ainda não chegaram à balança (base do alerta amarelo/vermelho)
+                'discharges' => fn ($q) => $q->whereIn('status', ['pending', 'in_transit'])
+                                             ->whereNotNull('hora_saida_porto'),
+            ])
             ->withCount([
                 'discharges',
                 'discharges as pendentes_count'   => fn ($q) => $q->whereIn('status', ['pending', 'in_transit']),
@@ -24,6 +29,15 @@ class DischargeOperationController extends Controller
             ->orderByRaw("CASE status WHEN 'active' THEN 0 ELSE 1 END")
             ->latest()
             ->get();
+
+        // Saída do porto mais antiga entre os camiões por chegar à balança (data + hora_saida_porto)
+        $operations->each(function ($op) {
+            $ts = $op->discharges
+                ->map(fn ($d) => Carbon::parse($d->data->format('Y-m-d') . ' ' . substr((string) $d->hora_saida_porto, 0, 5))->timestamp)
+                ->min();
+
+            $op->pendente_desde = $ts ? Carbon::createFromTimestamp($ts) : null;
+        });
 
         return view('operations.index', compact('operations'));
     }

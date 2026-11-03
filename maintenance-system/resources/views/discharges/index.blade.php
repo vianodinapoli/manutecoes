@@ -98,6 +98,19 @@
     #dTable tbody tr:hover{background:#fafbff}
     #dTable tbody tr:last-child td{border-bottom:none}
 
+    /* ── Alerta de tempo porto → balança (camiões por confirmar) ── */
+    .sla-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;
+             background:#0dcaf0;box-shadow:0 0 0 3px rgba(13,202,240,.22)}
+    .sla-dot.sla-warn{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.30)}
+    .sla-dot.sla-danger{background:#dc3545;box-shadow:0 0 0 3px rgba(220,53,69,.30);animation:sla-pulse 1.2s infinite}
+    @keyframes sla-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+    #dTable tbody tr.sla-warn > td{background-color:#fffbeb}
+    #dTable tbody tr.sla-danger > td{background-color:#fef2f2}
+    #dTable tbody tr.sla-warn > td:first-child{border-left:4px solid #f59e0b}
+    #dTable tbody tr.sla-danger > td:first-child{border-left:4px solid #dc3545}
+    tr.sla-warn .sla-tempo{color:#b45309;font-weight:700}
+    tr.sla-danger .sla-tempo{color:#b91c1c;font-weight:700}
+
     /* ── Sacos pills ── */
     .sp{display:inline-flex;align-items:center;gap:3px;border-radius:4px;
         padding:1px 6px;font-size:.65rem;font-weight:700;line-height:1.5;border:1px solid}
@@ -426,7 +439,7 @@
                         <th>TRANSPORTADORA</th>
                         <th>CARGA</th>
                         <th class="text-center" style="width:100px">PESO</th>
-                        <th class="text-center" style="width:70px">TEMPO</th>
+                        <th class="text-center" style="width:90px">TEMPO</th>
                         <th class="text-center" style="width:100px">ESTADO</th>
                         <th class="text-center" style="width:140px">AÇÕES</th>
                     </tr>
@@ -459,8 +472,18 @@
                         $d->status === 'weighing'                           => 'Pesar cheio',
                         default                                             => 'Balança',
                     };
+
+                    // Alerta porto → balança: só camiões que ainda não chegaram à balança
+                    $desde = null;
+                    if (in_array($d->status, ['pending', 'in_transit'], true) && $d->hora_saida_porto) {
+                        $desde = \Carbon\Carbon::parse($d->data->format('Y-m-d') . ' ' . substr((string) $d->hora_saida_porto, 0, 5));
+                    }
+                    $minSla = $desde ? max(0, (int) $desde->diffInMinutes(now(), false)) : null;
+                    $sla    = $minSla === null ? '' : ($minSla >= 120 ? 'danger' : ($minSla >= 80 ? 'warn' : 'ok'));
                 @endphp
-                <tr data-status="{{ $d->status }}"
+                <tr class="{{ $sla ? 'sla-' . $sla : '' }}"
+                    @if($desde) data-desde="{{ $desde->timestamp * 1000 }}" @endif
+                    data-status="{{ $d->status }}"
                     data-transportadora="{{ strtolower($d->transportadora) }}"
                     data-data="{{ $d->data->format('Y-m-d') }}"
                     data-produtos="{{ $produtos }}"
@@ -535,9 +558,13 @@
                         @endif
                     </td>
 
-                    {{-- Tempo --}}
-                    <td class="text-center">
-                        @if($d->tempo_transporte)
+                    {{-- Tempo (camiões em viagem: contador ao vivo com ponto de cor) --}}
+                    <td class="text-center" style="white-space:nowrap;">
+                        @if($desde)
+                        <span class="sla-dot sla-{{ $sla }}"
+                              title="Saiu do porto às {{ $desde->format('H:i') }} · amarelo aos 80 min, vermelho aos 120 min"></span><span
+                              class="sla-tempo" data-tempo style="font-size:.7rem;color:#64748b;">{{ $minSla }}m</span>
+                        @elseif($d->tempo_transporte)
                         <span style="font-size:.7rem;color:#64748b;"><i class="bi bi-clock" style="font-size:.6rem;"></i> {{ $d->tempo_transporte }}m</span>
                         @else
                         <span class="text-muted">—</span>
@@ -836,6 +863,10 @@
 let dtTable, _activeMenu = null;
 let _itensBalanca = [];
 
+// Alerta porto → balança (minutos): amarelo a 1h20, vermelho a 2h
+const SLA_AMARELO  = 80;
+const SLA_VERMELHO = 120;
+
 $(document).ready(function(){
     dtTable = $('#dTable').DataTable({
         language:{ url:'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json' },
@@ -843,6 +874,10 @@ $(document).ready(function(){
         columnDefs:[{ orderable:false, targets:[7,8] }],
         pageLength:15,
     });
+
+    // Contador ao vivo + cores (actualiza todas as linhas, mesmo as de outras páginas da tabela)
+    atualizarSla();
+    setInterval(atualizarSla, 20000);
 
     @if(session('success'))
     const t = document.getElementById('successToast');
@@ -896,6 +931,26 @@ $(document).ready(function(){
         document.getElementById('modalLoading').style.display='flex';
     });
 });
+
+/* ── Alerta de tempo: camiões que saíram do porto e ainda não chegaram à balança ── */
+function atualizarSla() {
+    if (!dtTable) return;
+
+    dtTable.rows().nodes().to$().filter('[data-desde]').each(function () {
+        const tr  = this;
+        const min = Math.max(0, Math.floor((Date.now() - Number(tr.dataset.desde)) / 60000));
+        const nivel = min >= SLA_VERMELHO ? 'danger' : (min >= SLA_AMARELO ? 'warn' : 'ok');
+
+        tr.classList.remove('sla-ok', 'sla-warn', 'sla-danger');
+        tr.classList.add('sla-' + nivel);
+
+        const dot = tr.querySelector('.sla-dot');
+        if (dot) dot.className = 'sla-dot sla-' + nivel;
+
+        const tempo = tr.querySelector('[data-tempo]');
+        if (tempo) tempo.textContent = min + 'm';
+    });
+}
 
 function setBalancaStatus(msg, cor = '#64748b') {
     document.getElementById('balanca-status').innerHTML = `<span style="color:${cor};">${msg}</span>`;

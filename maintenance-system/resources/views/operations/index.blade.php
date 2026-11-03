@@ -8,6 +8,8 @@
              transition:box-shadow .15s,transform .15s;text-decoration:none;color:inherit;display:block}
     .op-card:hover{box-shadow:0 6px 18px rgba(15,23,42,.08);transform:translateY(-1px);color:inherit}
     .op-card.planned{border-style:dashed;background:#fbfcfe}
+    .op-card.alert-warn{border:2px solid #f59e0b;background:#fffbeb}
+    .op-card.alert-danger{border:2px solid #dc3545;background:#fef2f2}
     .op-navio{font-size:.95rem;font-weight:800;color:#1e293b;line-height:1.2}
     .op-empresa{font-size:.72rem;color:#64748b}
     .op-ref{font-size:.68rem;color:#94a3b8}
@@ -21,6 +23,10 @@
     .chip-transit{background:#e0f7fc;color:#0aa2c0}
     .chip-ok{background:#e6f4ec;color:#198754}
     .chip-plan{background:#fff3cd;color:#856404}
+    .chip-warn{background:#fef3c7;color:#b45309}
+    .chip-danger{background:#fee2e2;color:#b91c1c}
+    .chip-danger.pulse{animation:pulse-red 1.4s infinite}
+    @keyframes pulse-red{0%,100%{opacity:1}50%{opacity:.55}}
     .prod-chip{display:inline-block;background:#eef2ff;color:#3b4cca;border-radius:4px;
                font-size:.62rem;font-weight:600;padding:1px 7px;margin:2px 3px 0 0}
 </style>
@@ -58,9 +64,18 @@
             $recebido = round(((float) $op->discharges_sum_peso_liquido) / 1000, 3);
             $esperado = (float) $op->quantidade_esperada;
             $pct = $esperado > 0 ? min(100, round($recebido / $esperado * 100, 1)) : 0;
+
+            // Tempo do camião pendente mais antigo (porto -> balança)
+            $desde = ($op->pendentes_count > 0 && $op->pendente_desde)
+                ? \Carbon\Carbon::parse($op->pendente_desde)
+                : null;
+            $min = $desde ? (int) abs($desde->diffInMinutes(now())) : 0;
+            $nivel = $desde ? ($min >= 120 ? 'danger' : ($min >= 80 ? 'warn' : '')) : '';
         @endphp
         <div class="col-12 col-md-6 col-xl-4">
-            <a href="{{ route('operations.show', $op) }}" class="op-card {{ $op->isPlanned() ? 'planned' : '' }}">
+            <a href="{{ route('operations.show', $op) }}"
+               class="op-card {{ $op->isPlanned() ? 'planned' : '' }} {{ $nivel ? 'alert-'.$nivel : '' }}"
+               @if($desde) data-desde="{{ $desde->timestamp * 1000 }}" @endif>
                 <div class="d-flex justify-content-between align-items-start gap-2">
                     <div>
                         <div class="op-navio">{{ $op->navio }}</div>
@@ -69,7 +84,12 @@
                     @if($op->isPlanned())
                         <span class="op-chip chip-plan"><i class="bi bi-clipboard-check"></i>Planeada</span>
                     @elseif($op->pendentes_count > 0)
-                        <span class="op-chip chip-transit"><i class="bi bi-truck"></i>{{ $op->pendentes_count }} por confirmar</span>
+                        <span class="op-chip chip-chip {{ $nivel ? 'chip-'.$nivel : 'chip-transit' }} {{ $nivel === 'danger' ? 'pulse' : '' }}"
+                              data-chip>
+                            <i class="bi {{ $nivel ? 'bi-exclamation-triangle-fill' : 'bi-truck' }}"></i>
+                            {{ $op->pendentes_count }} por confirmar
+                            @if($desde)· <span data-tempo>{{ intdiv($min, 60) }}h{{ str_pad($min % 60, 2, '0', STR_PAD_LEFT) }}</span>@endif
+                        </span>
                     @elseif($op->discharges_count > 0)
                         <span class="op-chip chip-ok"><i class="bi bi-check-circle-fill"></i>Tudo confirmado</span>
                     @else
@@ -111,5 +131,36 @@
 </div>
 
 @include('operations._modal')
+
+<script>
+    // Limites (minutos): amarelo a 1h20, vermelho a 2h
+    const LIMITE_AMARELO = 80;
+    const LIMITE_VERMELHO = 120;
+
+    function atualizarAlertas() {
+        document.querySelectorAll('.op-card[data-desde]').forEach(card => {
+            const min = Math.floor((Date.now() - Number(card.dataset.desde)) / 60000);
+            const chip = card.querySelector('[data-chip]');
+            const tempo = card.querySelector('[data-tempo]');
+
+            if (tempo) tempo.textContent = Math.floor(min / 60) + 'h' + String(min % 60).padStart(2, '0');
+
+            card.classList.remove('alert-warn', 'alert-danger');
+            if (chip) chip.classList.remove('chip-transit', 'chip-warn', 'chip-danger', 'pulse');
+
+            if (min >= LIMITE_VERMELHO) {
+                card.classList.add('alert-danger');
+                if (chip) chip.classList.add('chip-danger', 'pulse');
+            } else if (min >= LIMITE_AMARELO) {
+                card.classList.add('alert-warn');
+                if (chip) chip.classList.add('chip-warn');
+            } else if (chip) {
+                chip.classList.add('chip-transit');
+            }
+        });
+    }
+    atualizarAlertas();
+    setInterval(atualizarAlertas, 30000);
+</script>
 
 </x-app-layout>
