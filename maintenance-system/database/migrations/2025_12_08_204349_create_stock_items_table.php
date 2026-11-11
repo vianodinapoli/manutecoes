@@ -1,30 +1,24 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
-{
-    Schema::table('stock_items', function (Blueprint $table) {
-        // Remove o índice único simples se existir
-        try { $table->dropUnique(['referencia']); } catch (\Exception $e) {}
+    {
+        if (! Schema::hasTable('stock_items')) {
+            return;
+        }
 
-        // Adiciona índice composto
-        $table->unique(['referencia', 'marca_fabricante'], 'stock_items_ref_marca_unique');
-    });
-}
+        DB::statement('DROP INDEX IF EXISTS "stock_items_referencia_unique"');
+        DB::statement('CREATE UNIQUE INDEX IF NOT EXISTS "stock_items_ref_marca_unique" ON "stock_items" ("referencia", "marca_fabricante")');
+    }
 
-public function down(): void
-{
-    Schema::table('stock_items', function (Blueprint $table) {
-        $table->dropUnique('stock_items_ref_marca_unique');
-        $table->unique('referencia');
-    });
-}
+    public function down(): void
+    {
+        DB::statement('DROP INDEX IF EXISTS "stock_items_ref_marca_unique"');
+        DB::statement('CREATE UNIQUE INDEX IF NOT EXISTS "stock_items_referencia_unique" ON "stock_items" ("referencia")');
+    }
 };

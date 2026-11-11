@@ -6,23 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-public function up()
-{
-    Schema::table('stock_items', function (Blueprint $table) {
-        $table->string('nome')->after('id'); // Adiciona a coluna 'nome' após o ID
-    });
-}
+    public function up(): void
+    {
+        if (Schema::hasTable('stock_items') && ! Schema::hasColumn('stock_items', 'nome')) {
+            Schema::table('stock_items', function (Blueprint $table) {
+                $table->string('nome')->default('');
+            });
+        }
+    }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('stock_items', function (Blueprint $table) {
-            //
-        });
+        if (Schema::hasTable('stock_items') && Schema::hasColumn('stock_items', 'nome')) {
+            Schema::table('stock_items', function (Blueprint $table) {
+                $table->dropColumn('nome');
+            });
+        }
     }
 };
