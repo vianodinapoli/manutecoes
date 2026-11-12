@@ -627,12 +627,13 @@
                     ->whereHas('operation', fn ($q) => $q->where('status', 'active'))
                     ->count();
                 $temSaidas = \Illuminate\Support\Facades\Route::has('saidas.index');
+                $temContentores = \Illuminate\Support\Facades\Route::has('contentores.index');
                 // Dashboards só aparecem quando as rotas já existem (evita erro 500 no menu)
                 $temDashboards = \Illuminate\Support\Facades\Route::has('dashboard.descargas')
                               && \Illuminate\Support\Facades\Route::has('dashboard.saidas');
             @endphp
             <div class="sb-dropdown"
-                 x-data="{ open: {{ request()->routeIs('operations.*', 'discharges.*', 'saidas.*', 'dashboard.descargas', 'dashboard.saidas') ? 'true' : 'false' }} }">
+                 x-data="{ open: {{ request()->routeIs('operations.*', 'discharges.*', 'saidas.*', 'contentores.*', 'dashboard.descargas', 'dashboard.saidas') ? 'true' : 'false' }} }">
                 <div class="sb-dropdown-trigger" :class="open ? 'open' : ''" @click="open = !open" style="position:relative;">
                     <i class="fas fa-ship ni-icon"></i>
                     <span class="ni-text">Descarga / Navio</span>
@@ -670,6 +671,13 @@
                         <span class="ni-text">Saída de carga</span>
                     </x-nav-link>
                     @endif
+                    @if($temContentores)
+                    <x-nav-link :href="route('contentores.index')"
+                        :active="request()->routeIs('contentores.*')" class="nav-item">
+                        <i class="fas fa-cubes ni-icon"></i>
+                        <span class="ni-text">Contentores</span>
+                    </x-nav-link>
+                    @endif
                     <x-nav-link :href="route('operations.archive')"
                         :active="request()->routeIs('operations.archive')" class="nav-item">
                         <i class="fas fa-archive ni-icon"></i>
@@ -688,6 +696,9 @@
                     </a>
                     @if($temSaidas)
                     <a href="{{ route('saidas.index') }}"><i class="fas fa-box-open"></i> Saída de carga</a>
+                    @endif
+                    @if($temContentores)
+                    <a href="{{ route('contentores.index') }}"><i class="fas fa-cubes"></i> Contentores</a>
                     @endif
                     <a href="{{ route('operations.archive') }}"><i class="fas fa-archive"></i> Arquivo</a>
                 </div>

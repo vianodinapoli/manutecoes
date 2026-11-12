@@ -20,8 +20,9 @@ use App\Http\Controllers\DischargeOperationController;
 use App\Http\Controllers\SaidaController;
 use App\Http\Controllers\SaidaCargaController;
 use App\Http\Controllers\SaidaPesagemController;
- use App\Http\Controllers\DashboardDescargasController;
+use App\Http\Controllers\DashboardDescargasController;
 use App\Http\Controllers\DashboardSaidasController;
+use App\Http\Controllers\ContentorController;
 
 
 // ── Página inicial ──────────────────────────────────────────
@@ -33,8 +34,6 @@ Route::get('/', function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified', 'permission:acesso dashboard'])
     ->name('dashboard');
-
-   
 
 Route::prefix('dashboard')->group(function () {
     Route::get('/descargas', [DashboardDescargasController::class, 'index'])->name('dashboard.descargas');
@@ -149,7 +148,11 @@ Route::middleware('auth')->group(function () {
         Route::resource('discharges', DischargeController::class);
         Route::get('discharges/{discharge}/ticket', [DischargeController::class, 'ticket'])->name('discharges.ticket');
         Route::patch('discharges/{discharge}/confirm', [DischargeController::class, 'confirm'])->name('discharges.confirm');
-    });
+
+        // Gestão de contentores
+        Route::resource('contentores', ContentorController::class)
+            ->parameters(['contentores' => 'contentor'])
+->except(['show', 'create', 'edit']);    });
 
     // ── Saídas de carga (cada saída = uma operação de carga) ─
     Route::middleware('permission:acesso discharges')
@@ -168,6 +171,12 @@ Route::middleware('auth')->group(function () {
             Route::patch('camioes/{camiao}/devolver', [SaidaCargaController::class, 'devolver'])->name('camioes.devolver');
             Route::delete('camioes/{camiao}',         [SaidaCargaController::class, 'destroy']) ->name('camioes.destroy');
 
+            // Pesagens e ticket de cada camião
+            Route::patch('camioes/{camiao}/pesagem-vazio',  [SaidaPesagemController::class, 'vazio'])->name('camioes.vazio');
+            Route::patch('camioes/{camiao}/pesagem-cheio',  [SaidaPesagemController::class, 'cheio'])->name('camioes.cheio');
+            Route::patch('camioes/{camiao}/anular-pesagem', [SaidaPesagemController::class, 'anular'])->name('camioes.anular');
+            Route::get('camioes/{camiao}/ticket',           [SaidaPesagemController::class, 'ticket'])->name('camioes.ticket');
+
             // Uma saída
             Route::get('{saida}',             [SaidaController::class, 'show'])     ->name('show');
             Route::put('{saida}',             [SaidaController::class, 'update'])   ->name('update');
@@ -177,13 +186,6 @@ Route::middleware('auth')->group(function () {
             Route::get('{saida}/relatorio',   [SaidaController::class, 'relatorio'])->name('relatorio');
             Route::post('{saida}/importar',   [SaidaController::class, 'importar']) ->name('importar');
             Route::post('{saida}/camioes',    [SaidaCargaController::class, 'store'])->name('camioes.store');
-
-
-// dentro do grupo ->prefix('saidas')->name('saidas.')
-Route::patch('camioes/{camiao}/pesagem-vazio', [SaidaPesagemController::class, 'vazio'])->name('camioes.vazio');
-Route::patch('camioes/{camiao}/pesagem-cheio', [SaidaPesagemController::class, 'cheio'])->name('camioes.cheio');
-Route::patch('camioes/{camiao}/anular-pesagem', [SaidaPesagemController::class, 'anular'])->name('camioes.anular');
-Route::get('camioes/{camiao}/ticket', [SaidaPesagemController::class, 'ticket'])->name('camioes.ticket');
         });
 
     // ── Administração ───────────────────────────────────────
