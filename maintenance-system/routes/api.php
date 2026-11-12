@@ -1,4 +1,6 @@
 <?php
+use App\Http\Controllers\Api\AuthApiController;
+use App\Http\Controllers\Api\DischargeApiController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -27,3 +29,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/requisitions', [RequisitionController::class, 'index']);
     Route::get('/requisitions/{id}', [RequisitionController::class, 'show']);
 });
+
+Route::post('/login', [AuthApiController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthApiController::class, 'logout']);
+    Route::get('/operations', [DischargeApiController::class, 'operations']);
+    Route::get('/operations/{operation}', [DischargeApiController::class, 'operation']);
+    Route::post('/discharges', [DischargeApiController::class, 'store']);
+});
+
+Route::middleware('auth:sanctum')->get('/discharges/{discharge}', [\App\Http\Controllers\Api\DischargeShowApiController::class, 'show']);
+
+Route::middleware('auth:sanctum')->get('/operations/{operation}/discharges', [\App\Http\Controllers\Api\DischargeListApiController::class, 'index']);
