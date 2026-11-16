@@ -58,75 +58,80 @@
         </div>
     @endif
 
-    <div class="row g-3">
-        @forelse($operations as $op)
-        @php
-            $recebido = round(((float) $op->discharges_sum_peso_liquido) / 1000, 3);
-            $esperado = (float) $op->quantidade_esperada;
-            $pct = $esperado > 0 ? min(100, round($recebido / $esperado * 100, 1)) : 0;
+    {{-- Tempo real: verifica a cada 2s se houve alterações e só então recarrega a lista (rede de segurança: 60s) --}}
+    <x-auto-refresh :segundos="60" :verificar="route('operations.sinal')" :verificar-segundos="2" />
 
-            // Tempo do camião pendente mais antigo (porto -> balança)
-            $desde = ($op->pendentes_count > 0 && $op->pendente_desde)
-                ? \Carbon\Carbon::parse($op->pendente_desde)
-                : null;
-            $min = $desde ? (int) abs($desde->diffInMinutes(now())) : 0;
-            $nivel = $desde ? ($min >= 120 ? 'danger' : ($min >= 80 ? 'warn' : '')) : '';
-        @endphp
-        <div class="col-12 col-md-6 col-xl-4">
-            <a href="{{ route('operations.show', $op) }}"
-               class="op-card {{ $op->isPlanned() ? 'planned' : '' }} {{ $nivel ? 'alert-'.$nivel : '' }}"
-               @if($desde) data-desde="{{ $desde->timestamp * 1000 }}" @endif>
-                <div class="d-flex justify-content-between align-items-start gap-2">
-                    <div>
-                        <div class="op-navio">{{ $op->navio }}</div>
-                        <div class="op-empresa">{{ $op->empresa }}</div>
+    <div id="conteudo-atualizavel">
+        <div class="row g-3">
+            @forelse($operations as $op)
+            @php
+                $recebido = round(((float) $op->discharges_sum_peso_liquido) / 1000, 3);
+                $esperado = (float) $op->quantidade_esperada;
+                $pct = $esperado > 0 ? min(100, round($recebido / $esperado * 100, 1)) : 0;
+
+                // Tempo do camião pendente mais antigo (porto -> balança)
+                $desde = ($op->pendentes_count > 0 && $op->pendente_desde)
+                    ? \Carbon\Carbon::parse($op->pendente_desde)
+                    : null;
+                $min = $desde ? (int) abs($desde->diffInMinutes(now())) : 0;
+                $nivel = $desde ? ($min >= 120 ? 'danger' : ($min >= 80 ? 'warn' : '')) : '';
+            @endphp
+            <div class="col-12 col-md-6 col-xl-4">
+                <a href="{{ route('operations.show', $op) }}"
+                   class="op-card {{ $op->isPlanned() ? 'planned' : '' }} {{ $nivel ? 'alert-'.$nivel : '' }}"
+                   @if($desde) data-desde="{{ $desde->timestamp * 1000 }}" @endif>
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <div class="op-navio">{{ $op->navio }}</div>
+                            <div class="op-empresa">{{ $op->empresa }}</div>
+                        </div>
+                        @if($op->isPlanned())
+                            <span class="op-chip chip-plan"><i class="bi bi-clipboard-check"></i>Planeada</span>
+                        @elseif($op->pendentes_count > 0)
+                            <span class="op-chip {{ $nivel ? 'chip-'.$nivel : 'chip-transit' }} {{ $nivel === 'danger' ? 'pulse' : '' }}"
+                                  data-chip>
+                                <i class="bi {{ $nivel ? 'bi-exclamation-triangle-fill' : 'bi-truck' }}"></i>
+                                {{ $op->pendentes_count }} por confirmar
+                                @if($desde)· <span data-tempo>{{ intdiv($min, 60) }}h{{ str_pad($min % 60, 2, '0', STR_PAD_LEFT) }}</span>@endif
+                            </span>
+                        @elseif($op->discharges_count > 0)
+                            <span class="op-chip chip-ok"><i class="bi bi-check-circle-fill"></i>Tudo confirmado</span>
+                        @else
+                            <span class="op-chip chip-transit"><i class="bi bi-play-circle"></i>Em curso</span>
+                        @endif
                     </div>
-                    @if($op->isPlanned())
-                        <span class="op-chip chip-plan"><i class="bi bi-clipboard-check"></i>Planeada</span>
-                    @elseif($op->pendentes_count > 0)
-                        <span class="op-chip chip-chip {{ $nivel ? 'chip-'.$nivel : 'chip-transit' }} {{ $nivel === 'danger' ? 'pulse' : '' }}"
-                              data-chip>
-                            <i class="bi {{ $nivel ? 'bi-exclamation-triangle-fill' : 'bi-truck' }}"></i>
-                            {{ $op->pendentes_count }} por confirmar
-                            @if($desde)· <span data-tempo>{{ intdiv($min, 60) }}h{{ str_pad($min % 60, 2, '0', STR_PAD_LEFT) }}</span>@endif
-                        </span>
-                    @elseif($op->discharges_count > 0)
-                        <span class="op-chip chip-ok"><i class="bi bi-check-circle-fill"></i>Tudo confirmado</span>
-                    @else
-                        <span class="op-chip chip-transit"><i class="bi bi-play-circle"></i>Em curso</span>
-                    @endif
-                </div>
 
-                <div class="op-ref mt-2">
-                    BL: <b>{{ $op->bl ?: '—' }}</b> &nbsp;·&nbsp; Factura: <b>{{ $op->factura ?: '—' }}</b>
-                    @if($op->data_chegada) &nbsp;·&nbsp; {{ $op->data_chegada->format('d/m/Y') }} @endif
-                </div>
+                    <div class="op-ref mt-2">
+                        BL: <b>{{ $op->bl ?: '—' }}</b> &nbsp;·&nbsp; Factura: <b>{{ $op->factura ?: '—' }}</b>
+                        @if($op->data_chegada) &nbsp;·&nbsp; {{ $op->data_chegada->format('d/m/Y') }} @endif
+                    </div>
 
-                <div class="mt-1">
-                    @foreach($op->items as $it)
-                        <span class="prod-chip">
-                            {{ $it->nome }}:
-                            {{ rtrim(rtrim(number_format($it->quantidade, 3, ',', '.'), '0'), ',') }} {{ $it->unidade_label }}
-                            @if($it->unidade === 'saco') × {{ rtrim(rtrim(number_format($it->peso_unitario_kg, 3, ',', '.'), '0'), ',') }} kg @endif
-                        </span>
-                    @endforeach
-                </div>
+                    <div class="mt-1">
+                        @foreach($op->items as $it)
+                            <span class="prod-chip">
+                                {{ $it->nome }}:
+                                {{ rtrim(rtrim(number_format($it->quantidade, 3, ',', '.'), '0'), ',') }} {{ $it->unidade_label }}
+                                @if($it->unidade === 'saco') × {{ rtrim(rtrim(number_format($it->peso_unitario_kg, 3, ',', '.'), '0'), ',') }} kg @endif
+                            </span>
+                        @endforeach
+                    </div>
 
-                <div class="op-bar {{ $pct >= 100 ? 'done' : '' }}"><div style="width:{{ $pct }}%"></div></div>
-                <div class="op-nums">
-                    <span><b>{{ number_format($recebido, 1, ',', '.') }} t</b> de {{ number_format($esperado, 1, ',', '.') }} t</span>
-                    <span>{{ $pct }}% · {{ $op->discharges_count }} camiões</span>
-                </div>
-            </a>
-        </div>
-        @empty
-        <div class="col-12">
-            <div class="text-center text-muted py-5" style="font-size:.85rem;">
-                <i class="bi bi-ship" style="font-size:2rem;"></i>
-                <div class="mt-2">Sem operações. Crie a primeira com “Nova Operação”.</div>
+                    <div class="op-bar {{ $pct >= 100 ? 'done' : '' }}"><div style="width:{{ $pct }}%"></div></div>
+                    <div class="op-nums">
+                        <span><b>{{ number_format($recebido, 1, ',', '.') }} t</b> de {{ number_format($esperado, 1, ',', '.') }} t</span>
+                        <span>{{ $pct }}% · {{ $op->discharges_count }} camiões</span>
+                    </div>
+                </a>
             </div>
+            @empty
+            <div class="col-12">
+                <div class="text-center text-muted py-5" style="font-size:.85rem;">
+                    <i class="bi bi-ship" style="font-size:2rem;"></i>
+                    <div class="mt-2">Sem operações. Crie a primeira com “Nova Operação”.</div>
+                </div>
+            </div>
+            @endforelse
         </div>
-        @endforelse
     </div>
 </div>
 
@@ -161,6 +166,9 @@
     }
     atualizarAlertas();
     setInterval(atualizarAlertas, 30000);
+
+    // Depois de cada atualização automática, recalcula tempos e cores
+    document.addEventListener('auto-refresh:feito', atualizarAlertas);
 </script>
 
 </x-app-layout>

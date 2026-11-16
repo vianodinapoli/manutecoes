@@ -867,6 +867,10 @@ let _itensBalanca = [];
 const SLA_AMARELO  = 80;
 const SLA_VERMELHO = 120;
 
+// Atualização automática da página (milissegundos)
+const AUTO_REFRESH_MS = 5000;
+let _autoOcupado = false;
+
 $(document).ready(function(){
     dtTable = $('#dTable').DataTable({
         language:{ url:'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json' },
@@ -878,6 +882,10 @@ $(document).ready(function(){
     // Contador ao vivo + cores (actualiza todas as linhas, mesmo as de outras páginas da tabela)
     atualizarSla();
     setInterval(atualizarSla, 20000);
+
+    // Atualização automática dos dados (sem recarregar a página)
+    setInterval(atualizarAuto, AUTO_REFRESH_MS);
+    document.addEventListener('visibilitychange', atualizarAuto);
 
     @if(session('success'))
     const t = document.getElementById('successToast');
@@ -950,6 +958,64 @@ function atualizarSla() {
         const tempo = tr.querySelector('[data-tempo]');
         if (tempo) tempo.textContent = min + 'm';
     });
+}
+
+/* ── Atualização automática (de 5 em 5 s) ──
+   Vai buscar a própria página em segundo plano e actualiza o cabeçalho/plano, os KPIs e as linhas
+   da tabela. Mantém a página, a ordenação, a pesquisa e os filtros do DataTables.
+   Não corre com o separador escondido, com um modal aberto ou com o cursor num campo. */
+function _autoPodeAtualizar() {
+    if (document.visibilityState !== 'visible') return false;
+    if (document.querySelector('.modal.show')) return false;
+    const el = document.activeElement;
+    if (el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return false;
+    return true;
+}
+
+async function atualizarAuto() {
+    if (_autoOcupado || !dtTable || !_autoPodeAtualizar()) return;
+    _autoOcupado = true;
+
+    try {
+        const res = await fetch(window.location.href, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+            cache: 'no-store',
+        });
+        if (!res.ok) return;
+
+        const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+        const novoCorpo = doc.querySelector('#dTable tbody');
+        if (!novoCorpo) return;                    // resposta inesperada (ex.: sessão expirada)
+        if (!_autoPodeAtualizar()) return;         // o utilizador começou a mexer entretanto
+
+        // Cabeçalho da operação (plano vs realizado) e KPIs
+        ['.op-head', '.kpi-row'].forEach(sel => {
+            const atual = document.querySelector(sel), novo = doc.querySelector(sel);
+            if (atual && novo) atual.innerHTML = novo.innerHTML;
+        });
+
+        // Lista de transportadoras do filtro (pode ter aparecido uma nova)
+        const selAtual = document.getElementById('fTrans'), selNovo = doc.getElementById('fTrans');
+        if (selAtual && selNovo) {
+            const valor = selAtual.value;
+            selAtual.innerHTML = selNovo.innerHTML;
+            selAtual.value = valor;
+        }
+
+        // Linhas da tabela: substitui os dados e redesenha na mesma página
+        const tmp = document.createElement('tbody');
+        tmp.innerHTML = novoCorpo.innerHTML;
+        dtTable.clear();
+        dtTable.rows.add($(tmp).children('tr'));
+        dtTable.draw(false);
+
+        atualizarSla();
+    } catch (e) {
+        // sem rede ou erro temporário: tenta no próximo ciclo
+    } finally {
+        _autoOcupado = false;
+    }
 }
 
 function setBalancaStatus(msg, cor = '#64748b') {

@@ -133,8 +133,23 @@ Route::middleware('auth')->group(function () {
     // ── Discharges / Operações de descarga ──────────────────
     Route::middleware('permission:acesso discharges')->group(function () {
 
-        // Operações (navios). 'archive' tem de vir ANTES do resource.
+        // 'archive' e 'sinal' têm de vir ANTES do resource.
         Route::get('operations/archive', [DischargeOperationController::class, 'archive'])->name('operations.archive');
+
+        // Sinal leve para o auto-refresh (muda sempre que há alteração em operações ou camiões)
+        Route::get('operations/sinal', function () {
+            $sinal = md5(implode('|', [
+                \App\Models\DischargeOperation::count(),
+                \App\Models\DischargeOperation::max('updated_at'),
+                \App\Models\Discharge::count(),
+                \App\Models\Discharge::max('updated_at'),
+            ]));
+
+            return response()->json(['s' => $sinal])
+                ->header('Cache-Control', 'no-store');
+        })->name('operations.sinal');
+
+        // Operações (navios)
         Route::resource('operations', DischargeOperationController::class)
             ->except(['create', 'edit'])
             ->parameters(['operations' => 'operation']);
@@ -152,7 +167,8 @@ Route::middleware('auth')->group(function () {
         // Gestão de contentores
         Route::resource('contentores', ContentorController::class)
             ->parameters(['contentores' => 'contentor'])
-->except(['show', 'create', 'edit']);    });
+            ->except(['show', 'create', 'edit']);
+    });
 
     // ── Saídas de carga (cada saída = uma operação de carga) ─
     Route::middleware('permission:acesso discharges')

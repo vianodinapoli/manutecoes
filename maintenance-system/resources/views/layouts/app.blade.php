@@ -241,6 +241,8 @@
             box-shadow: 0 0 0 2px var(--sb-bg);
         }
         #sidebar.collapsed .sb-dot { display: block; }
+        /* contador a zero: escondido (os elementos existem sempre, para o auto refresh os poder actualizar) */
+        .ni-badge.is-zero, .sb-dot.is-zero { display: none !important; }
 
         /* ── DROPDOWN ── */
         .sb-dropdown { position: relative; }
@@ -637,10 +639,10 @@
                 <div class="sb-dropdown-trigger" :class="open ? 'open' : ''" @click="open = !open" style="position:relative;">
                     <i class="fas fa-ship ni-icon"></i>
                     <span class="ni-text">Descarga / Navio</span>
-                    @if($camioesPendentes > 0)
-                        <span class="ni-badge" title="Camiões por confirmar na balança">{{ $camioesPendentes }}</span>
-                        <span class="sb-dot"></span>
-                    @endif
+                    {{-- Os badges existem sempre; a classe is-zero esconde-os a zero (o auto refresh actualiza-os via data-pendentes) --}}
+                    <span class="ni-badge {{ $camioesPendentes > 0 ? '' : 'is-zero' }}" data-pendentes
+                          title="Camiões por confirmar na balança">{{ $camioesPendentes }}</span>
+                    <span class="sb-dot {{ $camioesPendentes > 0 ? '' : 'is-zero' }}" data-pendentes-dot></span>
                     <i class="fas fa-chevron-right sb-chevron"></i>
                 </div>
                 <div x-show="open" x-cloak x-collapse class="sb-dropdown-items">
@@ -660,9 +662,8 @@
                         :active="request()->routeIs('operations.index', 'operations.show', 'discharges.*')" class="nav-item">
                         <i class="fas fa-anchor ni-icon"></i>
                         <span class="ni-text">Operações</span>
-                        @if($camioesPendentes > 0)
-                            <span class="ni-badge" title="Camiões por confirmar na balança">{{ $camioesPendentes }}</span>
-                        @endif
+                        <span class="ni-badge {{ $camioesPendentes > 0 ? '' : 'is-zero' }}" data-pendentes
+                              title="Camiões por confirmar na balança">{{ $camioesPendentes }}</span>
                     </x-nav-link>
                     @if($temSaidas)
                     <x-nav-link :href="route('saidas.index')"
@@ -692,7 +693,7 @@
                     @endif
                     <a href="{{ route('operations.index') }}">
                         <i class="fas fa-anchor"></i> Operações
-                        @if($camioesPendentes > 0)<span class="ni-badge">{{ $camioesPendentes }}</span>@endif
+                        <span class="ni-badge {{ $camioesPendentes > 0 ? '' : 'is-zero' }}" data-pendentes>{{ $camioesPendentes }}</span>
                     </a>
                     @if($temSaidas)
                     <a href="{{ route('saidas.index') }}"><i class="fas fa-box-open"></i> Saída de carga</a>
@@ -818,7 +819,8 @@
         setTimeout(function(){ if (el) el.remove(); }, 380);
     }
 
-    @if(session('success')) $(document).ready(function(){ showToast('{{ addslashes(session('success')) }}','success'); }); @endif
+    {{-- Com ticket_url, o toast de sucesso é o da própria vista (traz o link "Imprimir ticket"); aqui só mostramos os restantes --}}
+    @if(session('success') && !session('ticket_url')) $(document).ready(function(){ showToast('{{ addslashes(session('success')) }}','success'); }); @endif
     @if(session('error'))   $(document).ready(function(){ showToast('{{ addslashes(session('error')) }}','error'); });   @endif
     @if(session('warning')) $(document).ready(function(){ showToast('{{ addslashes(session('warning')) }}','warning'); }); @endif
     @if(session('info'))    $(document).ready(function(){ showToast('{{ addslashes(session('info')) }}','info'); });    @endif

@@ -42,3 +42,5 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware('auth:sanctum')->get('/discharges/{discharge}', [\App\Http\Controllers\Api\DischargeShowApiController::class, 'show']);
 
 Route::middleware('auth:sanctum')->get('/operations/{operation}/discharges', [\App\Http\Controllers\Api\DischargeListApiController::class, 'index']);
+
+Route::middleware('auth:sanctum')->get('/contentores', [\App\Http\Controllers\Api\ContentorApiController::class, 'index']);
