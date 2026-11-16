@@ -820,10 +820,6 @@
     }
 
     {{-- Com ticket_url, o toast de sucesso é o da própria vista (traz o link "Imprimir ticket"); aqui só mostramos os restantes --}}
-    @if(session('success') && !session('ticket_url')) $(document).ready(function(){ showToast('{{ addslashes(session('success')) }}','success'); }); @endif
-    @if(session('error'))   $(document).ready(function(){ showToast('{{ addslashes(session('error')) }}','error'); });   @endif
-    @if(session('warning')) $(document).ready(function(){ showToast('{{ addslashes(session('warning')) }}','warning'); }); @endif
-    @if(session('info'))    $(document).ready(function(){ showToast('{{ addslashes(session('info')) }}','info'); });    @endif
 
     /* ── Sidebar toggle ── */
     document.addEventListener('DOMContentLoaded', function () {

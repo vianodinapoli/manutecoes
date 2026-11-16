@@ -27,7 +27,9 @@ use App\Http\Controllers\ContentorController;
 
 // ── Página inicial ──────────────────────────────────────────
 Route::get('/', function () {
-    return auth()->check() ? redirect()->route('dashboard') : view('auth/login');
+    return auth()->check()
+        ? redirect(\App\Support\HomeRedirect::para(auth()->user()))
+        : view('auth.login');
 });
 
 // ── Dashboard ───────────────────────────────────────────────
@@ -35,7 +37,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified', 'permission:acesso dashboard'])
     ->name('dashboard');
 
-Route::prefix('dashboard')->group(function () {
+Route::prefix('dashboard')->middleware(['auth', 'permission:acesso discharges'])->group(function () {
     Route::get('/descargas', [DashboardDescargasController::class, 'index'])->name('dashboard.descargas');
     Route::get('/saidas',    [DashboardSaidasController::class,    'index'])->name('dashboard.saidas');
 });

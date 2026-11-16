@@ -23,201 +23,302 @@
 
     $fmt = fn ($n) => rtrim(rtrim(number_format((float) $n, 3, ',', '.'), '0'), ',');
     $transpExtra = $operation->transportadorasExtra();
+
+    $dtChegada = $operation->data_chegada ? \Carbon\Carbon::parse($operation->data_chegada) : null;
+    $dtInicio  = $operation->started_at   ? \Carbon\Carbon::parse($operation->started_at)   : null;
+    $dtArquivo = $operation->archived_at  ? \Carbon\Carbon::parse($operation->archived_at)  : null;
+    $nomesProdutos = $planItems->pluck('nome')->filter()->implode(', ');
 @endphp
 
 <style>
-    /* ── Layout ── */
-    .page-header-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-    .page-title{font-size:1.05rem;font-weight:700;color:#1e293b;margin:0}
-    .page-sub{font-size:.72rem;color:#94a3b8;margin:2px 0 0}
+   /* ── Base: peso leve em toda a página ────────────────── */
+.op-page{font-weight:300;color:#334155;letter-spacing:.1px}
+.op-page b,.op-page strong,.op-page .fw-bold,.op-page .fw-semibold{font-weight:400 !important}
 
-    /* ── Cabeçalho da operação ── */
-    .op-head{background:#fff;border:1px solid #e9ecef;border-radius:10px;padding:14px 18px;margin-bottom:14px}
-    .op-ref{font-size:.72rem;color:#94a3b8}
-    .op-ref b{color:#475569;font-weight:600}
-    .op-bar{height:10px;border-radius:6px;background:#f1f3f5;overflow:hidden;margin:10px 0 4px}
-    .op-bar>div{height:100%;border-radius:6px;background:linear-gradient(90deg,#1a56db,#0dcaf0)}
-    .op-bar.done>div{background:#198754}
-    .op-nums{display:flex;justify-content:space-between;font-size:.7rem;color:#64748b;flex-wrap:wrap;gap:6px}
-    .meta-chip{display:inline-block;background:#f1f3f5;color:#475569;border-radius:4px;
-               font-size:.62rem;padding:1px 7px;margin:2px 3px 0 0}
+/* ── Cabeçalho da página ─────────────────────────────── */
+.page-header-bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.page-title{font-size:clamp(.95rem,1.6vw,1.02rem);font-weight:500;color:#1e293b;margin:0}
+.page-sub{font-size:.68rem;font-weight:300;color:#64748b;margin:2px 0 0}
+.back-link{font-size:.7rem;color:#64748b;text-decoration:none}
+.back-link:hover{color:#0d6efd}
+.btn-op{border-radius:8px;font-weight:400;font-size:.7rem;padding:.3rem .65rem;min-height:30px;
+        display:inline-flex;align-items:center;justify-content:center;gap:.35rem}
+.estado-badge{font-size:.58rem;font-weight:400;vertical-align:middle}
 
-    /* ── Stickers de transportadoras ── */
-    .tp-label{font-size:.6rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#94a3b8;margin-right:6px}
-    .tp-chip{display:inline-flex;align-items:center;gap:4px;background:#eef2ff;color:#3b4cca;border:1px solid #d5dcff;
-             border-radius:20px;font-size:.64rem;font-weight:600;padding:2px 9px;margin:2px 3px 0 0;white-space:nowrap}
-    .tp-chip.extra{background:#fd7e14;color:#fff;border-color:#fd7e14;box-shadow:0 0 0 3px rgba(253,126,20,.22)}
+/* ── Cabeçalho da operação ───────────────────────────── */
+.op-head{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;margin-bottom:12px}
+.op-ref{font-size:.68rem;color:#64748b;display:flex;flex-wrap:wrap;gap:3px 14px}
+.op-ref b{color:#334155;font-weight:400}
+.op-ref i{color:#94a3b8;margin-right:3px}
+.op-bar{height:7px;border-radius:6px;background:#eef1f5;overflow:hidden;margin:10px 0 5px}
+.op-bar>div{height:100%;border-radius:6px;background:linear-gradient(90deg,#1a56db,#0dcaf0);transition:width .4s}
+.op-bar.done>div{background:#198754}
+.op-nums{display:flex;justify-content:space-between;font-size:.68rem;color:#64748b;flex-wrap:wrap;gap:6px}
+.meta-chip{display:inline-block;background:#f1f3f5;color:#475569;border-radius:6px;
+           font-size:.62rem;padding:2px 7px;margin:3px 4px 0 0}
 
-    /* ── Plano vs realizado ── */
-    #planoTable th{font-size:.58rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#868e96;
-                   border-bottom:1px solid #e9ecef;padding:6px 8px;white-space:nowrap}
-    #planoTable td{font-size:.76rem;padding:6px 8px;vertical-align:middle;border-bottom:1px solid #f1f3f5}
-    .prod-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
-    .mini-bar{height:6px;border-radius:4px;background:#f1f3f5;overflow:hidden;min-width:70px}
-    .mini-bar>div{height:100%;border-radius:4px}
+/* ── Transportadoras ─────────────────────────────────── */
+.tp-label{font-size:.58rem;font-weight:500;letter-spacing:.8px;text-transform:uppercase;color:#94a3b8;margin-right:6px}
+.tp-chip{display:inline-flex;align-items:center;gap:4px;background:#eef2ff;color:#3b4cca;border:1px solid #d5dcff;
+         border-radius:20px;font-size:.62rem;font-weight:400;padding:1px 8px;margin:3px 4px 0 0;white-space:nowrap}
+.tp-chip.extra{background:#fd7e14;color:#fff;border-color:#fd7e14;box-shadow:0 0 0 2px rgba(253,126,20,.18)}
 
-    /* ── KPIs ── */
-    .kpi-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-    .kpi{flex:1;min-width:100px;background:#fff;border:1px solid #e9ecef;border-radius:10px;
-         padding:10px 14px;position:relative;overflow:hidden}
-    .kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:10px 0 0 10px}
-    .kpi.teal::before{background:#0dcaf0}.kpi.green::before{background:#198754}
-    .kpi.purple::before{background:#6f42c1}.kpi.gold::before{background:#fd7e14}
-    .kpi.amber::before{background:#ffc107}
-    .kpi-lbl{font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#adb5bd;margin-bottom:2px}
-    .kpi-val{font-size:1.35rem;font-weight:800;line-height:1.1;color:#1e293b}
-    .kpi-sub{font-size:.62rem;color:#adb5bd;margin-top:1px}
+/* ── Plano vs realizado ──────────────────────────────── */
+#planoTable th{font-size:.58rem;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:#868e96;
+               border-bottom:1px solid #e9ecef;padding:5px 8px;white-space:nowrap}
+#planoTable td{font-size:.7rem;font-weight:300;padding:5px 8px;vertical-align:middle;border-bottom:1px solid #f1f3f5}
+#planoTable td.fw-bold{font-weight:400 !important}
+.prod-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}
+.prod-tipo{font-size:.62rem;color:#94a3b8;font-weight:300;margin-left:4px}
+.mini-bar{height:4px;border-radius:4px;background:#f1f3f5;overflow:hidden;min-width:70px}
+.mini-bar>div{height:100%;border-radius:4px}
 
-    /* ── Filter panel ── */
-    .filter-panel{background:#fff;border:1px solid #e9ecef;border-radius:10px;
-                  padding:14px 18px;margin-bottom:14px}
-    .filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
-    .fi{display:flex;flex-direction:column;gap:3px}
-    .fi label{font-size:.62rem;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#94a3b8}
-    .fi select,.fi input{border:1px solid #dee2e6;border-radius:6px;padding:5px 10px;
-                          font-size:.78rem;color:#343a40;background:#f8f9fa;min-width:120px;outline:none}
-    .fi select:focus,.fi input:focus{border-color:#0d6efd;background:#fff}
-    .btn-f{padding:6px 14px;border-radius:6px;font-size:.75rem;font-weight:600;
-           cursor:pointer;border:1px solid #dee2e6;display:inline-flex;align-items:center;gap:5px}
-    .btn-fa{background:#0d6efd;color:#fff;border-color:#0d6efd}.btn-fa:hover{background:#0b5ed7}
-    .btn-fc{background:#f8f9fa;color:#495057}.btn-fc:hover{background:#e9ecef}
-    .btn-fr{background:#198754;color:#fff;border-color:#198754}.btn-fr:hover{background:#146c43}
-    .atr-chip{display:inline-block;font-size:.55rem;font-weight:700;letter-spacing:.5px;padding:1px 6px;border-radius:3px;margin:2px 0 0 4px}
-    .atr-chip.normal{background:#e8f0fe;color:#1a56db}.atr-chip.link{background:#fde8e8;color:#dc3545}
-    .active-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
-    .ftag{display:inline-flex;align-items:center;gap:4px;background:#e7f1ff;color:#0d6efd;
-          border:1px solid #b6d0ff;border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:500}
-    .ftag .rm{cursor:pointer;opacity:.6}.ftag .rm:hover{opacity:1}
+/* ── KPIs ────────────────────────────────────────────── */
+.kpi-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.kpi{flex:1 1 120px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;
+     padding:7px 12px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:10px 0 0 10px}
+.kpi.teal::before{background:#0dcaf0}.kpi.green::before{background:#198754}
+.kpi.purple::before{background:#6f42c1}.kpi.gold::before{background:#fd7e14}
+.kpi.amber::before{background:#ffc107}
+.kpi-lbl{font-size:.56rem;font-weight:500;letter-spacing:.9px;text-transform:uppercase;color:#94a3b8;margin-bottom:2px}
+.kpi-val{font-size:1.05rem;font-weight:400;line-height:1.1;color:#1e293b}
+.kpi-sub{font-size:.62rem;font-weight:300;color:#94a3b8;margin-top:1px}
 
-    /* ── Table ── */
-    .table-card{background:#fff;border:1px solid #e9ecef;border-radius:10px;overflow:hidden}
-    #dTable thead tr{background:#f8f9fa}
-    #dTable thead th{font-size:.6rem;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
-                      color:#868e96;border-bottom:1px solid #e9ecef;padding:7px 10px;white-space:nowrap}
-    #dTable tbody td{padding:5px 10px;vertical-align:middle;border-bottom:1px solid #f1f3f5;font-size:.78rem}
-    #dTable tbody tr:hover{background:#fafbff}
-    #dTable tbody tr:last-child td{border-bottom:none}
+/* ── Filtros ─────────────────────────────────────────── */
+.filter-panel{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px 16px;margin-bottom:12px}
+.filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.fi{display:flex;flex-direction:column;gap:3px}
+.fi label{font-size:.58rem;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8}
+.fi select,.fi input{border:1px solid #dee2e6;border-radius:7px;padding:3px 9px;min-height:28px;
+                     font-size:.7rem;font-weight:300;color:#343a40;background:#f8f9fa;min-width:116px;outline:none}
+.fi select:focus,.fi input:focus{border-color:#0d6efd;background:#fff}
+.btn-f{padding:4px 12px;min-height:28px;border-radius:7px;font-size:.7rem;font-weight:400;
+       cursor:pointer;border:1px solid #dee2e6;display:inline-flex;align-items:center;gap:5px}
+.btn-fa{background:#0d6efd;color:#fff;border-color:#0d6efd}.btn-fa:hover{background:#0b5ed7}
+.btn-fc{background:#f8f9fa;color:#495057}.btn-fc:hover{background:#e9ecef}
+.btn-fr{background:#198754;color:#fff;border-color:#198754}.btn-fr:hover{background:#146c43}
+.atr-chip{display:inline-block;font-size:.56rem;font-weight:500;letter-spacing:.4px;padding:1px 6px;border-radius:4px;margin:2px 0 0 4px}
+.atr-chip.normal{background:#e8f0fe;color:#1a56db}.atr-chip.link{background:#fde8e8;color:#dc3545}
+.active-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.ftag{display:inline-flex;align-items:center;gap:5px;background:#e7f1ff;color:#0d6efd;
+      border:1px solid #b6d0ff;border-radius:20px;padding:2px 9px;font-size:.64rem;font-weight:400}
+.ftag .rm{cursor:pointer;opacity:.6;font-size:.56rem}.ftag .rm:hover{opacity:1}
 
-    /* ── Alerta de tempo porto → balança (camiões por confirmar) ── */
-    .sla-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;
-             background:#0dcaf0;box-shadow:0 0 0 3px rgba(13,202,240,.22)}
-    .sla-dot.sla-warn{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.30)}
-    .sla-dot.sla-danger{background:#dc3545;box-shadow:0 0 0 3px rgba(220,53,69,.30);animation:sla-pulse 1.2s infinite}
-    @keyframes sla-pulse{0%,100%{opacity:1}50%{opacity:.35}}
-    #dTable tbody tr.sla-warn > td{background-color:#fffbeb}
-    #dTable tbody tr.sla-danger > td{background-color:#fef2f2}
-    #dTable tbody tr.sla-warn > td:first-child{border-left:4px solid #f59e0b}
-    #dTable tbody tr.sla-danger > td:first-child{border-left:4px solid #dc3545}
-    tr.sla-warn .sla-tempo{color:#b45309;font-weight:700}
-    tr.sla-danger .sla-tempo{color:#b91c1c;font-weight:700}
+/* ── Tabela ──────────────────────────────────────────── */
+#dTable{font-size:.72rem;font-weight:300;color:#334155;letter-spacing:.1px}
+#dTable thead tr{background:#f8f9fa}
+#dTable thead th{font-size:.58rem;font-weight:500;letter-spacing:.6px;text-transform:uppercase;
+                 color:#868e96;border-bottom:1px solid #e9ecef;padding:7px 9px;white-space:nowrap}
+#dTable tbody td{padding:6px 9px;vertical-align:middle;border-bottom:1px solid #f1f3f5;
+                 font-size:.72rem;font-weight:300;line-height:1.4}
+#dTable tbody tr:hover{background:#fafbff}
+#dTable tbody tr:last-child td{border-bottom:none}
 
-    /* ── Sacos pills ── */
-    .sp{display:inline-flex;align-items:center;gap:3px;border-radius:4px;
-        padding:1px 6px;font-size:.65rem;font-weight:700;line-height:1.5;border:1px solid}
-    .sp-ref{font-size:.55rem;letter-spacing:.5px;text-transform:uppercase;opacity:.75}
-    .sp-n{font-size:.75rem;font-weight:800}
-    .sp-total{font-size:.6rem;color:#94a3b8;background:#f1f3f5;border-radius:3px;padding:0 4px}
-    .div-badge{display:inline-flex;align-items:center;gap:2px;background:#fff3cd;color:#856404;
-               border:1px solid #ffc107;border-radius:3px;padding:0 5px;font-size:.58rem;font-weight:600}
+.c-id{font-size:.72rem;font-weight:400;color:#64748b}
+.c-sub{font-size:.64rem;font-weight:300;color:#94a3b8}
+.c-guia{font-size:.72rem;font-weight:400;color:#1a56db;white-space:nowrap}
 
-    /* ── Status badge ── */
-    .sbadge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;
-            border-radius:20px;font-size:.63rem;font-weight:600;white-space:nowrap}
+#dTable .fw-bold{font-weight:400 !important}
+#dTable .motorista-name{font-size:.74rem;font-weight:400;color:#1e293b;line-height:1.3}
+#dTable .mat-badge{display:inline-block;margin-top:2px;font-size:.56rem;padding:1px 5px;font-weight:400;letter-spacing:.6px}
+#dTable .atr-chip{margin:2px 0 0 4px;font-weight:500}
+#dTable .sp{font-size:.64rem;font-weight:400;padding:0 5px}
+#dTable .sp-ref{font-weight:400}
+#dTable .sp-n{font-size:.7rem;font-weight:500}
+#dTable .sp-total,#dTable .div-badge{font-weight:400}
+#dTable .sbadge{font-size:.62rem;font-weight:400;padding:2px 8px}
+#dTable .btn-balanca{font-size:.64rem;font-weight:500;padding:2px 9px;min-height:24px}
+#dTable .ab{width:24px;height:24px;font-size:.68rem}
+#dTable .text-muted{font-weight:300}
 
-    /* ── Action btns ── */
-    .ab{width:24px;height:24px;border-radius:5px;display:inline-flex;align-items:center;
-        justify-content:center;font-size:.68rem;border:1px solid;transition:all .12s;
-        text-decoration:none;cursor:pointer;background:transparent}
-    .btn-balanca{font-size:.62rem;padding:2px 8px;border-radius:20px;font-weight:700;
-                 background:#198754;color:#fff;border:none;white-space:nowrap;
-                 display:inline-flex;align-items:center;gap:3px}
-    .btn-balanca:hover{background:#146c43;color:#fff}
-    .btn-balanca.pesar{background:#fd7e14}
-    .btn-balanca.pesar:hover{background:#d96a0c}
+#dTable td:nth-child(1),
+#dTable td:nth-child(2),
+#dTable td:nth-child(6),
+#dTable td:nth-child(7),
+#dTable td:nth-child(8),
+#dTable td:nth-child(9){white-space:nowrap}
 
-    /* ── Motorista block ── */
-    .motorista-name{font-size:.78rem;font-weight:600;color:#1e293b;line-height:1.2}
-    .mat-badge{display:inline-block;background:#1e293b;color:#fff;border-radius:3px;
-               font-size:.55rem;letter-spacing:1px;padding:1px 5px;margin-top:2px;font-weight:600}
+/* ── Alerta de tempo porto -> balança ────────────────── */
+.sla-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;
+         background:#0dcaf0;box-shadow:0 0 0 3px rgba(13,202,240,.22)}
+.sla-dot.sla-warn{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.30)}
+.sla-dot.sla-danger{background:#dc3545;box-shadow:0 0 0 3px rgba(220,53,69,.30);animation:sla-pulse 1.2s infinite}
+@keyframes sla-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+#dTable tbody tr.sla-warn > td{background-color:#fffbeb}
+#dTable tbody tr.sla-danger > td{background-color:#fef2f2}
+#dTable tbody tr.sla-warn > td:first-child{border-left:4px solid #f59e0b}
+#dTable tbody tr.sla-danger > td:first-child{border-left:4px solid #dc3545}
+tr.sla-warn .sla-tempo{color:#b45309;font-weight:400}
+tr.sla-danger .sla-tempo{color:#b91c1c;font-weight:400}
 
-    /* ── DataTable overrides ── */
-    div.dataTables_wrapper div.dataTables_filter input{border-radius:6px;border:1px solid #dee2e6;
-        padding:4px 10px;font-size:.78rem}
-    div.dataTables_wrapper div.dataTables_length select{border-radius:6px;border:1px solid #dee2e6;
-        padding:3px 6px;font-size:.78rem}
-    div.dataTables_wrapper div.dataTables_info{font-size:.72rem;color:#94a3b8;padding-top:6px}
-    div.dataTables_wrapper div.dataTables_paginate .paginate_button{font-size:.72rem;border-radius:5px!important}
+/* ── Cargas ──────────────────────────────────────────── */
+.sp{display:inline-flex;align-items:center;gap:3px;border-radius:5px;
+    padding:1px 6px;font-size:.64rem;font-weight:400;line-height:1.5;border:1px solid}
+.sp-ref{font-size:.54rem;letter-spacing:.4px;text-transform:uppercase;opacity:.75}
+.sp-n{font-size:.7rem;font-weight:500}
+.sp-total{font-size:.6rem;color:#94a3b8;background:#f1f3f5;border-radius:4px;padding:0 5px}
+.div-badge{display:inline-flex;align-items:center;gap:3px;background:#fff3cd;color:#856404;
+           border:1px solid #ffc107;border-radius:4px;padding:0 6px;font-size:.58rem}
 
-    .modal-loading{display:flex;align-items:center;justify-content:center;
-                   height:260px;flex-direction:column;gap:10px;color:#adb5bd}
+/* ── Estado ──────────────────────────────────────────── */
+.sbadge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;
+        border-radius:20px;font-size:.62rem;font-weight:400;white-space:nowrap}
 
-    /* ── Progresso da pesagem (modal da balança) ── */
-    #pwProg{border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;background:#f8fafc}
-    #pwBarra{height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin:8px 0}
-    #pwFill{height:100%;width:0;border-radius:6px;transition:width .25s,background .25s}
-    .pw-chip{font-size:.72rem;font-weight:600;border-radius:20px;padding:2px 12px;border:1px solid #cbd5e1}
+/* ── Acções ──────────────────────────────────────────── */
+.ab{width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;
+    justify-content:center;font-size:.72rem;border:1px solid;transition:all .12s;
+    text-decoration:none;cursor:pointer;background:transparent}
+.btn-balanca{font-size:.64rem;padding:3px 9px;min-height:26px;border-radius:20px;font-weight:500;
+             background:#198754;color:#fff;border:none;white-space:nowrap;
+             display:inline-flex;align-items:center;gap:4px}
+.btn-balanca:hover{background:#146c43;color:#fff}
+.btn-balanca.pesar{background:#fd7e14}
+.btn-balanca.pesar:hover{background:#d96a0c}
 
+.motorista-name{font-size:.74rem;font-weight:400;color:#1e293b;line-height:1.3}
+.mat-badge{display:inline-block;background:#1e293b;color:#fff;border-radius:4px;
+           font-size:.56rem;letter-spacing:.8px;padding:1px 6px;margin-top:2px;font-weight:400}
+
+/* ── DataTables (Mostrar / Procurar / paginação mais pequenos e leves) ── */
+div.dataTables_wrapper{font-size:.7rem;font-weight:300}
+div.dataTables_wrapper div.dataTables_length,
+div.dataTables_wrapper div.dataTables_filter{font-size:.7rem;color:#64748b}
+div.dataTables_wrapper div.dataTables_filter input{border-radius:7px;border:1px solid #dee2e6;
+    padding:2px 9px;font-size:.7rem;font-weight:300;min-height:26px}
+div.dataTables_wrapper div.dataTables_length select{border-radius:7px;border:1px solid #dee2e6;
+    padding:2px 22px 2px 8px;font-size:.7rem;font-weight:300;min-height:26px}
+div.dataTables_wrapper div.dataTables_info{font-size:.66rem;color:#94a3b8;padding-top:8px}
+div.dataTables_wrapper div.dataTables_paginate .pagination{margin:0;gap:2px}
+div.dataTables_wrapper div.dataTables_paginate .page-link{font-size:.68rem;font-weight:300;padding:3px 10px;
+    border-radius:6px !important;color:#475569}
+div.dataTables_wrapper div.dataTables_paginate .page-item.active .page-link{color:#fff;font-weight:400}
+
+.modal-loading{display:flex;align-items:center;justify-content:center;
+               height:260px;flex-direction:column;gap:10px;color:#94a3b8}
+
+/* ── Modais: mesmo peso leve ─────────────────────────── */
+.modal{font-weight:300}
+.modal b,.modal strong,.modal .fw-bold{font-weight:400 !important}
+.modal .modal-title{font-weight:500 !important}
+
+/* ── Progresso da pesagem ────────────────────────────── */
+#pwProg{border:1px solid #e2e8f0;border-radius:10px;padding:9px 12px;background:#f8fafc}
+#pwBarra{height:6px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin:7px 0}
+#pwFill{height:100%;width:0;border-radius:6px;transition:width .25s,background .25s}
+.pw-chip{font-size:.66rem;font-weight:400;border-radius:20px;padding:2px 11px;border:1px solid #cbd5e1;
+         display:inline-flex;align-items:center;gap:5px}
+#pwTitulo{font-size:.8rem;font-weight:500}
+#pwTexto{font-size:.68rem}
+
+.lbl-b{font-size:.68rem;font-weight:400;color:#64748b}
+.lbl-b small{font-weight:300;color:#94a3b8}
+
+/* ── Modal de confirmação ────────────────────────────── */
+.confirm-icon{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;
+              justify-content:center;font-size:1.35rem;margin:0 auto 12px}
+.confirm-icon.perigo{background:#fee2e2;color:#dc3545}
+.confirm-icon.aviso{background:#fef3c7;color:#b45309}
+.confirm-icon.info{background:#e0ecff;color:#0d6efd}
+#confirmarTitulo{font-size:.9rem;font-weight:500;color:#1e293b}
+#confirmarTexto{color:#64748b;font-size:.74rem;margin-bottom:0}
+
+/* ── Modais visíveis em qualquer ecrã, sem zoom ──────── */
+.modal .modal-dialog{margin:.5rem auto;max-width:min(var(--bs-modal-width,500px),calc(100vw - 1rem))}
+.modal .modal-content{max-height:calc(100vh - 1rem);max-height:calc(100dvh - 1rem);
+                      display:flex;flex-direction:column;overflow:hidden}
+.modal .modal-content>form{display:flex;flex-direction:column;min-height:0;max-height:inherit;overflow:hidden}
+.modal .modal-header,.modal .modal-footer{flex-shrink:0}
+.modal .modal-body{overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch}
+@media (max-width:767.98px){
+    .modal input,.modal select,.modal textarea,.fi select,.fi input{font-size:16px !important}
+    .modal .modal-footer{flex-wrap:wrap}
+    .modal .modal-footer .btn{flex:1 1 140px}
+    .fi{flex:1 1 140px}
+    .fi select,.fi input{width:100%}
+}
+@media (pointer:coarse){
+    .modal .btn,.modal .form-control,.modal .form-select{min-height:40px}
+    .ab{width:34px;height:34px}
+    .btn-balanca{min-height:34px}
+}
 </style>
 
-<div class="container-fluid py-3 px-4">
-
-    {{-- HEADER --}}
+<div class="container-fluid py-3 px-3 px-md-4 op-page">
+    {{-- CABEÇALHO --}}
     <div class="page-header-bar no-print">
         <div>
-            <a href="{{ $readonly ? route('operations.archive') : route('operations.index') }}"
-               class="text-decoration-none" style="font-size:.7rem;color:#94a3b8;">
+            <a href="{{ $readonly ? route('operations.archive') : route('operations.index') }}" class="back-link">
                 <i class="bi bi-arrow-left me-1"></i>{{ $readonly ? 'Arquivo' : 'Operações' }}
             </a>
-            <div class="page-title mt-1">
-                <i class="bi bi-ship me-2" style="color:#0d6efd;"></i>{{ $operation->navio }}
+            <h1 class="page-title mt-1">
+                <i class="bi bi-water me-2 text-primary"></i>{{ $operation->navio }}
                 @if($readonly)
-                    <span class="badge bg-secondary ms-2" style="font-size:.6rem;vertical-align:middle;">ARQUIVADA</span>
+                    <span class="badge bg-secondary ms-2 estado-badge">ARQUIVADA</span>
                 @else
-                    <span class="badge ms-2" style="background:#e0f7fc;color:#0aa2c0;font-size:.6rem;vertical-align:middle;">EM CURSO</span>
+                    <span class="badge ms-2 estado-badge" style="background:#e0f7fc;color:#0a8aa5;">EM CURSO</span>
                 @endif
+            </h1>
+            <div class="page-sub">
+                {{ $operation->empresa }}
+                @if($nomesProdutos)<i class="bi bi-dot"></i>{{ $nomesProdutos }}@endif
             </div>
-            <div class="page-sub">{{ $operation->empresa }} — Nitrato de Amónio</div>
         </div>
-        <div class="d-flex gap-2">
-            <a href="{{ route('operations.report', $operation) }}" target="_blank"
-               class="btn btn-outline-secondary btn-sm fw-bold" style="border-radius:7px;font-size:.75rem;">
-                <i class="bi bi-file-earmark-text me-1"></i>Relatório
+
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ route('operations.report', $operation) }}" target="_blank" class="btn btn-outline-secondary btn-op">
+                <i class="bi bi-file-earmark-text"></i>Relatório
             </a>
 
             @if(!$readonly)
-                <button class="btn btn-outline-primary btn-sm fw-bold" style="border-radius:7px;font-size:.75rem;"
+                <button type="button" class="btn btn-outline-primary btn-op"
                         onclick='abrirOperacaoModal(@json($operation->modalPayload()))'>
-                    <i class="bi bi-pencil me-1"></i>Editar Operação
+                    <i class="bi bi-pencil"></i>Editar Operação
                 </button>
 
-                <form action="{{ route('operations.archiveOperation', $operation) }}" method="POST" class="m-0">
+                <form action="{{ route('operations.archiveOperation', $operation) }}" method="POST" class="m-0"
+                      data-confirm
+                      data-confirm-tipo="aviso"
+                      data-confirm-icone="bi-archive"
+                      data-confirm-titulo="Arquivar esta operação?"
+                      data-confirm-texto="A operação do navio {{ $operation->navio }} vai para o Arquivo e deixa de aceitar novas descargas. Pode reactivá-la quando quiser."
+                      data-confirm-ok="Sim, arquivar">
                     @csrf @method('PATCH')
-                    <button type="submit" class="btn btn-outline-dark btn-sm fw-bold" style="border-radius:7px;font-size:.75rem;"
-                            onclick="return confirm('Enviar esta operação para o arquivo?')">
-                        <i class="bi bi-archive me-1"></i>Arquivar
+                    <button type="submit" class="btn btn-outline-dark btn-op">
+                        <i class="bi bi-archive"></i>Arquivar
                     </button>
                 </form>
 
-                <button class="btn btn-primary btn-sm fw-bold shadow-sm" style="border-radius:7px;font-size:.75rem;"
+                <button type="button" class="btn btn-primary btn-op shadow-sm"
                         onclick="abrirModal('{{ route('discharges.create', ['operation_id' => $operation->id]) }}', 'Registar Nova Descarga', 'primary')">
-                    <i class="bi bi-plus-lg me-1"></i>Nova Descarga
+                    <i class="bi bi-plus-lg"></i>Nova Descarga
                 </button>
             @else
-                <form action="{{ route('operations.restore', $operation) }}" method="POST" class="m-0">
+                <form action="{{ route('operations.restore', $operation) }}" method="POST" class="m-0"
+                      data-confirm
+                      data-confirm-tipo="info"
+                      data-confirm-icone="bi-arrow-counterclockwise"
+                      data-confirm-titulo="Reactivar esta operação?"
+                      data-confirm-texto="A operação do navio {{ $operation->navio }} volta a ficar em curso e poderá registar novas descargas."
+                      data-confirm-ok="Sim, reactivar">
                     @csrf @method('PATCH')
-                    <button type="submit" class="btn btn-outline-warning btn-sm fw-bold" style="border-radius:7px;font-size:.75rem;"
-                            onclick="return confirm('Reactivar esta operação?')">
-                        <i class="bi bi-arrow-counterclockwise me-1"></i>Reactivar
+                    <button type="submit" class="btn btn-outline-warning btn-op">
+                        <i class="bi bi-arrow-counterclockwise"></i>Reactivar
                     </button>
                 </form>
             @endif
         </div>
     </div>
 
-    {{-- ALERTAS --}}
+    {{-- ERROS --}}
     @if($errors->any())
-        <div class="alert alert-danger py-2 no-print" style="font-size:.78rem;border-radius:8px;">
-            @foreach($errors->all() as $e)<div>{{ $e }}</div>@endforeach
+        <div class="alert alert-danger py-2 no-print" role="alert" style="font-size:.74rem;border-radius:10px;">
+            <div class="d-flex align-items-center gap-2 fw-semibold mb-1">
+                <i class="bi bi-exclamation-triangle-fill"></i>Não foi possível concluir. Verifique:
+            </div>
+            <ul class="mb-0 ps-4">
+                @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
+            </ul>
         </div>
     @endif
 
@@ -225,12 +326,12 @@
     @if(session('success'))
     <div class="position-fixed top-0 end-0 p-3 no-print" style="z-index:9999;">
         <div id="successToast" class="toast show border-0"
-             style="border-radius:10px;min-width:240px;overflow:hidden;
+             style="border-radius:10px;min-width:240px;max-width:92vw;overflow:hidden;
                     background:rgba(25,135,84,.95);backdrop-filter:blur(12px);
                     box-shadow:0 8px 24px rgba(25,135,84,.3);">
             <div class="d-flex align-items-center gap-2 px-3 py-2">
-                <i class="bi bi-check-circle-fill text-white" style="font-size:1.1rem;"></i>
-                <div style="font-size:.75rem;color:rgba(255,255,255,.95);">{{ session('success') }}
+                <i class="bi bi-check-circle-fill text-white" style="font-size:1rem;"></i>
+                <div style="font-size:.74rem;color:rgba(255,255,255,.95);">{{ session('success') }}
                     @if(session('ticket_url'))
                         <a href="{{ session('ticket_url') }}" target="_blank"
                            style="color:#fff;font-weight:700;text-decoration:underline;margin-left:6px;white-space:nowrap;">
@@ -239,7 +340,7 @@
                     @endif
                 </div>
                 <button type="button" class="btn-close btn-close-white opacity-75 ms-auto"
-                        data-bs-dismiss="toast" style="font-size:.5rem;"></button>
+                        data-bs-dismiss="toast" aria-label="Fechar" style="font-size:.55rem;"></button>
             </div>
             <div style="height:2px;background:rgba(255,255,255,.15);">
                 <div id="toastProg" style="height:100%;width:100%;background:rgba(255,255,255,.5);transition:width {{ session('ticket_url') ? '12s' : '3.5s' }} linear;"></div>
@@ -251,36 +352,36 @@
     {{-- CABEÇALHO DA OPERAÇÃO + PLANO VS REALIZADO --}}
     <div class="op-head no-print">
         <div class="op-ref">
-            BL: <b>{{ $operation->bl ?: '—' }}</b> &nbsp;·&nbsp;
-            Factura: <b>{{ $operation->factura ?: '—' }}</b> &nbsp;·&nbsp;
-            Empresa: <b>{{ $operation->empresa }}</b>
-            @if($operation->data_chegada) &nbsp;·&nbsp; Chegada: <b>{{ $operation->data_chegada->format('d/m/Y') }}</b> @endif
-            @if($operation->started_at) &nbsp;·&nbsp; Iniciada: <b>{{ $operation->started_at->format('d/m/Y H:i') }}</b> @endif
-            @if($readonly && $operation->archived_at) &nbsp;·&nbsp; Arquivada em: <b>{{ $operation->archived_at->format('d/m/Y') }}</b> @endif
+            <span><i class="bi bi-file-earmark-text"></i>BL: <b>{{ $operation->bl ?: '-' }}</b></span>
+            <span><i class="bi bi-receipt"></i>Factura: <b>{{ $operation->factura ?: '-' }}</b></span>
+            <span><i class="bi bi-building"></i>Empresa: <b>{{ $operation->empresa }}</b></span>
+            @if($dtChegada)<span><i class="bi bi-calendar-event"></i>Chegada: <b>{{ $dtChegada->format('d/m/Y') }}</b></span>@endif
+            @if($dtInicio)<span><i class="bi bi-play-circle"></i>Iniciada: <b>{{ $dtInicio->format('d/m/Y H:i') }}</b></span>@endif
+            @if($readonly && $dtArquivo)<span><i class="bi bi-archive"></i>Arquivada em: <b>{{ $dtArquivo->format('d/m/Y') }}</b></span>@endif
         </div>
 
         @if(!empty($operation->metadata))
         <div>
             @foreach($operation->metadata as $k => $v)
-                <span class="meta-chip"><b>{{ $k }}:</b> {{ $v }}</span>
+                <span class="meta-chip"><b>{{ $k }}:</b> {{ is_scalar($v) ? $v : json_encode($v) }}</span>
             @endforeach
         </div>
         @endif
 
         @if(!empty($operation->transportadoras))
-        <div class="mt-1">
-            <span class="tp-label">Transportadoras</span>
+        <div class="mt-2">
+            <span class="tp-label"><i class="bi bi-truck me-1"></i>Transportadoras</span>
             @foreach($operation->transportadoras as $t)
                 <span class="tp-chip {{ !empty($t['extra']) ? 'extra' : '' }}"
                       @if(!empty($t['extra'])) title="Fora da lista prevista (acrescentada ao lançar um camião)" @endif>
-                    @if(!empty($t['extra']))<i class="bi bi-exclamation-triangle-fill"></i>@endif{{ $t['nome'] }}
+                    @if(!empty($t['extra']))<i class="bi bi-exclamation-triangle-fill"></i>@endif{{ $t['nome'] ?? '' }}
                 </span>
             @endforeach
         </div>
         @endif
 
         @if($operation->observacoes)
-            <div class="mt-1" style="font-size:.72rem;color:#64748b;"><i class="bi bi-chat-left-text me-1"></i>{{ $operation->observacoes }}</div>
+            <div class="mt-2" style="font-size:.72rem;color:#64748b;"><i class="bi bi-chat-left-text me-1"></i>{{ $operation->observacoes }}</div>
         @endif
 
         {{-- Plano vs realizado por produto --}}
@@ -307,8 +408,8 @@
                 <tr>
                     <td class="fw-bold">
                         <span class="prod-dot" style="background:{{ $cor[$pi->id]['tx'] }};"></span>{{ $pi->nome }}
-                        <span class="text-muted fw-normal" style="font-size:.65rem;">
-                            @if($pi->unidade === 'saco') · {{ $fmt($pi->peso_unitario_kg) }} kg/saco @else · granel @endif
+                        <span class="prod-tipo">
+                            @if($pi->unidade === 'saco') sacos de {{ $fmt($pi->peso_unitario_kg) }} kg @else a granel @endif
                         </span>
                     </td>
                     <td class="text-end">{{ $fmt($pi->quantidade) }} {{ $pi->unidade_label }}</td>
@@ -324,11 +425,14 @@
             </table>
         </div>
 
-        <div class="op-bar {{ $pct >= 100 ? 'done' : '' }}"><div style="width:{{ $pct }}%"></div></div>
+        <div class="op-bar {{ $pct >= 100 ? 'done' : '' }}" role="progressbar"
+             aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da descarga">
+            <div style="width:{{ min(100, $pct) }}%"></div>
+        </div>
         <div class="op-nums">
-            <span><b>{{ number_format($recebido, 1, ',', '.') }} t</b> pesadas na balança de {{ number_format($esperado, 1, ',', '.') }} t esperadas ({{ $pct }}%)</span>
+            <span><b>{{ number_format($recebido, 1, ',', '.') }} t</b> pesadas na balança de {{ number_format($esperado, 1, ',', '.') }} t esperadas ({{ number_format($pct, 1, ',', '.') }}%)</span>
             <span style="color:{{ $falta > 0 ? '#dc3545' : '#198754' }};">
-                {{ $falta > 0 ? 'Faltam ' . number_format($falta, 1, ',', '.') . ' t' : ($falta < 0 ? 'Excesso de ' . number_format(abs($falta), 1, ',', '.') . ' t' : 'Quantidade completa') }}
+                <i class="bi {{ $falta > 0 ? 'bi-hourglass-split' : 'bi-check-circle-fill' }} me-1"></i>{{ $falta > 0 ? 'Faltam ' . number_format($falta, 1, ',', '.') . ' t' : ($falta < 0 ? 'Excesso de ' . number_format(abs($falta), 1, ',', '.') . ' t' : 'Quantidade completa') }}
             </span>
         </div>
     </div>
@@ -337,7 +441,7 @@
     <div class="kpi-row no-print">
         <div class="kpi teal">
             <div class="kpi-lbl">Em Trânsito</div>
-            <div class="kpi-val" style="color:#0dcaf0;">{{ $discharges->where('status','in_transit')->count() }}</div>
+            <div class="kpi-val" style="color:#0aa2c0;">{{ $discharges->where('status','in_transit')->count() }}</div>
             <div class="kpi-sub">camiões</div>
         </div>
         <div class="kpi amber">
@@ -357,8 +461,8 @@
         </div>
         <div class="kpi gold">
             <div class="kpi-lbl">Peso Liq.</div>
-            <div class="kpi-val" style="color:#fd7e14;font-size:1.1rem;padding-top:3px;">
-                {{ number_format($discharges->whereNotNull('peso_liquido')->sum('peso_liquido')/1000,1,',','.') }}t
+            <div class="kpi-val" style="color:#fd7e14;font-size:1rem;padding-top:3px;">
+                {{ number_format($discharges->whereNotNull('peso_liquido')->sum('peso_liquido')/1000,1,',','.') }} t
             </div>
             <div class="kpi-sub">confirmado</div>
         </div>
@@ -367,10 +471,10 @@
     {{-- FILTROS --}}
     <div class="filter-panel no-print">
         <div class="filter-row">
-            <div class="fi"><label>De</label><input type="date" id="fDe"></div>
-            <div class="fi"><label>Até</label><input type="date" id="fAte"></div>
+            <div class="fi"><label for="fDe">De</label><input type="date" id="fDe"></div>
+            <div class="fi"><label for="fAte">Até</label><input type="date" id="fAte"></div>
             <div class="fi">
-                <label>Transportadora</label>
+                <label for="fTrans">Transportadora</label>
                 <select id="fTrans">
                     <option value="">Todas</option>
                     @foreach($discharges->pluck('transportadora')->unique()->sort() as $t)
@@ -379,7 +483,7 @@
                 </select>
             </div>
             <div class="fi">
-                <label>Estado</label>
+                <label for="fStatus">Estado</label>
                 <select id="fStatus">
                     <option value="">Todos</option>
                     <option value="in_transit">Em Trânsito</option>
@@ -389,7 +493,7 @@
                 </select>
             </div>
             <div class="fi">
-                <label>Carga</label>
+                <label for="fCarga">Carga</label>
                 <select id="fCarga">
                     <option value="">Todos</option>
                     @foreach($planItems as $pi)
@@ -399,7 +503,7 @@
                 </select>
             </div>
             <div class="fi">
-                <label>Divergência</label>
+                <label for="fDiv">Divergência</label>
                 <select id="fDiv">
                     <option value="">Todos</option>
                     <option value="sim">Com divergência</option>
@@ -407,7 +511,7 @@
                 </select>
             </div>
             <div class="fi">
-                <label>Atrelado</label>
+                <label for="fAtrel">Atrelado</label>
                 <select id="fAtrel">
                     <option value="">Todos</option>
                     <option value="normal">Normal (até 24)</option>
@@ -416,9 +520,9 @@
                 </select>
             </div>
             <div class="d-flex gap-1 align-items-end flex-wrap">
-                <button class="btn-f btn-fa" onclick="applyFilters()"><i class="bi bi-search"></i>Filtrar</button>
-                <button class="btn-f btn-fc" onclick="clearFilters()"><i class="bi bi-x"></i>Limpar</button>
-                <button class="btn-f btn-fr" onclick="gerarRelatorioCargas()"
+                <button type="button" class="btn-f btn-fa" onclick="applyFilters()"><i class="bi bi-search"></i>Filtrar</button>
+                <button type="button" class="btn-f btn-fc" onclick="clearFilters()"><i class="bi bi-x-lg"></i>Limpar</button>
+                <button type="button" class="btn-f btn-fr" onclick="gerarRelatorioCargas()"
                         title="Relatório de cargas por transportadora e tipo de atrelado, com os filtros aplicados">
                     <i class="bi bi-file-earmark-bar-graph"></i>Gerar relatório
                 </button>
@@ -429,24 +533,25 @@
 
     {{-- TABELA --}}
     <div class="table-card no-print">
-        <div class="p-2 pt-3">
+        <div class="p-2 pt-3 table-responsive">
             <table class="table table-hover align-middle mb-0" id="dTable" style="width:100%">
                 <thead>
                     <tr>
-                        <th style="width:70px">#&nbsp;/&nbsp;DATA</th>
-                        <th style="width:90px">GUIA</th>
-                        <th>MOTORISTA</th>
-                        <th>TRANSPORTADORA</th>
-                        <th>CARGA</th>
-                        <th class="text-center" style="width:100px">PESO</th>
-                        <th class="text-center" style="width:90px">TEMPO</th>
-                        <th class="text-center" style="width:100px">ESTADO</th>
-                        <th class="text-center" style="width:140px">AÇÕES</th>
+                        <th style="width:80px">Nº / Data</th>
+                        <th style="width:90px">Guia</th>
+                        <th>Motorista</th>
+                        <th>Transportadora</th>
+                        <th>Carga</th>
+                        <th class="text-center" style="width:100px">Peso</th>
+                        <th class="text-center" style="width:90px">Tempo</th>
+                        <th class="text-center" style="width:110px">Estado</th>
+                        <th class="text-center" style="width:150px">Acções</th>
                     </tr>
                 </thead>
                 <tbody>
                 @foreach($discharges as $d)
                 @php
+                    $dataD = \Carbon\Carbon::parse($d->data);
                     $stClass = match($d->status){
                         'confirmed'  => 'bg-success bg-opacity-10 text-success',
                         'in_transit' => 'bg-info bg-opacity-10 text-info',
@@ -473,10 +578,10 @@
                         default                                             => 'Balança',
                     };
 
-                    // Alerta porto → balança: só camiões que ainda não chegaram à balança
+                    // Alerta porto -> balança: só camiões que ainda não chegaram à balança
                     $desde = null;
                     if (in_array($d->status, ['pending', 'in_transit'], true) && $d->hora_saida_porto) {
-                        $desde = \Carbon\Carbon::parse($d->data->format('Y-m-d') . ' ' . substr((string) $d->hora_saida_porto, 0, 5));
+                        $desde = \Carbon\Carbon::parse($dataD->format('Y-m-d') . ' ' . substr((string) $d->hora_saida_porto, 0, 5));
                     }
                     $minSla = $desde ? max(0, (int) $desde->diffInMinutes(now(), false)) : null;
                     $sla    = $minSla === null ? '' : ($minSla >= 120 ? 'danger' : ($minSla >= 80 ? 'warn' : 'ok'));
@@ -485,40 +590,38 @@
                     @if($desde) data-desde="{{ $desde->timestamp * 1000 }}" @endif
                     data-status="{{ $d->status }}"
                     data-transportadora="{{ strtolower($d->transportadora) }}"
-                    data-data="{{ $d->data->format('Y-m-d') }}"
+                    data-data="{{ $dataD->format('Y-m-d') }}"
                     data-produtos="{{ $produtos }}"
                     data-divergencia="{{ $div ? 'sim' : 'nao' }}"
                     data-atrelado="{{ $d->tipo_atrelado ?: 'nd' }}">
 
                     {{-- Nº / Data --}}
-                    <td>
-                        <span class="fw-bold" style="font-size:.75rem;color:#64748b;">#{{ $d->id }}</span>
-                        <div style="font-size:.68rem;color:#94a3b8;">{{ $d->data->format('d/m/Y') }}</div>
+                    <td data-order="{{ $d->id }}">
+                        <span class="c-id">#{{ $d->id }}</span>
+                        <div class="c-sub">{{ $dataD->format('d/m/Y') }}</div>
                     </td>
 
                     {{-- Guia --}}
-                    <td>
-                        <span class="fw-bold" style="font-size:.75rem;color:#1a56db;">{{ $d->numero_guia }}</span>
-                    </td>
+                    <td><span class="c-guia">{{ $d->numero_guia }}</span></td>
 
                     {{-- Motorista --}}
                     <td>
                         <div class="motorista-name">{{ $d->motorista }}</div>
                         <span class="mat-badge">{{ $d->matricula }}</span>
                         @if($d->assinado ?? false)
-                            <i class="bi bi-pen-fill" style="color:#198754;font-size:.6rem;margin-left:4px;" title="Assinado pelo motorista"></i>
+                            <i class="bi bi-pen-fill" style="color:#198754;font-size:.64rem;margin-left:4px;" title="Assinado pelo motorista"></i>
                         @endif
                         @if($d->tipo_atrelado)
                             <span class="atr-chip {{ $d->tipo_atrelado }}"
                                   title="{{ $d->atreladoInconsistente() ? 'Não bate com o nº de sacos' : 'Atrelado ' . $d->tipo_atrelado }}">
-                                {{ strtoupper($d->tipo_atrelado) }}@if($d->atreladoInconsistente()) ⚠@endif
+                                {{ strtoupper($d->tipo_atrelado) }}@if($d->atreladoInconsistente())<i class="bi bi-exclamation-triangle-fill ms-1"></i>@endif
                             </span>
                         @endif
                     </td>
 
                     {{-- Transportadora --}}
                     <td>
-                        <span style="font-size:.75rem;color:#64748b;">{{ $d->transportadora }}</span>
+                        <span style="font-size:.72rem;color:#64748b;">{{ $d->transportadora }}</span>
                         @if(in_array(mb_strtolower($d->transportadora), $transpExtra, true))
                             <div><span class="tp-chip extra" title="Transportadora fora da lista prevista da operação">
                                 <i class="bi bi-exclamation-triangle-fill"></i>Fora da lista
@@ -538,23 +641,23 @@
                             </span>
                             @endforeach
                             @if($d->total_sacos > 0)
-                            <span class="sp-total">{{ $d->total_sacos }}</span>
+                            <span class="sp-total" title="Total de sacos">{{ $d->total_sacos }}</span>
                             @endif
                             @if($div)
-                            <span class="div-badge"><i class="bi bi-exclamation-triangle-fill" style="font-size:.55rem;"></i>{{ $d->sacos_confirmados }}</span>
+                            <span class="div-badge" title="Divergência: sacos confirmados"><i class="bi bi-exclamation-triangle-fill" style="font-size:.56rem;"></i>{{ $d->sacos_confirmados }}</span>
                             @endif
                         </div>
                     </td>
 
                     {{-- Peso --}}
                     <td class="text-center">
-                        <div class="fw-bold" style="font-size:.75rem;">{{ number_format($d->peso_total_estimado, 0, ',', '.') }} kg</div>
+                        <div class="fw-bold" style="font-size:.73rem;">{{ number_format((float) $d->peso_total_estimado, 0, ',', '.') }} kg</div>
                         @if($d->status === 'weighing')
-                            <div style="font-size:.65rem;color:#b35c00;">
-                                {{ $d->peso_bruto !== null ? 'Cheio: ' . number_format($d->peso_bruto, 0, ',', '.') : 'Vazio: ' . number_format($d->tara, 0, ',', '.') }}
+                            <div style="font-size:.66rem;color:#b35c00;">
+                                {{ $d->peso_bruto !== null ? 'Cheio: ' . number_format((float) $d->peso_bruto, 0, ',', '.') : 'Vazio: ' . number_format((float) $d->tara, 0, ',', '.') }}
                             </div>
                         @elseif($d->peso_liquido)
-                            <div style="font-size:.65rem;color:#198754;">Líq: {{ number_format($d->peso_liquido,0,',','.') }}</div>
+                            <div style="font-size:.66rem;color:#198754;">Líq: {{ number_format((float) $d->peso_liquido, 0, ',', '.') }}</div>
                         @endif
                     </td>
 
@@ -562,28 +665,28 @@
                     <td class="text-center" style="white-space:nowrap;">
                         @if($desde)
                         <span class="sla-dot sla-{{ $sla }}"
-                              title="Saiu do porto às {{ $desde->format('H:i') }} · amarelo aos 80 min, vermelho aos 120 min"></span><span
+                              title="Saiu do porto às {{ $desde->format('H:i') }}. Amarelo aos 80 min, vermelho aos 120 min."></span><span
                               class="sla-tempo" data-tempo style="font-size:.7rem;color:#64748b;">{{ $minSla }}m</span>
                         @elseif($d->tempo_transporte)
-                        <span style="font-size:.7rem;color:#64748b;"><i class="bi bi-clock" style="font-size:.6rem;"></i> {{ $d->tempo_transporte }}m</span>
+                        <span style="font-size:.7rem;color:#64748b;"><i class="bi bi-clock" style="font-size:.62rem;"></i> {{ $d->tempo_transporte }}m</span>
                         @else
-                        <span class="text-muted">—</span>
+                        <span class="text-muted">-</span>
                         @endif
                     </td>
 
                     {{-- Estado --}}
                     <td class="text-center">
                         <span class="sbadge {{ $stClass }}">
-                            <i class="bi bi-{{ $stIcon }}" style="font-size:.55rem;"></i>
+                            <i class="bi bi-{{ $stIcon }}" style="font-size:.6rem;"></i>
                             {{ $d->status_label }}
                         </span>
                     </td>
 
-                    {{-- Ações --}}
+                    {{-- Acções --}}
                     <td class="text-center">
                         <div class="d-flex justify-content-center align-items-center gap-1">
                             @if(!$readonly && in_array($d->status, ['pending','in_transit','weighing']))
-                            <button class="btn-balanca {{ $d->status === 'weighing' ? 'pesar' : '' }}"
+                            <button type="button" class="btn-balanca {{ $d->status === 'weighing' ? 'pesar' : '' }}"
                                     data-bs-toggle="modal" data-bs-target="#modalConfirm"
                                     data-id="{{ $d->id }}" data-guia="{{ $d->numero_guia }}"
                                     data-itens='@json($itensBalanca)'
@@ -598,26 +701,32 @@
                             @if(in_array($d->status, ['weighing','confirmed']))
                             <a href="{{ route('discharges.ticket', $d->id) }}" target="_blank"
                                class="ab {{ $d->status === 'confirmed' ? 'text-success border-success' : 'text-warning border-warning' }} border-opacity-25"
-                               title="{{ $d->status === 'confirmed' ? 'Ticket' : 'Ticket provisório' }}">
+                               title="{{ $d->status === 'confirmed' ? 'Ticket' : 'Ticket provisório' }}" aria-label="Ticket">
                                 <i class="bi bi-receipt"></i>
                             </a>
                             @endif
                             <button type="button"
                                 onclick="abrirModal('{{ route('discharges.show', $d->id) }}', 'Descarga #{{ $d->id }}', 'dark')"
-                                class="ab text-primary border-primary border-opacity-25" title="Ver">
+                                class="ab text-primary border-primary border-opacity-25" title="Ver" aria-label="Ver descarga">
                                 <i class="bi bi-eye"></i>
                             </button>
                             @if(!$readonly)
                             <button type="button"
                                 onclick="abrirModal('{{ route('discharges.edit', $d->id) }}', 'Editar #{{ $d->id }}', 'warning')"
-                                class="ab text-warning border-warning border-opacity-25" title="Editar">
+                                class="ab text-warning border-warning border-opacity-25" title="Editar" aria-label="Editar descarga">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            @if(auth()->user()->hasRole('super-admin'))
-                            <form action="{{ route('discharges.destroy', $d->id) }}" method="POST" class="m-0">
+                            @if(auth()->user()?->hasRole('super-admin'))
+                            <form action="{{ route('discharges.destroy', $d->id) }}" method="POST" class="m-0"
+                                  data-confirm
+                                  data-confirm-tipo="perigo"
+                                  data-confirm-icone="bi-trash3"
+                                  data-confirm-titulo="Eliminar este registo?"
+                                  data-confirm-texto="A descarga #{{ $d->id }} (guia {{ $d->numero_guia }}, motorista {{ $d->motorista }}) será eliminada. Esta acção não pode ser desfeita."
+                                  data-confirm-ok="Sim, eliminar">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="ab text-danger border-danger border-opacity-25"
-                                        onclick="return confirm('Eliminar?')" title="Eliminar">
+                                        title="Eliminar" aria-label="Eliminar descarga">
                                     <i class="bi bi-trash3"></i>
                                 </button>
                             </form>
@@ -635,47 +744,47 @@
 </div>
 
 {{-- MODAL UNIVERSAL --}}
-<div class="modal fade" id="modalPrincipal" tabindex="-1">
+<div class="modal fade" id="modalPrincipal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
             <div class="modal-header border-0 text-white" id="modalHeader"
-                 style="background:linear-gradient(135deg,#1a56db,#0dcaf0);padding:12px 20px;">
+                 style="background:linear-gradient(135deg,#1a56db,#0dcaf0);padding:10px 18px;">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-file-text" id="modalIcon" style="font-size:1rem;"></i>
-                    <h5 class="modal-title fw-bold mb-0" style="font-size:.9rem;" id="modalTitulo">A carregar...</h5>
+                    <i class="bi bi-file-text" id="modalIcon" style="font-size:.95rem;"></i>
+                    <h5 class="modal-title fw-bold mb-0" style="font-size:.88rem;" id="modalTitulo">A carregar...</h5>
                 </div>
-                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
-            <div class="modal-body p-0" style="min-height:360px;">
+            <div class="modal-body p-0" style="min-height:240px;">
                 <div id="modalLoading" class="modal-loading">
-                    <div class="spinner-border text-primary" role="status" style="width:1.5rem;height:1.5rem;"></div>
-                    <span style="font-size:.78rem;">A carregar...</span>
+                    <div class="spinner-border text-primary" role="status" style="width:1.4rem;height:1.4rem;"></div>
+                    <span style="font-size:.76rem;">A carregar...</span>
                 </div>
-                <div id="modalConteudo" style="display:none;padding:20px;"></div>
+                <div id="modalConteudo" style="display:none;padding:18px;"></div>
             </div>
         </div>
     </div>
 </div>
 
 {{-- MODAL BALANÇA --}}
-<div class="modal fade" id="modalConfirm" tabindex="-1">
-    <div class="modal-dialog modal-md modal-dialog-centered">
+<div class="modal fade" id="modalConfirm" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="--bs-modal-width:520px;">
         <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
-            <div class="modal-header bg-success text-white border-0" style="padding:12px 20px;">
+            <div class="modal-header bg-success text-white border-0" style="padding:10px 18px;">
                 <h5 class="modal-title fw-bold" style="font-size:.88rem;">
                     <i class="bi bi-speedometer2 me-2"></i>Confirmação na Balança
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <form id="formConfirm" method="POST">
                 @csrf @method('PATCH')
-                <div class="modal-body p-4">
+                <div class="modal-body p-3 p-md-4">
 
                     {{-- Progresso da pesagem (2 passos: cheio e vazio, em qualquer ordem) --}}
                     <div id="pwProg" class="mb-3">
                         <div class="d-flex justify-content-between align-items-baseline flex-wrap gap-1">
-                            <strong id="pwTitulo" style="font-size:.95rem;">Passo 0 de 2</strong>
-                            <span id="pwTexto" class="small text-muted"></span>
+                            <strong id="pwTitulo">Passo 0 de 2</strong>
+                            <span id="pwTexto" class="text-muted"></span>
                         </div>
                         <div id="pwBarra"><div id="pwFill"></div></div>
                         <div class="d-flex gap-2 flex-wrap">
@@ -686,59 +795,55 @@
 
                     {{-- Info da guia --}}
                     <div class="alert py-2 mb-3 border-0"
-                         style="border-radius:8px;background:#e8f4fd;color:#1a56db;font-size:.78rem;">
+                         style="border-radius:8px;background:#e8f4fd;color:#1a56db;font-size:.74rem;">
                         <i class="bi bi-info-circle me-1"></i>
-                        Guia <strong id="confirm_guia"></strong> — confirme a quantidade de cada produto
+                        Guia <strong id="confirm_guia"></strong>. Confirme a quantidade de cada produto.
                     </div>
 
                     <div class="row g-2">
 
                         {{-- Hora chegada + tempo --}}
-                        <div class="col-md-6">
-                            <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
-                                Hora de Chegada
-                            </label>
+                        <div class="col-sm-6">
+                            <label class="form-label lbl-b" for="hora_chegada_balanca">Hora de chegada</label>
                             <input type="time" name="hora_chegada_balanca" id="hora_chegada_balanca"
-                                   class="form-control form-control-sm" style="border-radius:7px;" required>
+                                   class="form-control form-control-sm" style="border-radius:7px;font-size:.76rem;" required>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
-                                Tempo Transporte
-                            </label>
+                        <div class="col-sm-6">
+                            <label class="form-label lbl-b" for="transport_time_calc">Tempo de transporte</label>
                             <div class="input-group input-group-sm">
                                 <input type="text" id="transport_time_calc" class="form-control bg-light"
-                                       style="border-radius:7px 0 0 7px;" readonly placeholder="Auto">
-                                <span class="input-group-text small">min</span>
+                                       style="border-radius:7px 0 0 7px;font-size:.76rem;" readonly placeholder="Automático">
+                                <span class="input-group-text" style="font-size:.72rem;">min</span>
                             </div>
                         </div>
 
                         {{-- Peso cheio (bruto) com botão de leitura --}}
                         <div class="col-12">
-                            <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
-                                Peso Cheio / Bruto (kg) <span class="fw-normal">· camião a chegar com a carga</span>
+                            <label class="form-label lbl-b" for="peso_bruto">
+                                Peso cheio / bruto (kg) <small>(camião a chegar com a carga)</small>
                             </label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="peso_bruto" id="peso_bruto"
-                                       class="form-control" style="border-radius:7px 0 0 7px;"
+                                       class="form-control" style="border-radius:7px 0 0 7px;font-size:.76rem;"
                                        step="0.01" min="0" placeholder="0.00"
                                        oninput="calcNetWeight()">
                                 <button type="button" id="btnLerBalanca"
                                         onclick="lerBalancaUI('peso_bruto')"
                                         class="btn btn-sm btn-outline-success fw-bold"
                                         style="border-radius:0 7px 7px 0;font-size:.72rem;white-space:nowrap;padding:0 12px;">
-                                    <i class="bi bi-usb-symbol me-1"></i>Ler Balança
+                                    <i class="bi bi-usb-symbol me-1"></i>Ler balança
                                 </button>
                             </div>
                         </div>
 
                         {{-- Peso vazio (tara) com botão de leitura --}}
-                        <div class="col-md-6">
-                            <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
-                                Peso Vazio / Tara (kg) <span class="fw-normal">· ao voltar</span>
+                        <div class="col-sm-6">
+                            <label class="form-label lbl-b" for="tara">
+                                Peso vazio / tara (kg) <small>(ao voltar)</small>
                             </label>
                             <div class="input-group input-group-sm">
                                 <input type="number" name="tara" id="tara"
-                                       class="form-control" style="border-radius:7px 0 0 7px;"
+                                       class="form-control" style="border-radius:7px 0 0 7px;font-size:.76rem;"
                                        step="0.01" min="0" placeholder="0.00" oninput="calcNetWeight()">
                                 <button type="button" id="btnLerTara"
                                         onclick="lerBalancaUI('tara')"
@@ -750,35 +855,30 @@
                         </div>
 
                         {{-- Peso líquido calculado --}}
-                        <div class="col-md-6">
-                            <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
-                                Peso Líquido (kg)
-                            </label>
+                        <div class="col-sm-6">
+                            <label class="form-label lbl-b" for="net_weight_calc">Peso líquido (kg)</label>
                             <input type="text" id="net_weight_calc"
                                    class="form-control form-control-sm bg-light fw-bold text-success"
-                                   style="border-radius:7px;" readonly placeholder="Aguarda os 2 pesos">
+                                   style="border-radius:7px;font-size:.76rem;" readonly placeholder="Aguarda os 2 pesos">
                         </div>
 
-                        {{-- Status da leitura / validação --}}
+                        {{-- Estado da leitura / validação --}}
                         <div class="col-12">
-                            <div id="balanca-status" style="font-size:.68rem;min-height:16px;"></div>
+                            <div id="balanca-status" style="font-size:.7rem;min-height:16px;" aria-live="polite"></div>
                         </div>
 
                         {{-- Quantidades confirmadas, uma por produto (gerado por JS) --}}
                         <div class="col-12">
-                            <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
-                                Quantidade confirmada por produto
-                            </label>
+                            <label class="form-label mb-1 lbl-b">Quantidade confirmada por produto</label>
                             <div id="confirmItens" class="row g-2"></div>
-                            <div id="divergence_alert" class="text-danger d-none"
-                                 style="font-size:.68rem;margin-top:3px;">
+                            <div id="divergence_alert" class="text-danger d-none" style="font-size:.7rem;margin-top:4px;">
                                 <i class="bi bi-exclamation-triangle-fill me-1"></i>Divergência detectada!
                             </div>
                         </div>
 
                         {{-- Config porta (colapsável) --}}
                         <div class="col-12 mt-1">
-                            <a class="text-muted" style="font-size:.68rem;cursor:pointer;text-decoration:none;"
+                            <a class="text-muted" style="font-size:.7rem;cursor:pointer;text-decoration:none;"
                                data-bs-toggle="collapse" href="#configSerial">
                                 <i class="bi bi-gear me-1"></i>Configurações da porta serial
                             </a>
@@ -786,11 +886,8 @@
                                 <div class="row g-2 mt-1 p-2 rounded"
                                      style="background:#f8f9fa;border:1px solid #e9ecef;">
                                     <div class="col-6">
-                                        <label style="font-size:.65rem;color:#94a3b8;font-weight:600;">
-                                            Baud Rate
-                                        </label>
-                                        <select id="cfg_baud" class="form-select form-select-sm"
-                                                style="border-radius:6px;font-size:.75rem;">
+                                        <label for="cfg_baud" style="font-size:.66rem;color:#94a3b8;font-weight:600;">Baud rate</label>
+                                        <select id="cfg_baud" class="form-select form-select-sm" style="border-radius:6px;font-size:.74rem;">
                                             <option value="1200">1200</option>
                                             <option value="2400">2400</option>
                                             <option value="4800">4800</option>
@@ -802,22 +899,17 @@
                                         </select>
                                     </div>
                                     <div class="col-6">
-                                        <label style="font-size:.65rem;color:#94a3b8;font-weight:600;">
-                                            Paridade
-                                        </label>
-                                        <select id="cfg_parity" class="form-select form-select-sm"
-                                                style="border-radius:6px;font-size:.75rem;">
+                                        <label for="cfg_parity" style="font-size:.66rem;color:#94a3b8;font-weight:600;">Paridade</label>
+                                        <select id="cfg_parity" class="form-select form-select-sm" style="border-radius:6px;font-size:.74rem;">
                                             <option value="none" selected>None</option>
                                             <option value="even">Even</option>
                                             <option value="odd">Odd</option>
                                         </select>
                                     </div>
                                     <div class="col-12">
-                                        <div class="d-flex align-items-center gap-2"
-                                             style="font-size:.68rem;color:#94a3b8;">
+                                        <div class="d-flex align-items-center gap-2" style="font-size:.68rem;color:#94a3b8;">
                                             <i class="bi bi-info-circle"></i>
-                                            Consulta o manual da balança se não souberes os valores.
-                                            O mais comum é 9600/8N1.
+                                            Consulte o manual da balança se não souber os valores. O mais comum é 9600/8N1.
                                         </div>
                                     </div>
                                 </div>
@@ -826,26 +918,45 @@
 
                         {{-- Observações --}}
                         <div class="col-12">
-                            <label class="form-label" style="font-size:.72rem;font-weight:600;color:#94a3b8;">
-                                Observações
-                            </label>
+                            <label class="form-label lbl-b" for="obs_balanca">Observações</label>
                             <textarea name="observacoes" id="obs_balanca" class="form-control form-control-sm"
-                                      style="border-radius:7px;" rows="2"
+                                      style="border-radius:7px;font-size:.76rem;" rows="2"
                                       placeholder="Ex: saco rasgado, diferença de peso..."></textarea>
                         </div>
 
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0" style="padding:0 20px 16px;">
-                    <button type="button" class="btn btn-light btn-sm px-3"
-                            style="border-radius:7px;" data-bs-dismiss="modal"
-                            onclick="Balanca.cancelar()">Cancelar</button>
-                    <button type="submit" id="btnConfirmar" class="btn btn-success btn-sm px-4 fw-bold"
-                            style="border-radius:7px;">
-                        <i class="bi bi-check-circle me-1"></i>Confirmar e Guardar
+                <div class="modal-footer border-0 pt-0" style="padding:0 18px 14px;">
+                    <button type="button" class="btn btn-light border btn-op px-3"
+                            data-bs-dismiss="modal" onclick="Balanca.cancelar()">
+                        <i class="bi bi-x-lg"></i>Cancelar
+                    </button>
+                    <button type="submit" id="btnConfirmar" class="btn btn-success btn-op px-4">
+                        <i class="bi bi-check-circle"></i>Confirmar e guardar
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL DE CONFIRMAÇÃO (apagar, arquivar, reactivar) --}}
+<div class="modal fade" id="confirmarModal" tabindex="-1" aria-labelledby="confirmarTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="--bs-modal-width:380px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center p-4">
+                <div class="confirm-icon perigo" id="confirmarIconeBox"><i class="bi bi-trash3" id="confirmarIcone"></i></div>
+                <h2 class="h5" id="confirmarTitulo">Tem a certeza?</h2>
+                <p id="confirmarTexto"></p>
+                <div class="d-flex flex-wrap gap-2 justify-content-center mt-4">
+                    <button type="button" class="btn btn-light border btn-op flex-fill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger btn-op flex-fill" id="confirmarOk">
+                        <i class="bi bi-check-lg" id="confirmarOkIcone"></i><span>Confirmar</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -860,16 +971,24 @@
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
-let dtTable, _activeMenu = null;
+let dtTable;
 let _itensBalanca = [];
 
-// Alerta porto → balança (minutos): amarelo a 1h20, vermelho a 2h
+// Alerta porto -> balança (minutos): amarelo a 1h20, vermelho a 2h
 const SLA_AMARELO  = 80;
 const SLA_VERMELHO = 120;
 
-// Atualização automática da página (milissegundos)
-const AUTO_REFRESH_MS = 5000;
+// Tempo real: pergunta ao servidor a cada 2 s se algo mudou; recarga de segurança a cada 60 s
+const URL_SINAL       = @json(route('operations.sinal'));
+const SINAL_MS        = 2000;
+const AUTO_REFRESH_MS = 60000;
 let _autoOcupado = false;
+let _ultimoSinal = null;
+
+// Escapa texto antes de o pôr em HTML
+function esc(s){
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 $(document).ready(function(){
     dtTable = $('#dTable').DataTable({
@@ -883,9 +1002,10 @@ $(document).ready(function(){
     atualizarSla();
     setInterval(atualizarSla, 20000);
 
-    // Atualização automática dos dados (sem recarregar a página)
+    // Actualização automática (sem recarregar a página)
+    setInterval(verificarSinal, SINAL_MS);
     setInterval(atualizarAuto, AUTO_REFRESH_MS);
-    document.addEventListener('visibilitychange', atualizarAuto);
+    document.addEventListener('visibilitychange', function(){ if (!document.hidden) verificarSinal(); });
 
     @if(session('success'))
     const t = document.getElementById('successToast');
@@ -924,12 +1044,12 @@ $(document).ready(function(){
         const sb = $('#peso_bruto').val().trim(), st = $('#tara').val().trim();
         if (sb === '' && st === '') {
             e.preventDefault();
-            setBalancaStatus('✗ Registe pelo menos um peso (cheio ou vazio).', '#dc3545');
+            setBalancaStatus('Registe pelo menos um peso (cheio ou vazio).', '#dc3545', 'bi-x-circle-fill');
             return;
         }
         if (sb !== '' && st !== '' && parseFloat(sb) <= parseFloat(st)) {
             e.preventDefault();
-            setBalancaStatus('✗ O peso cheio tem de ser maior que o peso vazio.', '#dc3545');
+            setBalancaStatus('O peso cheio tem de ser maior que o peso vazio.', '#dc3545', 'bi-x-circle-fill');
         }
     });
 
@@ -939,6 +1059,83 @@ $(document).ready(function(){
         document.getElementById('modalLoading').style.display='flex';
     });
 });
+
+/* ── Todos os modais ficam centrados e com scroll interno ── */
+document.addEventListener('show.bs.modal', function (e) {
+    const dlg = e.target.querySelector('.modal-dialog');
+    if (dlg) dlg.classList.add('modal-dialog-centered');
+});
+
+/* ── Confirmação amigável (formulários com data-confirm) ──
+   Delegado ao documento: continua a funcionar depois de cada actualização da tabela. */
+(function () {
+    const modalEl = document.getElementById('confirmarModal');
+    const okBtn   = document.getElementById('confirmarOk');
+    const TIPOS = {
+        perigo: { icone: 'bi-trash3',                btn: 'btn-danger'  },
+        aviso:  { icone: 'bi-archive',               btn: 'btn-warning' },
+        info:   { icone: 'bi-arrow-counterclockwise', btn: 'btn-primary' },
+    };
+    let pendente = null; // { acao, token, metodo }
+
+    function submeter(p) {
+        const f = document.createElement('form');
+        f.method = 'POST';
+        f.action = p.acao;
+        f.style.display = 'none';
+        [['_token', p.token], ['_method', p.metodo]].forEach(([n, v]) => {
+            if (!v) return;
+            const i = document.createElement('input');
+            i.type = 'hidden'; i.name = n; i.value = v;
+            f.appendChild(i);
+        });
+        document.body.appendChild(f);
+        f.submit();
+    }
+
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (!(form instanceof HTMLFormElement) || !form.hasAttribute('data-confirm')) return;
+        e.preventDefault();
+
+        pendente = {
+            acao: form.action,
+            token: (form.querySelector('input[name="_token"]') || {}).value,
+            metodo: (form.querySelector('input[name="_method"]') || {}).value,
+        };
+        const tipo   = TIPOS[form.dataset.confirmTipo] ? form.dataset.confirmTipo : 'perigo';
+        const icone  = form.dataset.confirmIcone || TIPOS[tipo].icone;
+        const titulo = form.dataset.confirmTitulo || 'Tem a certeza?';
+        const texto  = form.dataset.confirmTexto || 'Esta acção não pode ser desfeita.';
+        const ok     = form.dataset.confirmOk || 'Confirmar';
+
+        // Sem Bootstrap JS: usa a confirmação simples do navegador
+        if (!(window.bootstrap && window.bootstrap.Modal)) {
+            if (window.confirm(titulo + '\n\n' + texto)) submeter(pendente);
+            pendente = null;
+            return;
+        }
+
+        document.getElementById('confirmarTitulo').textContent = titulo;
+        document.getElementById('confirmarTexto').textContent = texto;
+        document.getElementById('confirmarIconeBox').className = 'confirm-icon ' + tipo;
+        document.getElementById('confirmarIcone').className = 'bi ' + icone;
+        okBtn.className = 'btn btn-op flex-fill ' + TIPOS[tipo].btn;
+        document.getElementById('confirmarOkIcone').className = 'bi ' + icone;
+        okBtn.querySelector('span').textContent = ok;
+        okBtn.disabled = false;
+        window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    });
+
+    okBtn.addEventListener('click', function () {
+        if (!pendente) return;
+        okBtn.disabled = true;
+        okBtn.querySelector('span').textContent = 'A processar...';
+        submeter(pendente);
+    });
+
+    modalEl.addEventListener('hidden.bs.modal', function () { pendente = null; });
+})();
 
 /* ── Alerta de tempo: camiões que saíram do porto e ainda não chegaram à balança ── */
 function atualizarSla() {
@@ -960,7 +1157,7 @@ function atualizarSla() {
     });
 }
 
-/* ── Atualização automática (de 5 em 5 s) ──
+/* ── Actualização automática ──
    Vai buscar a própria página em segundo plano e actualiza o cabeçalho/plano, os KPIs e as linhas
    da tabela. Mantém a página, a ordenação, a pesquisa e os filtros do DataTables.
    Não corre com o separador escondido, com um modal aberto ou com o cursor num campo. */
@@ -972,22 +1169,31 @@ function _autoPodeAtualizar() {
     return true;
 }
 
+// Devolve true se a página foi actualizada
 async function atualizarAuto() {
-    if (_autoOcupado || !dtTable || !_autoPodeAtualizar()) return;
+    if (_autoOcupado || !dtTable || !_autoPodeAtualizar()) return false;
     _autoOcupado = true;
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
 
     try {
         const res = await fetch(window.location.href, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             credentials: 'same-origin',
             cache: 'no-store',
+            signal: ctrl.signal,
         });
-        if (!res.ok) return;
+        if (res.status === 401 || res.status === 419 || (res.redirected && /login/i.test(res.url))) {
+            window.location.reload();
+            return false;
+        }
+        if (!res.ok) return false;
 
         const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
         const novoCorpo = doc.querySelector('#dTable tbody');
-        if (!novoCorpo) return;                    // resposta inesperada (ex.: sessão expirada)
-        if (!_autoPodeAtualizar()) return;         // o utilizador começou a mexer entretanto
+        if (!novoCorpo) return false;              // resposta inesperada
+        if (!_autoPodeAtualizar()) return false;   // o utilizador começou a mexer entretanto
 
         // Cabeçalho da operação (plano vs realizado) e KPIs
         ['.op-head', '.kpi-row'].forEach(sel => {
@@ -1011,15 +1217,55 @@ async function atualizarAuto() {
         dtTable.draw(false);
 
         atualizarSla();
+        return true;
     } catch (e) {
-        // sem rede ou erro temporário: tenta no próximo ciclo
+        return false;   // sem rede ou erro temporário: tenta no próximo ciclo
     } finally {
+        clearTimeout(timer);
         _autoOcupado = false;
     }
 }
 
-function setBalancaStatus(msg, cor = '#64748b') {
-    document.getElementById('balanca-status').innerHTML = `<span style="color:${cor};">${msg}</span>`;
+// Pedido minúsculo: só recarrega a tabela quando o servidor diz que algo mudou
+async function verificarSinal() {
+    if (_autoOcupado || document.visibilityState !== 'visible') return;
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    try {
+        const res = await fetch(URL_SINAL, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            credentials: 'same-origin',
+            cache: 'no-store',
+            signal: ctrl.signal,
+        });
+        if (res.status === 401 || res.status === 419) { window.location.reload(); return; }
+        if (!res.ok) return;
+
+        const dados = await res.json();
+        if (_ultimoSinal === null) { _ultimoSinal = dados.s; return; }
+        if (dados.s !== _ultimoSinal) {
+            const ok = await atualizarAuto();
+            if (ok) _ultimoSinal = dados.s;   // se foi bloqueado (modal aberto), tenta no próximo ciclo
+        }
+    } catch (e) {
+        // ignora: tenta no próximo ciclo
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+/* ── Estado da leitura / validação da balança (texto seguro + ícone) ── */
+function setBalancaStatus(msg, cor = '#64748b', icone = 'bi-info-circle') {
+    const box = document.getElementById('balanca-status');
+    box.innerHTML = '';
+    const s = document.createElement('span');
+    s.style.color = cor;
+    const i = document.createElement('i');
+    i.className = 'bi ' + icone + ' me-1';
+    s.appendChild(i);
+    s.appendChild(document.createTextNode(msg));
+    box.appendChild(s);
 }
 
 /* ── Balança: campos por produto ── */
@@ -1030,7 +1276,7 @@ function construirCamposBalanca(itens) {
 
     itens.forEach(it => {
         const col = document.createElement('div');
-        col.className = 'col-md-6';
+        col.className = 'col-sm-6';
 
         const lbl = document.createElement('label');
         lbl.style.cssText = 'font-size:.68rem;color:#64748b;font-weight:600;';
@@ -1041,6 +1287,7 @@ function construirCamposBalanca(itens) {
         inp.name = `confirmados[${it.id}]`;
         inp.className = 'form-control form-control-sm confirm-qtd';
         inp.style.borderRadius = '7px';
+        inp.style.fontSize = '.76rem';
         inp.min = 0;
         inp.step = it.unidade === 'tonelada' ? '0.001' : '1';
         // se já foi confirmada na 1ª pesagem, mostra o valor confirmado
@@ -1080,10 +1327,10 @@ function abrirModal(url, titulo, cor) {
     document.getElementById('modalLoading').style.display='flex';
     document.getElementById('modalConteudo').style.display='none';
     document.getElementById('modalConteudo').innerHTML='';
-    document.activeElement.blur();
-    new bootstrap.Modal(document.getElementById('modalPrincipal')).show();
+    if (document.activeElement) document.activeElement.blur();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPrincipal')).show();
 
-    // a URL de "create" já traz ?operation_id=…, por isso escolhemos ? ou &
+    // a URL de "create" já traz ?operation_id=..., por isso escolhemos ? ou &
     const sep = url.includes('?') ? '&' : '?';
 
     fetch(url+sep+'modal=1',{ headers:{'X-Requested-With':'XMLHttpRequest','Accept':'text/html'} })
@@ -1097,8 +1344,10 @@ function abrirModal(url, titulo, cor) {
         activarScriptsEForms(div);
     })
     .catch(err=>{
-        document.getElementById('modalConteudo').innerHTML=`<div class="alert alert-danger m-3">Erro: ${err.message}</div>`;
-        document.getElementById('modalConteudo').style.display='block';
+        const div = document.getElementById('modalConteudo');
+        div.innerHTML = '<div class="alert alert-danger m-3 d-flex align-items-center gap-2" style="font-size:.76rem;"><i class="bi bi-exclamation-triangle-fill"></i><span></span></div>';
+        div.querySelector('span').textContent = 'Não foi possível carregar (' + err.message + '). Tente novamente.';
+        div.style.display='block';
         document.getElementById('modalLoading').style.display='none';
     });
 }
@@ -1114,7 +1363,8 @@ function mostrarErrosModal(form, mensagens) {
     if (antigo) antigo.remove();
 
     const box = document.createElement('div');
-    box.className = 'alert alert-danger py-2 small mb-3 erros-modal';
+    box.className = 'alert alert-danger py-2 mb-3 erros-modal';
+    box.style.fontSize = '.76rem';
     const ul = document.createElement('ul');
     ul.className = 'mb-0';
     mensagens.forEach(m => { const li = document.createElement('li'); li.textContent = m; ul.appendChild(li); });
@@ -1148,7 +1398,8 @@ function submeterFormModal(form) {
             if(btn){ btn.disabled=false; btn.innerHTML=textoOriginal; }
             return;
         }
-        bootstrap.Modal.getInstance(document.getElementById('modalPrincipal')).hide();
+        const inst = bootstrap.Modal.getInstance(document.getElementById('modalPrincipal'));
+        if (inst) inst.hide();
         window.location.reload();
     })
     .catch(()=>{
@@ -1162,7 +1413,7 @@ function calcTransportTime(){
     if(!dep||!arr) return;
     const [hD,mD]=String(dep).split(':').map(Number),[hA,mA]=arr.split(':').map(Number);
     const diff=(hA*60+mA)-(hD*60+mD);
-    $('#transport_time_calc').val(diff>=0?diff:'—');
+    $('#transport_time_calc').val(diff>=0?diff:'-');
 }
 
 // Líquido só com os dois pesos; actualiza também o progresso e o botão
@@ -1170,14 +1421,14 @@ function calcNetWeight(){
     const sb = $('#peso_bruto').val().trim(), st = $('#tara').val().trim();
     if (sb !== '' && st !== '') {
         const net = parseFloat(sb) - parseFloat(st);
-        $('#net_weight_calc').val(net > 0 ? net.toFixed(2) : '—');
+        $('#net_weight_calc').val(net > 0 ? net.toFixed(2) : '-');
     } else {
         $('#net_weight_calc').val('');
     }
     atualizarProgressoPesagem();
 }
 
-/* ── Progresso da pesagem: Passo 0/1/2 de 2 ── */
+/* ── Progresso da pesagem: passo 0/1/2 de 2 ── */
 function atualizarProgressoPesagem(){
     const b = $('#peso_bruto').val().trim() !== '';
     const t = $('#tara').val().trim() !== '';
@@ -1197,7 +1448,7 @@ function atualizarProgressoPesagem(){
 
     const chip = (id, nome, ok) => {
         const el = document.getElementById(id);
-        el.textContent = (ok ? '✓ ' : '○ ') + nome;
+        el.innerHTML = `<i class="bi ${ok ? 'bi-check-circle-fill' : 'bi-circle'}"></i>${nome}`;
         el.style.background  = ok ? '#e6f4ec' : '#fff';
         el.style.color       = ok ? '#198754' : '#64748b';
         el.style.borderColor = ok ? '#b7dfc7' : '#cbd5e1';
@@ -1209,8 +1460,8 @@ function atualizarProgressoPesagem(){
     const btn = document.getElementById('btnConfirmar');
     btn.disabled = (n === 0);
     btn.innerHTML = n === 2
-        ? '<i class="bi bi-check-circle me-1"></i>Confirmar descarga'
-        : '<i class="bi bi-save me-1"></i>Guardar peso (passo 1 de 2)';
+        ? '<i class="bi bi-check-circle"></i>Confirmar descarga'
+        : '<i class="bi bi-save"></i>Guardar peso (passo 1 de 2)';
 }
 
 /* ── Filtros ── */
@@ -1262,7 +1513,7 @@ function renderTags(){
     };
     let html = '';
     for (const [k, v] of Object.entries(f)) {
-        if (v) html += `<span class="ftag">${l[k]} <span class="rm" onclick="removeTag('${k}')">✕</span></span>`;
+        if (v) html += `<span class="ftag">${esc(l[k])} <i class="bi bi-x-lg rm" role="button" aria-label="Remover filtro" onclick="removeTag('${k}')"></i></span>`;
     }
     $('#activeTags').html(html);
 }
@@ -1295,15 +1546,15 @@ async function lerBalancaUI(campo = 'peso_bruto') {
             parity   : document.getElementById('cfg_parity').value           || 'none',
             dataBits : 8,
             stopBits : 1,
-            onStatus : msg => setBalancaStatus('⏳ ' + msg),
+            onStatus : msg => setBalancaStatus(msg, '#64748b', 'bi-hourglass-split'),
         });
 
         document.getElementById(campo).value = peso.toFixed(2);
         calcNetWeight();
-        setBalancaStatus(`✓ Peso ${campo === 'tara' ? 'vazio' : 'cheio'} lido: ${peso.toFixed(2)} kg`, '#198754');
+        setBalancaStatus(`Peso ${campo === 'tara' ? 'vazio' : 'cheio'} lido: ${peso.toFixed(2)} kg`, '#198754', 'bi-check-circle-fill');
 
     } catch (err) {
-        setBalancaStatus('✗ ' + err.message, '#dc3545');
+        setBalancaStatus(err.message, '#dc3545', 'bi-x-circle-fill');
     } finally {
         btn.disabled = false;
         btn.innerHTML = htmlOriginal;
