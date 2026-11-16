@@ -44,3 +44,5 @@ Route::middleware('auth:sanctum')->get('/discharges/{discharge}', [\App\Http\Con
 Route::middleware('auth:sanctum')->get('/operations/{operation}/discharges', [\App\Http\Controllers\Api\DischargeListApiController::class, 'index']);
 
 Route::middleware('auth:sanctum')->get('/contentores', [\App\Http\Controllers\Api\ContentorApiController::class, 'index']);
+
+Route::middleware('auth:sanctum')->get('/operations/{operation}/reports/confirmed', [\App\Http\Controllers\OperationReportController::class, 'confirmed']);
