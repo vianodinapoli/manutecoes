@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Discharge extends Model
 {
+
     protected $table = 'descargas';
 
     protected $fillable = [
-        'operation_id',
+        'operation_id', 'location_id', 'location_extra',
         'data', 'motorista', 'matricula', 'transportadora',
         'numero_guia', 'hora_saida_porto', 'registado_por',
         'tipo_atrelado',
@@ -27,6 +28,7 @@ class Discharge extends Model
 
     protected $casts = [
         'data'          => 'date',
+        'location_extra' => 'boolean',
         'peso_bruto_em' => 'datetime',
         'tara_em'       => 'datetime',
     ];
@@ -116,6 +118,11 @@ class Discharge extends Model
     public function operation(): BelongsTo
     {
         return $this->belongsTo(DischargeOperation::class, 'operation_id');
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function items(): HasMany

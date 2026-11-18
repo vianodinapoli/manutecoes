@@ -90,6 +90,7 @@
             @endforeach
         </div>
         @endif
+        @include('operations._locais_resumo', ['operation' => $operation->loadMissing('locations')])
         @if($operation->observacoes)
             <div class="mt-2" style="font-size:.74rem;color:#64748b;"><i class="bi bi-chat-left-text me-1"></i>{{ $operation->observacoes }}</div>
         @endif

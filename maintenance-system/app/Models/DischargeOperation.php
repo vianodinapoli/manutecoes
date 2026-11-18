@@ -124,6 +124,11 @@ class DischargeOperation extends Model
             'data_chegada' => $this->data_chegada?->format('Y-m-d'),
             'metadata'     => $this->metadata ?? [],
             'transportadoras' => $this->transportadoras ?? [],
+            'locations'    => $this->locations->map(fn ($l) => [
+                'id'        => $l->id,
+                'nome'      => $l->nome,
+                'principal' => (bool) $l->pivot->principal,
+            ])->values()->all(),
             'items'        => $this->items->map(fn ($i) => [
                 'id'               => $i->id,
                 'nome'             => $i->nome,
@@ -133,4 +138,15 @@ class DischargeOperation extends Model
             ])->values()->all(),
         ];
     }
+
+
+    public function locations()
+{
+    return $this->belongsToMany(
+        Location::class,
+        'discharge_operation_location',
+        'discharge_operation_id',
+        'location_id'
+    )->withPivot('principal');
+}
 }

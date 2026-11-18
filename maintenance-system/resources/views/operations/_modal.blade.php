@@ -86,6 +86,8 @@
                             </div>
                         </div>
 
+                        @include('operations._locais')
+
                         {{-- Transportadoras (stickers) --}}
                         <div class="col-12">
                             <label class="form-label op-lbl">Transportadoras</label>
@@ -334,6 +336,7 @@
         document.getElementById('transpInput').value = '';
         renderTransp();
 
+        resetLocais();
         const campos = ['navio','empresa','bl','factura','data_chegada','observacoes'];
 
         if (op) {
@@ -342,6 +345,7 @@
             document.getElementById('opMethod').disabled = false;
             campos.forEach(c => document.getElementById('op_' + c).value = op[c] ?? '');
             Object.entries(op.metadata || {}).forEach(([k, v]) => addMetaRow(k, v));
+            preencherLocais(op);
 
             (op.items && op.items.length ? op.items : [{}]).forEach(addItemRow);
 

@@ -117,6 +117,14 @@ class DischargeApiController extends Controller
             'pendentes_count' => $pendentes,
             'pendente_desde'  => $ts ? $ts * 1000 : null,
             'transportadoras' => collect($op->transportadoras ?? [])->pluck('nome')->values(),
+            'locais'          => $op->locations()->get()
+                ->sortByDesc(fn ($l) => (int) $l->pivot->principal)
+                ->map(fn ($l) => [
+                    'id'        => $l->id,
+                    'nome'      => $l->nome,
+                    'tipo'      => $l->tipo,
+                    'principal' => (bool) $l->pivot->principal,
+                ])->values(),
             'items'           => $this->itensComSaldo($op, null)->map(fn ($it) => [
                 'id'               => $it->id,
                 'nome'             => $it->nome,

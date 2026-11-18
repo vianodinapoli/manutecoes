@@ -61,9 +61,12 @@ class DischargeOperationController extends Controller
         $items = $data['items'];
         unset($data['items']);
 
-        $op = DB::transaction(function () use ($data, $items) {
+        $locais = $this->validatedLocais($request, true);
+
+        $op = DB::transaction(function () use ($data, $items, $locais) {
             $op = DischargeOperation::create($data + ['status' => 'planned', 'quantidade_esperada' => 0]);
             $this->syncItems($op, $items);
+            $this->syncLocais($op, $locais);
             return $op;
         });
 
@@ -347,8 +350,11 @@ class DischargeOperationController extends Controller
         $razao  = $data['motivo_alteracao'] ?? null;
         unset($data['items'], $data['motivo_alteracao']);
 
-        DB::transaction(function () use ($operation, $data, $items, $editPlan, $motivo, $razao) {
+        $locais = $this->validatedLocais($request, false);
+
+        DB::transaction(function () use ($operation, $data, $items, $editPlan, $motivo, $razao, $locais) {
             $operation->update($data);
+            $this->syncLocais($operation, $locais);
 
             if ($editPlan && $items !== null) {
                 if ($motivo) {
@@ -506,6 +512,39 @@ class DischargeOperationController extends Controller
         $data['transportadoras'] = $lista ?: null;
 
         return $data;
+    }
+
+        /** Valida os locais de descarga e devolve [id => ['principal' => bool]]. */
+    private function validatedLocais(Request $request, bool $required): array
+    {
+        $v = $request->validate([
+            'locations'          => ($required ? 'required' : 'nullable') . '|array|min:1',
+            'locations.*'        => 'integer|exists:locations,id',
+            'location_principal' => 'nullable|integer',
+        ], [
+            'locations.required' => 'Escolha pelo menos um local de descarga (armazém / yard).',
+            'locations.min'      => 'Escolha pelo menos um local de descarga (armazém / yard).',
+        ]);
+
+        $ids = collect($v['locations'] ?? [])->map(fn ($i) => (int) $i)->unique()->values();
+        if ($ids->isEmpty()) {
+            return [];
+        }
+
+        $principal = (int) ($v['location_principal'] ?? 0);
+        if (! $ids->contains($principal)) {
+            $principal = $ids->first();
+        }
+
+        return $ids->mapWithKeys(fn ($id) => [$id => ['principal' => $id === $principal]])->all();
+    }
+
+    /** Grava os locais previstos (se nenhum foi enviado, mantém os existentes). */
+    private function syncLocais(DischargeOperation $op, array $locais): void
+    {
+        if ($locais !== []) {
+            $op->locations()->sync($locais);
+        }
     }
 
     /** Cria/actualiza/remove itens do plano e recalcula o peso esperado (t). */
