@@ -1,5 +1,7 @@
 <?php
+
 use App\Http\Controllers\Api\AuthApiController;
+use App\Http\Controllers\Api\CartaNovaApiController;
 use App\Http\Controllers\Api\DischargeApiController;
 
 use Illuminate\Http\Request;
@@ -39,7 +41,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/discharges', [DischargeApiController::class, 'store']);
     Route::patch('/discharges/{discharge}/saida-porto', [DischargeApiController::class, 'saidaPorto']);
     Route::match(['post', 'patch'], '/discharges/{discharge}/saiu-porto', [DischargeApiController::class, 'saidaPorto']);
-});
+
+    // T1 — Carta nova (lista de camiões por DO)
+    Route::get('/operations/{operation}/carta-nova', [CartaNovaApiController::class, 'index']);
+    Route::post('/operations/{operation}/carta-nova', [CartaNovaApiController::class, 'store']);
+    Route::get('/operations/{operation}/carta-nova/verificar', [CartaNovaApiController::class, 'verificar']);
+    Route::delete('/operations/{operation}/carta-nova/{cartaNova}', [CartaNovaApiController::class, 'destroy']);
+    Route::get('/operations/{operation}/carta-nova/pesquisar', [CartaNovaApiController::class, 'pesquisar']);
+    });
 
 Route::middleware('auth:sanctum')->get('/discharges/{discharge}', [\App\Http\Controllers\Api\DischargeShowApiController::class, 'show']);
 

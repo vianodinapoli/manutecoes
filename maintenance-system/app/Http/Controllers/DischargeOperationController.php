@@ -430,17 +430,21 @@ class DischargeOperationController extends Controller
     }
 
     public function destroy(DischargeOperation $operation)
-    {
-        abort_unless(auth()->user()->hasRole('super-admin'), 403);
+{
+    abort_unless(auth()->user()->hasRole('super-admin'), 403);
 
-        if ($operation->discharges()->exists()) {
-            return back()->withErrors(['archive' => 'Não é possível eliminar uma operação com descargas registadas.']);
-        }
+    $navio = $operation->navio;
 
+    DB::transaction(function () use ($operation) {
+        $operation->discharges()->get()->each->delete();
+        $operation->cartasNovas()->get()->each->delete();
+        $operation->items()->get()->each->delete();
         $operation->delete();
+    });
 
-        return redirect()->route('operations.index')->with('success', 'Operação eliminada.');
-    }
+    return redirect()->route('operations.index')
+        ->with('success', "Operação do navio {$navio} eliminada.");
+}
 
     /* ───────────────────────── helpers ───────────────────────── */
 

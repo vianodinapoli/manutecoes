@@ -130,7 +130,7 @@
                 $nivel = $desde ? ($min >= 120 ? 'danger' : ($min >= 80 ? 'warn' : '')) : '';
 
                 $chegada = $op->data_chegada ? \Carbon\Carbon::parse($op->data_chegada)->format('d/m/Y') : null;
-                $podeApagar = ((int) $op->discharges_count) === 0;
+                $podeApagar = auth()->user()->hasRole('super-admin');
                 $nCamioes = (int) $op->discharges_count;
             @endphp
             <div class="col-12 col-md-6 col-xl-4">
@@ -197,8 +197,10 @@
                         @if($podeApagar)
                         <form method="POST" action="{{ route('operations.destroy', $op) }}" class="op-del"
                               data-confirm
-                              data-confirm-titulo="Apagar esta operação?"
-                              data-confirm-texto="A operação do navio {{ $op->navio }} será apagada. Esta acção não pode ser desfeita."
+                              data-confirm-titulo="{{ $nCamioes > 0 ? 'Apagar operação com camiões?' : 'Apagar esta operação?' }}"
+                              data-confirm-texto="{{ $nCamioes > 0
+                                  ? 'ATENÇÃO: a operação do navio '.$op->navio.' tem '.$nCamioes.' '.($nCamioes === 1 ? 'camião registado' : 'camiões registados').'. Todos os camiões, pesagens e a carta nova serão apagados. Esta acção não pode ser desfeita.'
+                                  : 'A operação do navio '.$op->navio.' será apagada. Esta acção não pode ser desfeita.' }}"
                               data-confirm-ok="Sim, apagar">
                             @csrf
                             @method('DELETE')

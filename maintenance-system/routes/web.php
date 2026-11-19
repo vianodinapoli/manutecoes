@@ -23,6 +23,8 @@ use App\Http\Controllers\SaidaPesagemController;
 use App\Http\Controllers\DashboardDescargasController;
 use App\Http\Controllers\DashboardSaidasController;
 use App\Http\Controllers\ContentorController;
+        use App\Http\Controllers\Api\CartaNovaApiController;
+
 
 
 // ── Página inicial ──────────────────────────────────────────
@@ -166,6 +168,13 @@ Route::middleware('auth')->group(function () {
         Route::get('discharges/{discharge}/ticket', [DischargeController::class, 'ticket'])->name('discharges.ticket');
         Route::patch('discharges/{discharge}/confirm', [DischargeController::class, 'confirm'])->name('discharges.confirm');
         Route::patch('discharges/{discharge}/saida-porto', [DischargeController::class, 'sairDoPorto'])->name('discharges.saida-porto');
+
+
+// dentro de Route::middleware('permission:acesso discharges')->group(...)
+Route::get('operations/{operation}/carta-nova', [CartaNovaApiController::class, 'index'])->name('operations.carta-nova.index');
+Route::post('operations/{operation}/carta-nova', [CartaNovaApiController::class, 'store'])->name('operations.carta-nova.store');
+Route::get('operations/{operation}/carta-nova/verificar', [CartaNovaApiController::class, 'verificar'])->name('operations.carta-nova.verificar');
+Route::delete('operations/{operation}/carta-nova/{cartaNova}', [CartaNovaApiController::class, 'destroy'])->name('operations.carta-nova.destroy');
 
         // Gestão de contentores
         Route::resource('contentores', ContentorController::class)

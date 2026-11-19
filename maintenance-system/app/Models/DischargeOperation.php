@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DischargeOperation extends Model
@@ -38,6 +39,12 @@ class DischargeOperation extends Model
         return $this->hasMany(Discharge::class, 'operation_id');
     }
 
+    /** Listas "carta nova" (uma por DO) carregadas nesta operação. */
+    public function cartasNovas(): HasMany
+    {
+        return $this->hasMany(CartaNova::class, 'operation_id');
+    }
+
     public function archivedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'archived_by');
@@ -46,6 +53,16 @@ class DischargeOperation extends Model
     public function startedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'started_by');
+    }
+
+    public function locations(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Location::class,
+            'discharge_operation_location',
+            'discharge_operation_id',
+            'location_id'
+        )->withPivot('principal');
     }
 
     /* ── Scopes ── */
@@ -138,15 +155,4 @@ class DischargeOperation extends Model
             ])->values()->all(),
         ];
     }
-
-
-    public function locations()
-{
-    return $this->belongsToMany(
-        Location::class,
-        'discharge_operation_location',
-        'discharge_operation_id',
-        'location_id'
-    )->withPivot('principal');
-}
 }

@@ -109,6 +109,11 @@
                             </div>
                         </div>
 
+                        {{-- Carta nova (lista de camiões para o tablet) --}}
+                        <div class="col-12">
+                            @include('operations.partials.carta-nova')
+                        </div>
+
                         {{-- Metadata --}}
                         <div class="col-12">
                             <div class="d-flex justify-content-between align-items-center mb-1">
@@ -369,6 +374,7 @@
             addMetaRow();
         }
 
+        cartaNovaAbrir(op && op.id ? op.id : null);
         calcPlano();
         new bootstrap.Modal(document.getElementById('modalOperacao')).show();
     }
