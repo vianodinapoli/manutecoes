@@ -37,6 +37,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/operations', [DischargeApiController::class, 'operations']);
     Route::get('/operations/{operation}', [DischargeApiController::class, 'operation']);
     Route::post('/discharges', [DischargeApiController::class, 'store']);
+    Route::patch('/discharges/{discharge}/saida-porto', [DischargeApiController::class, 'saidaPorto']);
+    Route::match(['post', 'patch'], '/discharges/{discharge}/saiu-porto', [DischargeApiController::class, 'saidaPorto']);
 });
 
 Route::middleware('auth:sanctum')->get('/discharges/{discharge}', [\App\Http\Controllers\Api\DischargeShowApiController::class, 'show']);

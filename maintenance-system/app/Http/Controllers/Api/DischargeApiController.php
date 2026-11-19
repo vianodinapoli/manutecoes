@@ -9,6 +9,7 @@ use App\Models\DischargeOperation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class DischargeApiController extends Controller
 {
@@ -37,7 +38,6 @@ class DischargeApiController extends Controller
             'matricula'        => 'required|string|max:20',
             'transportadora'   => 'required|string|max:100',
             'numero_guia'      => 'required|string|unique:descargas,numero_guia',
-            'hora_saida_porto' => 'nullable|date_format:H:i',
             'tipo_atrelado'    => 'required|in:normal,link',
             'items'            => 'required|array',
             'items.*'          => 'nullable|numeric|min:0',
@@ -68,9 +68,10 @@ class DischargeApiController extends Controller
                 'transportadora'   => $transp,
                 'tipo_atrelado'    => $request->tipo_atrelado,
                 'numero_guia'      => $request->numero_guia,
-                'hora_saida_porto' => $request->hora_saida_porto,
                 'registado_por'    => auth()->id(),
-                'status'           => 'in_transit',
+                'status'           => 'loaded',
+                'carregado_em'     => now(),
+                'carregado_por'    => auth()->id(),
             ] + $this->totais($items, $qtys));
 
             $this->gravarItens($discharge, $qtys);
@@ -86,21 +87,66 @@ class DischargeApiController extends Controller
 
         return response()->json([
             'id'      => $discharge->id,
-            'message' => 'Descarga registada. Aguarda confirmação na balança.',
+            'status'  => 'loaded',
+            'message' => 'Camião carregado e registado. Aguarda a saída do porto.',
         ], 201);
+    }
+
+    /**
+     * 2.º agente conferiu os dados e deslizou a linha para a direita
+     * → "Em trânsito" (tempo ②). Hora do servidor, não a do tablet.
+     */
+    public function saidaPorto(Request $request, Discharge $discharge)
+    {
+        abort_if($discharge->operation && $discharge->operation->isArchived(), 403, 'Operação arquivada.');
+
+        $d = DB::transaction(function () use ($discharge) {
+            $d = Discharge::lockForUpdate()->findOrFail($discharge->id);
+
+            if ($d->status !== 'loaded') {
+                throw ValidationException::withMessages([
+                    'status' => 'Este camião já saiu do porto.',
+                ]);
+            }
+
+            $d->marcarEtapa('saiu_porto', auth()->id());
+            $d->hora_saida_porto = now()->setTimezone('Africa/Maputo')->format('H:i'); // compatibilidade legado
+            $d->status = 'in_transit';
+            $d->save();
+
+            return $d;
+        });
+
+        return response()->json([
+            'ok'            => true,
+            'id'            => $d->id,
+            'status'        => $d->status,
+            'saiu_porto_em' => $d->saiu_porto_em?->toIso8601String(),
+        ]);
     }
 
     private function operationPayload(DischargeOperation $op): array
     {
         $camioes   = $op->discharges()->count();
-        $pendentes = $op->discharges()->whereIn('status', ['pending', 'in_transit'])->count();
+        $pendentes = $op->discharges()->whereIn('status', ['loaded', 'pending', 'in_transit'])->count();
         $recebido  = (float) $op->discharges()->sum('peso_liquido');
 
         $ts = $op->discharges()
             ->whereIn('status', ['pending', 'in_transit'])
-            ->whereNotNull('hora_saida_porto')
             ->get()
-            ->map(fn ($d) => Carbon::parse($d->data->format('Y-m-d') . ' ' . substr((string) $d->hora_saida_porto, 0, 5))->timestamp)
+            ->map(function ($d) {
+                if ($d->saiu_porto_em) {
+                    return $d->saiu_porto_em->timestamp;
+                }
+                if ($d->hora_saida_porto) {
+                    return Carbon::parse(
+                        $d->data->format('Y-m-d') . ' ' . substr((string) $d->hora_saida_porto, 0, 5),
+                        'Africa/Maputo'
+                    )->timestamp;
+                }
+                return null;
+            })
+            ->filter()
             ->min();
 
         return [

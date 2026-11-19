@@ -24,8 +24,9 @@ class DischargeListApiController extends Controller
 
         $st = (string) $request->query('st');
         if ($st === 'por_confirmar') {
-            $q->whereIn('status', ['pending', 'in_transit']);
-        } elseif (in_array($st, ['pending', 'in_transit', 'weighing', 'confirmed'], true)) {
+            // ainda não chegaram à balança: carregados + em trânsito
+            $q->whereIn('status', ['loaded', 'pending', 'in_transit']);
+        } elseif (in_array($st, ['loaded', 'pending', 'in_transit', 'weighing', 'confirmed'], true)) {
             $q->where('status', $st);
         }
 
@@ -59,6 +60,11 @@ class DischargeListApiController extends Controller
             'status'              => $d->status,
             'total_sacos'         => (int) $d->total_sacos,
             'peso_total_estimado' => (float) $d->peso_total_estimado,
+            // os 4 tempos (ISO 8601, hora do servidor)
+            'carregado_em'        => $d->carregado_em?->toIso8601String(),
+            'saiu_porto_em'       => $d->saiu_porto_em?->toIso8601String(),
+            'chegou_balanca_em'   => $d->chegou_balanca_em?->toIso8601String(),
+            'saiu_descarga_em'    => $d->saiu_descarga_em?->toIso8601String(),
         ])->values();
 
         $porEstado = $operation->discharges()
@@ -78,7 +84,9 @@ class DischargeListApiController extends Controller
             ],
             'contagens' => [
                 'todos'         => (int) $porEstado->sum(),
-                'por_confirmar' => (int) (($porEstado['pending'] ?? 0) + ($porEstado['in_transit'] ?? 0)),
+                'por_confirmar' => (int) (($porEstado['loaded'] ?? 0) + ($porEstado['pending'] ?? 0) + ($porEstado['in_transit'] ?? 0)),
+                'loaded'        => (int) ($porEstado['loaded'] ?? 0),
+                'in_transit'    => (int) (($porEstado['in_transit'] ?? 0) + ($porEstado['pending'] ?? 0)),
                 'weighing'      => (int) ($porEstado['weighing'] ?? 0),
                 'confirmed'     => (int) ($porEstado['confirmed'] ?? 0),
             ],

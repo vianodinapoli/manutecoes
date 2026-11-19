@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Validation\ValidationException;
 
 class Discharge extends Model
 {
@@ -24,25 +25,70 @@ class Discharge extends Model
         'hora_chegada_balanca', 'tempo_transporte',
         'peso_bruto', 'peso_bruto_em', 'tara', 'tara_em', 'peso_liquido',
         'sacos_confirmados', 'observacoes', 'confirmado_por', 'status',
+        // 4 tempos do camião (T3)
+        'carregado_em', 'carregado_por',
+        'saiu_porto_em', 'saiu_porto_por',
+        'chegou_balanca_em', 'chegou_balanca_por',
+        'saiu_descarga_em', 'saiu_descarga_por',
     ];
 
     protected $casts = [
-        'data'          => 'date',
-        'location_extra' => 'boolean',
-        'peso_bruto_em' => 'datetime',
-        'tara_em'       => 'datetime',
+        'data'              => 'date',
+        'location_extra'    => 'boolean',
+        'peso_bruto_em'     => 'datetime',
+        'tara_em'           => 'datetime',
+        'carregado_em'      => 'datetime',
+        'saiu_porto_em'     => 'datetime',
+        'chegou_balanca_em' => 'datetime',
+        'saiu_descarga_em'  => 'datetime',
     ];
 
+    /**
+     * Fluxo: Carregado → Em trânsito → A pesar → Confirmado
+     *  loaded     : 1.º agente registou o camião no tablet
+     *  in_transit : 2.º agente conferiu e arrastou a linha (saiu do porto)
+     *  weighing   : a balança recebeu o 1.º peso
+     *  confirmed  : terminou a pesagem do camião vazio
+     */
     public static array $statusLabels = [
-        'in_transit' => 'Em Trânsito',
+        'loaded'     => 'Carregado',
+        'in_transit' => 'Em trânsito',
         'weighing'   => 'A pesar',
-        'confirmed'  => 'Descarregado',
+        'confirmed'  => 'Confirmado',
         'pending'    => 'Pendente',
     ];
+
+    /** Ordem obrigatória dos 4 tempos. */
+    public const ETAPAS = ['carregado', 'saiu_porto', 'chegou_balanca', 'saiu_descarga'];
 
     public function getStatusLabelAttribute(): string
     {
         return self::$statusLabels[$this->status] ?? $this->status;
+    }
+
+    /**
+     * Grava a hora do SERVIDOR e quem marcou. Não deixa saltar etapas
+     * e não sobrescreve uma etapa já marcada. Não faz save().
+     */
+    public function marcarEtapa(string $etapa, ?int $userId): void
+    {
+        $i = array_search($etapa, self::ETAPAS, true);
+        if ($i === false) {
+            throw new \InvalidArgumentException("Etapa desconhecida: {$etapa}");
+        }
+
+        if ($i > 0 && $this->{self::ETAPAS[$i - 1] . '_em'} === null) {
+            throw ValidationException::withMessages([
+                'etapa' => 'Não pode saltar etapas: falta "' . self::ETAPAS[$i - 1] . '".',
+            ]);
+        }
+
+        if ($this->{$etapa . '_em'} !== null) {
+            return;
+        }
+
+        $this->{$etapa . '_em'}  = now();
+        $this->{$etapa . '_por'} = $userId;
     }
 
     /**
@@ -73,6 +119,13 @@ class Discharge extends Model
 
     public function calculateTransportTime(): void
     {
+        // novo: diferença entre os dois tempos reais do servidor
+        if ($this->saiu_porto_em && $this->chegou_balanca_em) {
+            $this->tempo_transporte = (int) $this->saiu_porto_em->diffInMinutes($this->chegou_balanca_em);
+            return;
+        }
+
+        // legado: horas H:i escritas à mão
         if ($this->hora_saida_porto && $this->hora_chegada_balanca) {
             $departure = \Carbon\Carbon::createFromTimeString($this->hora_saida_porto);
             $arrival   = \Carbon\Carbon::createFromTimeString($this->hora_chegada_balanca);

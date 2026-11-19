@@ -441,6 +441,11 @@ div.dataTables_wrapper div.dataTables_paginate .page-item.active .page-link{colo
 
     {{-- KPIs --}}
     <div class="kpi-row no-print">
+        <div class="kpi gold">
+            <div class="kpi-lbl">Carregado</div>
+            <div class="kpi-val" style="color:#fd7e14;">{{ $discharges->where('status','loaded')->count() }}</div>
+            <div class="kpi-sub">por sair do porto</div>
+        </div>
         <div class="kpi teal">
             <div class="kpi-lbl">Em Trânsito</div>
             <div class="kpi-val" style="color:#0aa2c0;">{{ $discharges->where('status','in_transit')->count() }}</div>
@@ -488,6 +493,7 @@ div.dataTables_wrapper div.dataTables_paginate .page-item.active .page-link{colo
                 <label for="fStatus">Estado</label>
                 <select id="fStatus">
                     <option value="">Todos</option>
+                    <option value="loaded">Carregado</option>
                     <option value="in_transit">Em Trânsito</option>
                     <option value="weighing">A pesar</option>
                     <option value="confirmed">Confirmado</option>
@@ -557,11 +563,13 @@ div.dataTables_wrapper div.dataTables_paginate .page-item.active .page-link{colo
                     $stClass = match($d->status){
                         'confirmed'  => 'bg-success bg-opacity-10 text-success',
                         'in_transit' => 'bg-info bg-opacity-10 text-info',
+                        'loaded'     => 'bg-secondary bg-opacity-10 text-secondary',
                         default      => 'bg-warning bg-opacity-10 text-warning',   // weighing (A pesar) e pending
                     };
                     $stIcon = match($d->status){
                         'confirmed'  => 'check-circle-fill',
                         'in_transit' => 'truck',
+                        'loaded'     => 'box-seam',
                         'weighing'   => 'speedometer2',
                         default      => 'hourglass-split',
                     };
@@ -582,8 +590,10 @@ div.dataTables_wrapper div.dataTables_paginate .page-item.active .page-link{colo
 
                     // Alerta porto -> balança: só camiões que ainda não chegaram à balança
                     $desde = null;
-                    if (in_array($d->status, ['pending', 'in_transit'], true) && $d->hora_saida_porto) {
-                        $desde = \Carbon\Carbon::parse($dataD->format('Y-m-d') . ' ' . substr((string) $d->hora_saida_porto, 0, 5));
+                    if (in_array($d->status, ['pending', 'in_transit'], true) && ($d->saiu_porto_em || $d->hora_saida_porto)) {
+                        $desde = $d->saiu_porto_em
+                            ? $d->saiu_porto_em->copy()
+                            : \Carbon\Carbon::parse($dataD->format('Y-m-d') . ' ' . substr((string) $d->hora_saida_porto, 0, 5), 'Africa/Maputo');
                     }
                     $minSla = $desde ? max(0, (int) $desde->diffInMinutes(now(), false)) : null;
                     $sla    = $minSla === null ? '' : ($minSla >= 120 ? 'danger' : ($minSla >= 80 ? 'warn' : 'ok'));
@@ -667,7 +677,7 @@ div.dataTables_wrapper div.dataTables_paginate .page-item.active .page-link{colo
                     <td class="text-center" style="white-space:nowrap;">
                         @if($desde)
                         <span class="sla-dot sla-{{ $sla }}"
-                              title="Saiu do porto às {{ $desde->format('H:i') }}. Amarelo aos 80 min, vermelho aos 120 min."></span><span
+                              title="Saiu do porto às {{ $desde->copy()->timezone('Africa/Maputo')->format('H:i') }}. Amarelo aos 80 min, vermelho aos 120 min."></span><span
                               class="sla-tempo" data-tempo style="font-size:.7rem;color:#64748b;">{{ $minSla }}m</span>
                         @elseif($d->tempo_transporte)
                         <span style="font-size:.7rem;color:#64748b;"><i class="bi bi-clock" style="font-size:.62rem;"></i> {{ $d->tempo_transporte }}m</span>
@@ -687,6 +697,14 @@ div.dataTables_wrapper div.dataTables_paginate .page-item.active .page-link{colo
                     {{-- Acções --}}
                     <td class="text-center">
                         <div class="d-flex justify-content-center align-items-center gap-1">
+                            @if(!$readonly && $d->status === 'loaded')
+                            <form action="{{ route('discharges.saida-porto', $d->id) }}" method="POST" class="m-0">
+                                @csrf @method('PATCH')
+                                <button type="submit" class="btn-balanca" style="background:#0aa2c0;">
+                                    <i class="bi bi-box-arrow-right"></i>Saiu do porto
+                                </button>
+                            </form>
+                            @endif
                             @if(!$readonly && in_array($d->status, ['pending','in_transit','weighing']))
                             <button type="button" class="btn-balanca {{ $d->status === 'weighing' ? 'pesar' : '' }}"
                                     data-bs-toggle="modal" data-bs-target="#modalConfirm"
@@ -808,7 +826,7 @@ div.dataTables_wrapper div.dataTables_paginate .page-item.active .page-link{colo
                         <div class="col-sm-6">
                             <label class="form-label lbl-b" for="hora_chegada_balanca">Hora de chegada</label>
                             <input type="time" name="hora_chegada_balanca" id="hora_chegada_balanca"
-                                   class="form-control form-control-sm" style="border-radius:7px;font-size:.76rem;" required>
+                                   class="form-control form-control-sm" style="border-radius:7px;font-size:.76rem;" readonly tabindex="-1" placeholder="Automático">
                         </div>
                         <div class="col-sm-6">
                             <label class="form-label lbl-b" for="transport_time_calc">Tempo de transporte</label>

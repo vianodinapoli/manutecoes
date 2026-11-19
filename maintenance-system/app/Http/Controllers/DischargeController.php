@@ -30,6 +30,7 @@ class DischargeController extends Controller
         return view('discharges.create', compact('operation', 'items'));
     }
 
+    /** 1.º agente: regista o camião → estado "Carregado" (tempo ①). */
     public function store(Request $request)
     {
         $request->validate([
@@ -39,7 +40,6 @@ class DischargeController extends Controller
             'matricula'        => 'required|string|max:20',
             'transportadora'   => 'required|string|max:100',
             'numero_guia'      => 'required|string|unique:descargas,numero_guia',
-            'hora_saida_porto' => 'nullable|date_format:H:i',
             'tipo_atrelado'    => 'required|in:normal,link',
             'items'            => 'required|array',
             'items.*'          => 'nullable|numeric|min:0',
@@ -63,16 +63,17 @@ class DischargeController extends Controller
             $transp = $this->resolverTransportadora($operation, $request->transportadora);
 
             $discharge = Discharge::create([
-                'operation_id'     => $operation->id,
-                'data'             => $request->data,
-                'motorista'        => $request->motorista,
-                'matricula'        => $request->matricula,
-                'transportadora'   => $transp,
-                'tipo_atrelado'    => $request->tipo_atrelado,
-                'numero_guia'      => $request->numero_guia,
-                'hora_saida_porto' => $request->hora_saida_porto,
-                'registado_por'    => auth()->id(),
-                'status'           => 'in_transit',
+                'operation_id'   => $operation->id,
+                'data'           => $request->data,
+                'motorista'      => $request->motorista,
+                'matricula'      => $request->matricula,
+                'transportadora' => $transp,
+                'tipo_atrelado'  => $request->tipo_atrelado,
+                'numero_guia'    => $request->numero_guia,
+                'registado_por'  => auth()->id(),
+                'status'         => 'loaded',
+                'carregado_em'   => now(),
+                'carregado_por'  => auth()->id(),
             ] + $this->totais($items, $qtys));
 
             $this->gravarItens($discharge, $qtys);
@@ -85,7 +86,35 @@ class DischargeController extends Controller
         });
 
         return redirect()->route('operations.show', $operation)
-            ->with('success', '✅ Descarga registada com sucesso! Aguarda confirmação na balança.');
+            ->with('success', '✅ Camião carregado e registado. Aguarda a saída do porto.');
+    }
+
+    /**
+     * 2.º agente: conferiu os dados e arrastou a linha → "Em trânsito" (tempo ②).
+     * Aceita pedido normal (Central) e JSON (tablet).
+     */
+    public function sairDoPorto(Request $request, Discharge $discharge)
+    {
+        abort_if($discharge->operation && $discharge->operation->isArchived(), 403, 'Operação arquivada.');
+
+        DB::transaction(function () use ($discharge) {
+            $d = Discharge::lockForUpdate()->findOrFail($discharge->id);
+
+            if ($d->status !== 'loaded') {
+                throw ValidationException::withMessages([
+                    'status' => 'Este camião já saiu do porto.',
+                ]);
+            }
+
+            $d->marcarEtapa('saiu_porto', auth()->id());
+            $d->hora_saida_porto = now()->setTimezone('Africa/Maputo')->format('H:i'); // compatibilidade legado
+            $d->status = 'in_transit';
+            $d->save();
+        });
+
+        return $request->wantsJson()
+            ? response()->json(['ok' => true, 'status' => 'in_transit'])
+            : back()->with('success', '🚚 Camião em trânsito.');
     }
 
     public function show(Request $request, Discharge $discharge)
@@ -125,7 +154,6 @@ class DischargeController extends Controller
             'matricula'        => 'required|string|max:20',
             'transportadora'   => 'required|string|max:100',
             'numero_guia'      => 'required|string|unique:descargas,numero_guia,' . $discharge->id,
-            'hora_saida_porto' => 'nullable|date_format:H:i',
             'tipo_atrelado'    => 'required|in:normal,link',
             'items'            => 'required|array',
             'items.*'          => 'nullable|numeric|min:0',
@@ -137,13 +165,12 @@ class DischargeController extends Controller
             $transp = $this->resolverTransportadora($operation, $request->transportadora);
 
             $discharge->update([
-                'data'             => $request->data,
-                'motorista'        => $request->motorista,
-                'matricula'        => $request->matricula,
-                'transportadora'   => $transp,
-                'tipo_atrelado'    => $request->tipo_atrelado,
-                'numero_guia'      => $request->numero_guia,
-                'hora_saida_porto' => $request->hora_saida_porto,
+                'data'           => $request->data,
+                'motorista'      => $request->motorista,
+                'matricula'      => $request->matricula,
+                'transportadora' => $transp,
+                'tipo_atrelado'  => $request->tipo_atrelado,
+                'numero_guia'    => $request->numero_guia,
             ] + $this->totais($items, $qtys));
 
             $this->gravarItens($discharge, $qtys);
@@ -158,25 +185,32 @@ class DischargeController extends Controller
      *   1. o camião chega cheio  → regista-se o peso cheio (bruto) e as quantidades
      *   2. o camião volta vazio  → regista-se o peso vazio (tara)
      * Os pesos podem ser registados em qualquer ordem e em submissões separadas.
-     * Só quando existem os dois é que o estado passa a "confirmed".
-     * Enquanto falta um, o estado é "weighing" (A pesar).
+     *
+     *  - 1.º peso recebido  → "A pesar" e tempo ③ (chegada à balança, hora do servidor)
+     *  - os dois pesos      → "Confirmado" e tempo ④ (saída da descarga)
+     * Um camião ainda "Carregado" (sem saída do porto) não pode ser pesado.
      */
     public function confirm(Request $request, Discharge $discharge)
     {
         $discharge->load('items.operationItem', 'operation');
         abort_if($discharge->operation && $discharge->operation->isArchived(), 403, 'Operação arquivada.');
 
+        if ($discharge->status === 'loaded') {
+            throw ValidationException::withMessages([
+                'status' => 'Falta confirmar a saída do porto (2.º agente) antes de pesar.',
+            ]);
+        }
+
         // as quantidades por produto só são obrigatórias na primeira passagem
         $jaTemQtd = $discharge->items->isNotEmpty()
             && $discharge->items->every(fn ($i) => $i->quantidade_confirmada !== null);
 
         $request->validate([
-            'hora_chegada_balanca' => [$discharge->hora_chegada_balanca ? 'nullable' : 'required', 'date_format:H:i,H:i:s'],
-            'peso_bruto'           => 'nullable|numeric|min:0',
-            'tara'                 => 'nullable|numeric|min:0',
-            'confirmados'          => [$jaTemQtd ? 'nullable' : 'required', 'array'],
-            'confirmados.*'        => 'required|numeric|min:0',
-            'observacoes'          => 'nullable|string|max:500',
+            'peso_bruto'    => 'nullable|numeric|min:0',
+            'tara'          => 'nullable|numeric|min:0',
+            'confirmados'   => [$jaTemQtd ? 'nullable' : 'required', 'array'],
+            'confirmados.*' => 'required|numeric|min:0',
+            'observacoes'   => 'nullable|string|max:500',
         ]);
 
         // pesos finais = o que veio agora, ou o que já estava gravado
@@ -216,8 +250,14 @@ class DischargeController extends Controller
                 $discharge->sacos_confirmados = $sacosConfirmados;
             }
 
-            if ($request->filled('hora_chegada_balanca')) {
-                $discharge->hora_chegada_balanca = $request->hora_chegada_balanca;
+            // ③ chegada à balança = hora do servidor no 1.º peso
+            if ($discharge->chegou_balanca_em === null) {
+                // registos antigos que nunca registaram a saída do porto
+                if ($discharge->saiu_porto_em === null) {
+                    $discharge->marcarEtapa('saiu_porto', auth()->id());
+                }
+                $discharge->marcarEtapa('chegou_balanca', auth()->id());
+                $discharge->hora_chegada_balanca = now()->setTimezone('Africa/Maputo')->format('H:i:s');
             }
 
             // só carimba a hora da pesagem quando o peso é novo ou foi alterado
@@ -229,6 +269,11 @@ class DischargeController extends Controller
             }
 
             $completo = $bruto !== null && $tara !== null;
+
+            // ④ saída da descarga = fim da pesagem do camião vazio
+            if ($completo) {
+                $discharge->marcarEtapa('saiu_descarga', auth()->id());
+            }
 
             $discharge->peso_bruto     = $bruto;
             $discharge->tara           = $tara;

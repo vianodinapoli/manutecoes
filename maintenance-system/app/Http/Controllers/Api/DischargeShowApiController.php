@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Discharge;
+use App\Models\User;
 
 class DischargeShowApiController extends Controller
 {
@@ -30,6 +31,15 @@ class DischargeShowApiController extends Controller
                 'quantidade_confirmada' => $l->quantidade_confirmada !== null ? (float) $l->quantidade_confirmada : null,
             ];
         })->values();
+
+        // 4 tempos, por ordem, com quem marcou cada um
+        $ids   = collect(Discharge::ETAPAS)->map(fn ($e) => $discharge->{$e . '_por'})->filter()->unique();
+        $nomes = $ids->isNotEmpty() ? User::whereIn('id', $ids)->pluck('name', 'id') : collect();
+
+        $tempos = collect(Discharge::ETAPAS)->mapWithKeys(fn ($e) => [$e => [
+            'em'  => $discharge->{$e . '_em'}?->toIso8601String(),
+            'por' => $discharge->{$e . '_por'} ? ($nomes[$discharge->{$e . '_por'}] ?? null) : null,
+        ]])->all();
 
         $balanca = null;
         if ($discharge->peso_bruto !== null || $discharge->tara !== null) {
@@ -69,6 +79,7 @@ class DischargeShowApiController extends Controller
             'total_sacos'         => (int) $discharge->total_sacos,
             'peso_total_estimado' => (float) $discharge->peso_total_estimado,
             'balanca'             => $balanca,
+            'tempos'              => $tempos,
         ];
     }
 }

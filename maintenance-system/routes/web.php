@@ -165,6 +165,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('discharges', DischargeController::class);
         Route::get('discharges/{discharge}/ticket', [DischargeController::class, 'ticket'])->name('discharges.ticket');
         Route::patch('discharges/{discharge}/confirm', [DischargeController::class, 'confirm'])->name('discharges.confirm');
+        Route::patch('discharges/{discharge}/saida-porto', [DischargeController::class, 'sairDoPorto'])->name('discharges.saida-porto');
 
         // Gestão de contentores
         Route::resource('contentores', ContentorController::class)
