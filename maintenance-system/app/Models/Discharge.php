@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,17 +31,21 @@ class Discharge extends Model
         'saiu_porto_em', 'saiu_porto_por',
         'chegou_balanca_em', 'chegou_balanca_por',
         'saiu_descarga_em', 'saiu_descarga_por',
+        // justificação do atraso até à balança (vermelho)
+        'atraso_motivo', 'atraso_justificacao',
+        'atraso_justificado_por', 'atraso_justificado_em',
     ];
 
     protected $casts = [
-        'data'              => 'date',
-        'location_extra'    => 'boolean',
-        'peso_bruto_em'     => 'datetime',
-        'tara_em'           => 'datetime',
-        'carregado_em'      => 'datetime',
-        'saiu_porto_em'     => 'datetime',
-        'chegou_balanca_em' => 'datetime',
-        'saiu_descarga_em'  => 'datetime',
+        'data'                  => 'date',
+        'location_extra'        => 'boolean',
+        'peso_bruto_em'         => 'datetime',
+        'tara_em'               => 'datetime',
+        'carregado_em'          => 'datetime',
+        'saiu_porto_em'         => 'datetime',
+        'chegou_balanca_em'     => 'datetime',
+        'saiu_descarga_em'      => 'datetime',
+        'atraso_justificado_em' => 'datetime',
     ];
 
     /**
@@ -60,6 +65,12 @@ class Discharge extends Model
 
     /** Ordem obrigatória dos 4 tempos. */
     public const ETAPAS = ['carregado', 'saiu_porto', 'chegou_balanca', 'saiu_descarga'];
+
+    /** Motivos de atraso aceites (vermelho). */
+    public const ATRASO_MOTIVOS = [
+        'fila_descarga' => 'Fila de descarga',
+        'outro'         => 'Motivo',
+    ];
 
     public function getStatusLabelAttribute(): string
     {
@@ -89,6 +100,100 @@ class Discharge extends Model
 
         $this->{$etapa . '_em'}  = now();
         $this->{$etapa . '_por'} = $userId;
+    }
+
+    /* ── Atraso até à balança (laranja / vermelho) ───────────────── */
+
+    /** Momento em que o camião saiu do porto (novo campo, ou data + hora legado). */
+    public function inicioTransito(): ?Carbon
+    {
+        if ($this->saiu_porto_em) {
+            return $this->saiu_porto_em;
+        }
+
+        if ($this->data && $this->hora_saida_porto) {
+            return Carbon::parse($this->data->format('Y-m-d') . ' ' . substr((string) $this->hora_saida_porto, 0, 5));
+        }
+
+        return null;
+    }
+
+    /**
+     * Minutos entre a saída do porto e a chegada à balança.
+     * Se ainda não chegou, conta até agora.
+     */
+    public function atrasoMinutos(): ?int
+    {
+        $inicio = $this->inicioTransito();
+        if (! $inicio) {
+            return null;
+        }
+
+        $fim = $this->chegou_balanca_em ?? now();
+
+        return (int) abs($inicio->diffInMinutes($fim));
+    }
+
+    /** '' (normal) | 'warn' (laranja) | 'danger' (vermelho). Limites em config/operacoes.php. */
+    public function nivelAtraso(?int $minutos = null): string
+    {
+        $min = $minutos ?? $this->atrasoMinutos();
+        if ($min === null) {
+            return '';
+        }
+
+        if ($min >= (int) config('operacoes.atraso_vermelho_min', 80)) {
+            return 'danger';
+        }
+
+        if ($min >= (int) config('operacoes.atraso_laranja_min', 60)) {
+            return 'warn';
+        }
+
+        return '';
+    }
+
+    /** Já tem justificação do atraso gravada. */
+    public function atrasoJustificado(): bool
+    {
+        return ! empty($this->atraso_motivo);
+    }
+
+    /** Está no vermelho e ainda ninguém justificou: tem de justificar ao chegar à balança. */
+    public function exigeJustificacaoAtraso(?int $minutos = null): bool
+    {
+        return $this->nivelAtraso($minutos) === 'danger' && ! $this->atrasoJustificado();
+    }
+
+    /** Texto do motivo do atraso: "Fila de descarga" ou "Outro: <texto>". null se não há justificação. */
+    public function atrasoMotivoTexto(): ?string
+    {
+        if (! $this->atrasoJustificado()) {
+            return null;
+        }
+
+        $rotulo = self::ATRASO_MOTIVOS[$this->atraso_motivo] ?? $this->atraso_motivo;
+        $texto  = trim((string) $this->atraso_justificacao);
+
+        return $this->atraso_motivo === 'outro' && $texto !== ''
+            ? "{$rotulo}: {$texto}"
+            : $rotulo;
+    }
+
+    /**
+     * Chegou à balança no vermelho e ninguém justificou (registos anteriores a esta regra,
+     * ou chegada marcada pelo tablet). Só conta depois da chegada, porque aí o atraso já não muda.
+     */
+    public function atrasoSemJustificacao(): bool
+    {
+        return $this->chegou_balanca_em !== null
+            && $this->nivelAtraso() === 'danger'
+            && ! $this->atrasoJustificado();
+    }
+
+    public function atrasoJustificadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'atraso_justificado_por');
     }
 
     /**

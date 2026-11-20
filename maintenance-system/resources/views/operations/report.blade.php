@@ -19,6 +19,8 @@
         };
         $kgStatus = fn ($s) => ['confirmed' => 'Confirmado', 'in_transit' => 'Em trânsito', 'pending' => 'Pendente'][$s] ?? $s;
         $extras = $operation->transportadorasExtra();
+        $motivosAtraso = $discharges->filter(fn ($d) => $d->atrasoJustificado());
+        $semJustificar = $discharges->filter(fn ($d) => $d->atrasoSemJustificacao());
     @endphp
 
     <style>
@@ -97,6 +99,8 @@
         .tag.pe   { background: #fff3cd; color: #856404; }
         .tag.dv   { background: #fd7e14; color: #fff; }
         .tag.extra{ background: #fd7e14; color: #fff; }
+        .tag.atr { background: #fdecea; color: #b3261e; white-space: normal; display: inline-block; max-width: 170px; border-radius: 6px; margin-top: 2px; }
+        .tag.atr-sem { background: #b3261e; color: #fff; margin-top: 2px; }
         .meta { display: inline-block; background: #f1f5f9; border-radius: 3px; padding: 1px 7px; margin: 2px 4px 0 0; font-size: 9.5px; }
         .prod { display: block; white-space: nowrap; }
 
@@ -315,7 +319,9 @@
                     <td>{{ $d->motorista }}<br><span class="mut">{{ $d->matricula }}@if($d->tipo_atrelado) · {{ strtoupper($d->tipo_atrelado) }}@endif</span></td>
                     <td>{{ $d->transportadora }}@if($tpExtra)<br><span class="tag extra">⚠ fora da lista</span>@endif</td>
                     <td class="nw">{{ $d->hora_saida_porto ?: '—' }} → {{ $d->hora_chegada_balanca ?: '—' }}
-                        @if($d->tempo_transporte)<br><span class="mut">{{ $d->tempo_transporte }} min</span>@endif</td>
+                        @if($d->tempo_transporte)<br><span class="mut">{{ $d->tempo_transporte }} min</span>@endif
+                        @if($d->atrasoJustificado())<br><span class="tag atr">Atraso: {{ $d->atrasoMotivoTexto() }}</span>
+                        @elseif($d->atrasoSemJustificacao())<br><span class="tag atr-sem">Atraso sem justificação</span>@endif</td>
                     <td>
                         @foreach($d->items as $l)
                             @php $dif1 = $l->quantidade_confirmada !== null && abs($l->quantidade_confirmada - $l->quantidade) > 0.0005; @endphp
@@ -363,16 +369,26 @@
     @php
         $comDiv  = $discharges->filter(fn ($d) => $d->hasDivergence());
         $comObs  = $discharges->filter(fn ($d) => filled($d->observacoes));
+        $comAtraso = $discharges->filter(fn ($d) => $d->atrasoJustificado() || $d->atrasoSemJustificacao());
     @endphp
     <div class="sec">
-        <h2><span>6</span>Divergências e observações</h2>
-        @if($comDiv->isEmpty() && $comObs->isEmpty())
-            <div style="color:#198754;font-weight:600;">✓ Sem divergências nem observações registadas.</div>
+        <h2><span>6</span>Divergências, atrasos e observações</h2>
+        @if($motivosAtraso->isNotEmpty() || $semJustificar->isNotEmpty())
+            <div style="margin-bottom:6px;font-size:10.5px;">
+                <b>Atrasos (sinal vermelho):</b> {{ $motivosAtraso->count() }} justificado(s)
+                @foreach($motivosAtraso->groupBy('atraso_motivo') as $m => $g)
+                    · {{ \App\Models\Discharge::ATRASO_MOTIVOS[$m] ?? $m }}: {{ $g->count() }}
+                @endforeach
+                @if($semJustificar->isNotEmpty()) · <b class="neg">{{ $semJustificar->count() }} sem justificação</b>@endif
+            </div>
+        @endif
+        @if($comDiv->isEmpty() && $comObs->isEmpty() && $comAtraso->isEmpty())
+            <div style="color:#198754;font-weight:600;">✓ Sem divergências, atrasos nem observações registadas.</div>
         @else
             <table>
-                <thead><tr><th>Camião</th><th>Guia</th><th>Motorista</th><th>Divergência por produto (porto → balança)</th><th>Observações</th><th>Confirmado por</th></tr></thead>
+                <thead><tr><th>Camião</th><th>Guia</th><th>Motorista</th><th>Divergência por produto (porto → balança)</th><th>Observações</th><th>Atraso (porto → balança)</th><th>Confirmado por</th></tr></thead>
                 <tbody>
-                @foreach($comDiv->merge($comObs)->unique('id')->sortBy('id') as $d)
+                @foreach($comDiv->merge($comObs)->merge($comAtraso)->unique('id')->sortBy('id') as $d)
                     <tr>
                         <td class="nw">#{{ $d->id }} · {{ $d->data->format('d/m/Y') }}</td>
                         <td class="nw">{{ $d->numero_guia }}</td>
@@ -384,6 +400,16 @@
                             @empty <span class="mut">—</span> @endforelse
                         </td>
                         <td>{{ $d->observacoes ?: '—' }}</td>
+                        <td>
+                            @if($d->atrasoJustificado())
+                                <b class="neg">{{ $d->atrasoMinutos() }} min</b> · {{ $d->atrasoMotivoTexto() }}
+                                <br><span class="mut">{{ $d->atrasoJustificadoPor?->name ?? '—' }}@if($d->atraso_justificado_em) · {{ $d->atraso_justificado_em->format('d/m H:i') }}@endif</span>
+                            @elseif($d->atrasoSemJustificacao())
+                                <b class="neg">{{ $d->atrasoMinutos() }} min</b> · <span class="neg">sem justificação</span>
+                            @else
+                                <span class="mut">—</span>
+                            @endif
+                        </td>
                         <td>{{ $d->confirmedBy->name ?? '—' }}</td>
                     </tr>
                 @endforeach

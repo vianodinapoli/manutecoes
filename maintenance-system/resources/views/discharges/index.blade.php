@@ -711,6 +711,10 @@ div.dataTables_wrapper div.dataTables_paginate .page-item.active .page-link{colo
                                     data-id="{{ $d->id }}" data-guia="{{ $d->numero_guia }}"
                                     data-itens='@json($itensBalanca)'
                                     data-saida="{{ $d->hora_saida_porto }}"
+                                    data-inicio="{{ $d->inicioTransito()?->toIso8601String() }}"
+                                    data-atraso-min="{{ $d->atrasoMinutos() }}"
+                                    data-atraso-fixo="{{ $d->chegou_balanca_em ? 1 : 0 }}"
+                                    data-justificado="{{ $d->atrasoJustificado() ? 1 : 0 }}"
                                     data-hora="{{ $d->hora_chegada_balanca }}"
                                     data-bruto="{{ $d->peso_bruto }}"
                                     data-tara="{{ $d->tara }}"
@@ -821,6 +825,35 @@ div.dataTables_wrapper div.dataTables_paginate .page-item.active .page-link{colo
                     </div>
 
                     <div class="row g-2">
+
+                        {{-- Justificação do atraso: só aparece com sinal vermelho --}}
+                        <div class="col-12 d-none" id="blocoJustificacao">
+                            <div class="p-2 rounded" style="background:#fdecea;border:1px solid #f5c2c0;">
+                                <div class="fw-bold text-danger" style="font-size:.76rem;">
+                                    <i class="bi bi-exclamation-octagon-fill me-1"></i>
+                                    Sinal vermelho: <span id="atrasoMinTexto"></span> min desde a saída do porto
+                                    (limite <span id="atrasoLimiteTexto"></span> min)
+                                </div>
+                                <div class="text-muted mb-2" style="font-size:.7rem;">
+                                    Justifique o atraso para confirmar a chegada à balança.
+                                </div>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    @foreach(\App\Models\Discharge::ATRASO_MOTIVOS as $chave => $rotulo)
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-motivo"
+                                                data-motivo="{{ $chave }}" aria-pressed="false"
+                                                onclick="escolherMotivo('{{ $chave }}')">{{ $rotulo }}</button>
+                                    @endforeach
+                                </div>
+                                <input type="hidden" name="atraso_motivo" id="atraso_motivo">
+                                <div id="motivoOutroWrap" class="d-none mt-2">
+                                    <label class="form-label lbl-b" for="atraso_justificacao">Descreva o motivo</label>
+                                    <textarea name="atraso_justificacao" id="atraso_justificacao"
+                                              class="form-control form-control-sm" rows="2" maxlength="500"
+                                              style="border-radius:7px;font-size:.76rem;"
+                                              placeholder="Ex: avaria no caminho"></textarea>
+                                </div>
+                            </div>
+                        </div>
 
                         {{-- Hora chegada + tempo --}}
                         <div class="col-sm-6">
@@ -994,9 +1027,9 @@ div.dataTables_wrapper div.dataTables_paginate .page-item.active .page-link{colo
 let dtTable;
 let _itensBalanca = [];
 
-// Alerta porto -> balança (minutos): amarelo a 1h20, vermelho a 2h
-const SLA_AMARELO  = 80;
-const SLA_VERMELHO = 120;
+// Alerta porto -> balança (minutos): limites em config/operacoes.php (iguais aos do servidor)
+const SLA_AMARELO  = @json((int) config('operacoes.atraso_laranja_min', 60));
+const SLA_VERMELHO = @json((int) config('operacoes.atraso_vermelho_min', 80));
 
 // Tempo real: pergunta ao servidor a cada 2 s se algo mudou; recarga de segurança a cada 60 s
 const URL_SINAL       = @json(route('operations.sinal'));
@@ -1051,6 +1084,7 @@ $(document).ready(function(){
         $('#balanca-status').html('');
         $('#divergence_alert').addClass('d-none');
 
+        prepararJustificacao(b);
         construirCamposBalanca(b.data('itens') || []);
         verificarDivergencia();
         calcTransportTime();
@@ -1061,6 +1095,22 @@ $(document).ready(function(){
 
     // Validação no cliente: pelo menos 1 peso; se houver os dois, cheio > vazio
     document.getElementById('formConfirm').addEventListener('submit', function(e){
+        // Sinal vermelho: sem motivo do atraso não confirma a chegada
+        if (_exigeJustificacao) {
+            const motivo = $('#atraso_motivo').val();
+            if (!motivo) {
+                e.preventDefault();
+                setBalancaStatus('Escolha o motivo do atraso (sinal vermelho).', '#dc3545', 'bi-x-circle-fill');
+                return;
+            }
+            if (motivo === 'outro' && $('#atraso_justificacao').val().trim().length < 5) {
+                e.preventDefault();
+                setBalancaStatus('Descreva o motivo do atraso (mínimo 5 caracteres).', '#dc3545', 'bi-x-circle-fill');
+                $('#atraso_justificacao').trigger('focus');
+                return;
+            }
+        }
+
         const sb = $('#peso_bruto').val().trim(), st = $('#tara').val().trim();
         if (sb === '' && st === '') {
             e.preventDefault();
@@ -1276,6 +1326,50 @@ async function verificarSinal() {
 }
 
 /* ── Estado da leitura / validação da balança (texto seguro + ícone) ── */
+/* ── Justificação do atraso (só com sinal vermelho) ── */
+let _exigeJustificacao = false;
+
+// Minutos desde a saída do porto. Se o camião já chegou, o valor está fixo (vem do servidor).
+function minutosDeAtraso(b) {
+    if (String(b.attr('data-atraso-fixo')) === '1') {
+        const m = parseInt(b.attr('data-atraso-min'), 10);
+        return Number.isNaN(m) ? null : m;
+    }
+    const inicio = b.attr('data-inicio');
+    if (!inicio) return null;
+    const t = new Date(inicio).getTime();
+    if (Number.isNaN(t)) return null;
+    return Math.max(0, Math.round((Date.now() - t) / 60000));
+}
+
+function prepararJustificacao(b) {
+    const min = minutosDeAtraso(b);
+    const jaJustificado = String(b.attr('data-justificado')) === '1';
+    _exigeJustificacao = !jaJustificado && min !== null && min >= SLA_VERMELHO;
+
+    $('#atraso_motivo').val('');
+    $('#atraso_justificacao').val('');
+    $('#motivoOutroWrap').addClass('d-none');
+    $('#blocoJustificacao .btn-motivo').removeClass('active').attr('aria-pressed', 'false');
+    $('#blocoJustificacao').toggleClass('d-none', !_exigeJustificacao);
+
+    if (_exigeJustificacao) {
+        $('#atrasoMinTexto').text(min);
+        $('#atrasoLimiteTexto').text(SLA_VERMELHO);
+    }
+}
+
+function escolherMotivo(motivo) {
+    $('#atraso_motivo').val(motivo);
+    $('#blocoJustificacao .btn-motivo').each(function () {
+        const ligado = $(this).attr('data-motivo') === motivo;
+        $(this).toggleClass('active', ligado).attr('aria-pressed', ligado ? 'true' : 'false');
+    });
+    $('#motivoOutroWrap').toggleClass('d-none', motivo !== 'outro');
+    if (motivo === 'outro') $('#atraso_justificacao').trigger('focus');
+    setBalancaStatus('', '#64748b');
+}
+
 function setBalancaStatus(msg, cor = '#64748b', icone = 'bi-info-circle') {
     const box = document.getElementById('balanca-status');
     box.innerHTML = '';

@@ -187,6 +187,13 @@
             <div class="f"><div class="l">Saída do porto</div><div class="v">{{ $discharge->hora_saida_porto ?: '—' }}</div></div>
             <div class="f"><div class="l">Chegada à balança</div>
                 <div class="v">{{ $discharge->hora_chegada_balanca ?: '—' }}@if($discharge->tempo_transporte) <span class="mut" style="font-weight:400;">({{ $discharge->tempo_transporte }} min)</span>@endif</div></div>
+            @if($discharge->atrasoJustificado())
+                <div class="f"><div class="l">Atraso justificado</div>
+                    <div class="v" title="{{ $discharge->atrasoMotivoTexto() }}">{{ $discharge->atrasoMotivoTexto() }}</div></div>
+            @elseif($discharge->atrasoSemJustificacao())
+                <div class="f"><div class="l">Atraso</div>
+                    <div class="v neg">{{ $discharge->atrasoMinutos() }} min · sem justificação</div></div>
+            @endif
         </div>
 
         <div class="cols">
@@ -274,6 +281,9 @@
 
         <div class="rodape">
             Registado no porto por {{ $discharge->registeredBy->name ?? '—' }} · {{ $discharge->created_at->format('d/m/Y H:i') }}
+            @if($discharge->atrasoJustificado())
+                · Atraso de {{ $discharge->atrasoMinutos() }} min justificado por {{ $discharge->atrasoJustificadoPor?->name ?? '—' }}@if($discharge->atraso_justificado_em) ({{ $discharge->atraso_justificado_em->format('d/m H:i') }})@endif
+            @endif
             · Emitido em {{ now()->format('d/m/Y H:i') }} por {{ auth()->user()->name }}
         </div>
     </div>

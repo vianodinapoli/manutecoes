@@ -45,6 +45,22 @@
         @endif
     </div>
 
+    @if($discharge->atrasoJustificado())
+        <div class="mb-3 p-2 rounded" style="background:#fdecea;border:1px solid #f5c2c0;font-size:.74rem;">
+            <div class="fw-bold text-danger">
+                <i class="bi bi-exclamation-octagon-fill me-1"></i>Atraso justificado ({{ $discharge->atrasoMinutos() }} min)
+            </div>
+            <div>{{ $discharge->atrasoMotivoTexto() }}</div>
+            <div class="text-muted" style="font-size:.66rem;">
+                Por {{ $discharge->atrasoJustificadoPor?->name ?? '—' }}@if($discharge->atraso_justificado_em) · {{ $discharge->atraso_justificado_em->format('d/m H:i') }}@endif
+            </div>
+        </div>
+    @elseif($discharge->atrasoSemJustificacao())
+        <div class="mb-3 p-2 rounded" style="background:#fff3cd;border:1px solid #ffe08a;font-size:.74rem;">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>Chegou à balança com {{ $discharge->atrasoMinutos() }} min de atraso, sem justificação.
+        </div>
+    @endif
+
     <div class="fw-bold mb-1" style="font-size:.72rem;text-transform:uppercase;color:#64748b;">Produtos</div>
     <table class="table table-sm align-middle mb-3" style="font-size:.76rem;">
         <thead class="table-light">

@@ -189,6 +189,10 @@ class DischargeController extends Controller
      *  - 1.º peso recebido  → "A pesar" e tempo ③ (chegada à balança, hora do servidor)
      *  - os dois pesos      → "Confirmado" e tempo ④ (saída da descarga)
      * Um camião ainda "Carregado" (sem saída do porto) não pode ser pesado.
+     *
+     * Sinal vermelho (atraso porto → balança ≥ limite de config/operacoes.php):
+     * a justificação do atraso é obrigatória e é validada AQUI, com a hora do servidor,
+     * seja qual for o estado do ecrã.
      */
     public function confirm(Request $request, Discharge $discharge)
     {
@@ -206,11 +210,13 @@ class DischargeController extends Controller
             && $discharge->items->every(fn ($i) => $i->quantidade_confirmada !== null);
 
         $request->validate([
-            'peso_bruto'    => 'nullable|numeric|min:0',
-            'tara'          => 'nullable|numeric|min:0',
-            'confirmados'   => [$jaTemQtd ? 'nullable' : 'required', 'array'],
-            'confirmados.*' => 'required|numeric|min:0',
-            'observacoes'   => 'nullable|string|max:500',
+            'peso_bruto'          => 'nullable|numeric|min:0',
+            'tara'                => 'nullable|numeric|min:0',
+            'confirmados'         => [$jaTemQtd ? 'nullable' : 'required', 'array'],
+            'confirmados.*'       => 'required|numeric|min:0',
+            'observacoes'         => 'nullable|string|max:500',
+            'atraso_motivo'       => 'nullable|in:' . implode(',', array_keys(Discharge::ATRASO_MOTIVOS)),
+            'atraso_justificacao' => 'nullable|string|max:500',
         ]);
 
         // pesos finais = o que veio agora, ou o que já estava gravado
@@ -232,7 +238,27 @@ class DischargeController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($request, $discharge, $bruto, $tara, $brutoActual, $taraActual) {
+        // Sinal vermelho e ainda sem justificação: tem de vir motivo.
+        // Com azul/laranja (ou já justificado) o campo é ignorado.
+        $exigeJustificacao = $discharge->exigeJustificacaoAtraso();
+        $motivo = (string) $request->input('atraso_motivo', '');
+        $texto  = trim((string) $request->input('atraso_justificacao', ''));
+
+        if ($exigeJustificacao) {
+            if ($motivo === '') {
+                throw ValidationException::withMessages([
+                    'atraso_motivo' => 'Justificação do atraso obrigatória: o camião chegou com sinal vermelho.',
+                ]);
+            }
+
+            if ($motivo === 'outro' && mb_strlen($texto) < 5) {
+                throw ValidationException::withMessages([
+                    'atraso_justificacao' => 'Descreva o motivo do atraso (mínimo 5 caracteres).',
+                ]);
+            }
+        }
+
+        DB::transaction(function () use ($request, $discharge, $bruto, $tara, $brutoActual, $taraActual, $exigeJustificacao, $motivo, $texto) {
             // Quantidades confirmadas por produto (primeira passagem, ou correcção)
             if ($request->filled('confirmados')) {
                 $sacosConfirmados = 0;
@@ -258,6 +284,14 @@ class DischargeController extends Controller
                 }
                 $discharge->marcarEtapa('chegou_balanca', auth()->id());
                 $discharge->hora_chegada_balanca = now()->setTimezone('Africa/Maputo')->format('H:i:s');
+            }
+
+            // Justificação do atraso (só quando o camião chegou com sinal vermelho)
+            if ($exigeJustificacao) {
+                $discharge->atraso_motivo          = $motivo;
+                $discharge->atraso_justificacao    = $motivo === 'outro' ? $texto : null;
+                $discharge->atraso_justificado_por = auth()->id();
+                $discharge->atraso_justificado_em  = now();
             }
 
             // só carimba a hora da pesagem quando o peso é novo ou foi alterado
