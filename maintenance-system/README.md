@@ -90,6 +90,7 @@ No outro computador, basta correr:
 Bash
 php artisan db:seed --class=TankSeeder
 
+composer require phpoffice/phpspreadsheet
 
 # Instalar dependências do Node.js
 npm install
