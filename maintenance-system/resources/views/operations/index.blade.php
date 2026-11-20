@@ -127,7 +127,7 @@
                     ? \Carbon\Carbon::parse($op->pendente_desde)
                     : null;
                 $min = $desde ? (int) abs($desde->diffInMinutes(now())) : 0;
-                $nivel = $desde ? ($min >= 120 ? 'danger' : ($min >= 80 ? 'warn' : '')) : '';
+                $nivel = $desde ? ($min >= 80 ? 'danger' : ($min >= 60 ? 'warn' : '')) : '';
 
                 $chegada = $op->data_chegada ? \Carbon\Carbon::parse($op->data_chegada)->format('d/m/Y') : null;
                 $podeApagar = auth()->user()->hasRole('super-admin');
@@ -252,9 +252,9 @@
 @include('operations._modal')
 
 <script>
-    // ── Alertas de tempo (amarelo a 1h20, vermelho a 2h) ─────────────
-    const LIMITE_AMARELO = 80;
-    const LIMITE_VERMELHO = 120;
+    // ── Alertas de tempo (laranja a 1h00, vermelho a 1h20) ───────────
+const LIMITE_AMARELO = 60;
+const LIMITE_VERMELHO = 80;
 
     function atualizarAlertas() {
         document.querySelectorAll('.op-card[data-desde]').forEach(card => {
