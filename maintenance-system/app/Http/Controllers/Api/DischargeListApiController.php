@@ -48,24 +48,34 @@ class DischargeListApiController extends Controller
 
         $p = $q->orderByDesc('id')->paginate($porPagina);
 
-        $data = $p->getCollection()->map(fn ($d) => [
-            'id'                  => $d->id,
-            'data'                => $d->data->format('Y-m-d'),
-            'hora_saida_porto'    => $d->hora_saida_porto ? substr((string) $d->hora_saida_porto, 0, 5) : null,
-            'motorista'           => $d->motorista,
-            'matricula'           => $d->matricula,
-            'transportadora'      => $d->transportadora,
-            'numero_guia'         => $d->numero_guia,
-            'tipo_atrelado'       => $d->tipo_atrelado,
-            'status'              => $d->status,
-            'total_sacos'         => (int) $d->total_sacos,
-            'peso_total_estimado' => (float) $d->peso_total_estimado,
-            // os 4 tempos (ISO 8601, hora do servidor)
-            'carregado_em'        => $d->carregado_em?->toIso8601String(),
-            'saiu_porto_em'       => $d->saiu_porto_em?->toIso8601String(),
-            'chegou_balanca_em'   => $d->chegou_balanca_em?->toIso8601String(),
-            'saiu_descarga_em'    => $d->saiu_descarga_em?->toIso8601String(),
-        ])->values();
+                $data = $p->getCollection()->map(function ($d) {
+            // O atraso só conta depois de sair do porto (Carregado ainda não saiu).
+            $emTransito = in_array($d->status, ['in_transit', 'pending', 'weighing', 'confirmed'], true);
+            $minAtraso  = $emTransito ? $d->atrasoMinutos() : null;
+
+            return [
+                'id'                  => $d->id,
+                'data'                => $d->data->format('Y-m-d'),
+                'hora_saida_porto'    => $d->hora_saida_porto ? substr((string) $d->hora_saida_porto, 0, 5) : null,
+                'motorista'           => $d->motorista,
+                'matricula'           => $d->matricula,
+                'transportadora'      => $d->transportadora,
+                'numero_guia'         => $d->numero_guia,
+                'tipo_atrelado'       => $d->tipo_atrelado,
+                'status'              => $d->status,
+                'total_sacos'         => (int) $d->total_sacos,
+                'peso_total_estimado' => (float) $d->peso_total_estimado,
+                // os 4 tempos (ISO 8601, hora do servidor)
+                'carregado_em'        => $d->carregado_em?->toIso8601String(),
+                'saiu_porto_em'       => $d->saiu_porto_em?->toIso8601String(),
+                'chegou_balanca_em'   => $d->chegou_balanca_em?->toIso8601String(),
+                'saiu_descarga_em'    => $d->saiu_descarga_em?->toIso8601String(),
+                // atraso até à balança: 'ok' (normal) | 'warn' (laranja) | 'danger' (vermelho)
+                'atraso_minutos'      => $minAtraso,
+                'nivel_atraso'        => $minAtraso === null ? null : ($d->nivelAtraso($minAtraso) ?: 'ok'),
+                'atraso_motivo'       => $d->atrasoMotivoTexto(),
+            ];
+        })->values();
 
         $porEstado = $operation->discharges()
             ->selectRaw('status, COUNT(*) as n')
