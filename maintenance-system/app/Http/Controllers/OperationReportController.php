@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\RelatorioConfirmadosXlsx;
 use App\Models\DischargeOperation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -14,8 +15,9 @@ class OperationReportController extends Controller
     public function confirmed(Request $request, DischargeOperation $operation)
     {
         $data = $request->validate([
-            'de'  => ['required', 'date'],
-            'ate' => ['required', 'date', 'after_or_equal:de'],
+            'de'      => ['required', 'date'],
+            'ate'     => ['required', 'date', 'after_or_equal:de'],
+            'formato' => ['nullable', 'in:xlsx'],
         ]);
 
         // A hora escolhida é hora de Maputo; converte para o fuso da aplicação
@@ -59,15 +61,16 @@ class OperationReportController extends Controller
         )->count();
 
         // Camiões confirmados no intervalo (carregados uma só vez para
-        // divergências e produtos).
-        $confirmados = (clone $q)->with('items')->get();
+        // divergências, produtos e Excel).
+        $confirmados = (clone $q)->with(['items.operationItem'])->get();
 
-        // Divergências: camiões confirmados no intervalo com divergência na balança.
+        // Divergências: camiões confirmados no intervalo com divergência na balança
+        // (mesma regra do modelo e do relatório da operação).
         $divergencias = $confirmados
-            ->filter(fn ($d) => (bool) data_get($d, 'divergencia'))
+            ->filter(fn ($d) => $d->hasDivergence())
             ->count();
 
-                // Tipo de carga: produtos definidos no plano da operação, com a quantidade
+        // Tipo de carga: produtos definidos no plano da operação, com a quantidade
         // confirmada de cada um nos camiões do intervalo.
         $linhas = $confirmados->flatMap(fn ($d) => $d->items);
 
@@ -93,7 +96,7 @@ class OperationReportController extends Controller
             ];
         })->values();
 
-        return [
+        $resultado = [
             'camioes'   => (int) $tot->camioes,
             'sacos'     => (int) $tot->sacos,
             'toneladas' => round(((float) $tot->peso_kg) / 1000, 3),
@@ -110,5 +113,18 @@ class OperationReportController extends Controller
 
             'produtos' => $produtos,
         ];
+
+        // Exportar para Excel: o mesmo balanço, organizado em folhas.
+        if (($data['formato'] ?? null) === 'xlsx') {
+            return RelatorioConfirmadosXlsx::gerar($resultado, [
+                'navio'       => $operation->navio,
+                'empresa'     => $operation->empresa,
+                'de'          => $data['de'],
+                'ate'         => $data['ate'],
+                'confirmados' => $confirmados,
+            ]);
+        }
+
+        return $resultado;
     }
 }
