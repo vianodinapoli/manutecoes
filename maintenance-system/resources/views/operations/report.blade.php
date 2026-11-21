@@ -126,6 +126,7 @@
     <a href="{{ route('operations.show', $operation) }}">← Voltar à operação</a>
     <div>
         <span style="font-size:11px;opacity:.7;margin-right:12px;">Para guardar em PDF, escolha “Guardar como PDF” no destino da impressão</span>
+        <a href="{{ request()->fullUrlWithQuery(['formato' => 'xlsx']) }}" style="background:#198754;border-color:#198754;font-weight:600;margin-right:8px;">Exportar Excel</a>
         <button class="primary" onclick="window.print()">Imprimir / Guardar PDF</button>
     </div>
 </div>

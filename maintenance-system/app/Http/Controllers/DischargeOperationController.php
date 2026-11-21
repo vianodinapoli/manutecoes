@@ -229,6 +229,13 @@ class DischargeOperationController extends Controller
         }
         $historico = $historico->sortBy('quando')->values();
 
+        if (request('formato') === 'xlsx') {
+            return \App\Exports\RelatorioOperacaoXlsx::gerar(
+                compact('operation', 'discharges', 'resumo', 'porProduto', 'porTransp', 'semCamioes', 'historico')
+                + ['utilizador' => auth()->user()->name]
+            );
+        }
+
         return view('operations.report', compact(
             'operation', 'discharges', 'resumo', 'porProduto', 'porTransp', 'semCamioes', 'historico'
         ));
